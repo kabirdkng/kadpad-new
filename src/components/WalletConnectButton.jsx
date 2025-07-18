@@ -42,6 +42,7 @@ const WalletConnectButton = () => {
 
   const truncateAddress = (address) => {
     if (!address) return '';
+    // More aggressive truncation for mobile
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
@@ -62,23 +63,23 @@ const WalletConnectButton = () => {
     return (
       <button
         onClick={handleClick}
-        className="btn btn-primary flex items-center gap-2 relative group"
+        className="btn btn-primary flex items-center gap-2 relative group px-3 py-2 sm:px-6 sm:py-3"
       >
-        <Wallet size={18} />
-        <span className="hidden sm:inline">Connect Wallet</span>
-        <span className="sm:hidden">Connect</span>
+        <Wallet size={16} className="sm:w-[18px] sm:h-[18px]" />
+        <span className="hidden sm:inline text-sm sm:text-base">Connect Wallet</span>
+        <span className="sm:hidden text-xs">Connect</span>
       </button>
     );
   }
 
   return (
-    <div className="relative">
+    <div className="relative wallet-dropdown-container">
       <button
         onClick={handleClick}
-        className="btn btn-secondary flex items-center gap-2 relative group min-w-[120px] justify-center"
+        className="btn btn-secondary flex items-center gap-1 sm:gap-2 relative group px-2 py-2 sm:px-4 sm:py-3 min-w-[100px] sm:min-w-[120px] justify-center"
       >
-        <div className="w-2 h-2 bg-accent-primary rounded-full animate-pulse"></div>
-        <span className="font-mono text-sm">
+        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-accent-primary rounded-full animate-pulse"></div>
+        <span className="font-mono text-xs sm:text-sm truncate max-w-[60px] sm:max-w-none">
           {truncateAddress(account)}
         </span>
       </button>
@@ -93,39 +94,39 @@ const WalletConnectButton = () => {
           ></div>
           
           {/* Dropdown Content */}
-          <div className="absolute right-0 mt-2 w-80 bg-card border border-border-color rounded-2xl shadow-lg z-50 animate-scale-in">
+          <div className="wallet-dropdown-mobile">
             {/* Header */}
-            <div className="p-4 border-b border-border-color">
+            <div className="p-3 sm:p-4 border-b border-border-color">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-accent-primary/20 border border-accent-primary/30 flex items-center justify-center">
-                    <Wallet size={18} className="text-accent-primary" />
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-accent-primary/20 border border-accent-primary/30 flex items-center justify-center flex-shrink-0">
+                    <Wallet size={14} className="sm:w-[18px] sm:h-[18px] text-accent-primary" />
                   </div>
-                  <div>
-                    <div className="font-medium text-primary-text">Connected</div>
-                    <div className="text-xs text-secondary">{getProviderName(provider)}</div>
+                  <div className="min-w-0">
+                    <div className="font-medium text-primary-text text-sm sm:text-base">Connected</div>
+                    <div className="text-xs text-secondary truncate">{getProviderName(provider)}</div>
                   </div>
                 </div>
-                <div className="w-3 h-3 bg-accent-primary rounded-full"></div>
+                <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-accent-primary rounded-full flex-shrink-0"></div>
               </div>
             </div>
 
             {/* Account Info */}
-            <div className="p-4 border-b border-border-color">
+            <div className="p-3 sm:p-4 border-b border-border-color">
               <div className="text-xs text-secondary mb-1">Account Address</div>
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-sm text-primary-text break-all">
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-mono text-xs sm:text-sm text-primary-text break-all flex-1 leading-relaxed">
                   {account}
                 </span>
                 <button
                   onClick={copyAddress}
-                  className="ml-2 p-2 rounded-lg hover:bg-hover-bg transition-colors duration-200 flex-shrink-0"
+                  className="p-1.5 sm:p-2 rounded-lg hover:bg-hover-bg transition-colors duration-200 flex-shrink-0 mt-0.5"
                   title="Copy address"
                 >
                   {copied ? (
-                    <Check size={16} className="text-accent-primary" />
+                    <Check size={14} className="sm:w-4 sm:h-4 text-accent-primary" />
                   ) : (
-                    <Copy size={16} className="text-secondary hover:text-primary-text" />
+                    <Copy size={14} className="sm:w-4 sm:h-4 text-secondary hover:text-primary-text" />
                   )}
                 </button>
               </div>
@@ -137,27 +138,27 @@ const WalletConnectButton = () => {
             </div>
 
             {/* Actions */}
-            <div className="p-4 space-y-2">
+            <div className="p-3 sm:p-4 space-y-2">
               <a
-                href={`https://explorer.chainweb.com/testnet04/account/${account}`}
+                href={`https://explorer.kadena.io/mainnet/account/${account}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-hover-bg transition-colors duration-200 group"
+                className="flex items-center justify-between w-full p-2.5 sm:p-3 rounded-lg hover:bg-hover-bg transition-colors duration-200 group"
               >
-                <div className="flex items-center gap-3">
-                  <ExternalLink size={16} className="text-secondary" />
-                  <span className="text-sm text-primary-text">View on Explorer</span>
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                  <ExternalLink size={14} className="sm:w-4 sm:h-4 text-secondary flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-primary-text">View on Explorer</span>
                 </div>
-                <ExternalLink size={14} className="text-secondary group-hover:text-primary-text" />
+                <ExternalLink size={12} className="sm:w-3.5 sm:h-3.5 text-secondary group-hover:text-primary-text flex-shrink-0" />
               </a>
               
               <button
                 onClick={onDisconnect}
-                className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-red-500/10 hover:border-red-500/20 transition-colors duration-200 group text-left"
+                className="flex items-center justify-between w-full p-2.5 sm:p-3 rounded-lg hover:bg-red-500/10 hover:border-red-500/20 transition-colors duration-200 group text-left"
               >
-                <div className="flex items-center gap-3">
-                  <LogOut size={16} className="text-red-400" />
-                  <span className="text-sm text-red-400">Disconnect Wallet</span>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <LogOut size={14} className="sm:w-4 sm:h-4 text-red-400 flex-shrink-0" />
+                  <span className="text-xs sm:text-sm text-red-400">Disconnect Wallet</span>
                 </div>
               </button>
             </div>

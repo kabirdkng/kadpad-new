@@ -67,19 +67,24 @@ function ClientContextProvider({ children }) {
         const fullAccountString = session.namespaces.kadena.accounts[0];
         const pubKey = fullAccountString.split(":").slice(2).join(":");
         const account = `k:${pubKey}`;
-        useWalletStore.setState({ pubKey: pubKey, provider: ["WC"], isConnected: true });
-        sethideConnectWalletModal();
-        useWalletStore.setState({
-          session,
-          account,
+        
+        
+        useWalletStore.setState({ 
+          pubKey: pubKey, 
+          provider: "WC",
+          isConnected: true,
+          account: account,
+          session: session
         });
+        
+        sethideConnectWalletModal();
       } catch (e) {
         console.error(e);
       } finally {
         web3Modal.closeModal();
       }
     },
-    [client, onSessionConnected]
+    [client, onSessionConnected, sethideConnectWalletModal]
   );
 
   const disconnect = useCallback(async () => {
@@ -103,6 +108,7 @@ function ClientContextProvider({ children }) {
         provider: null,
         pubKey: "",
         session: null,
+        isConnected: false,
       });
 
       useWalletStore.setState({
