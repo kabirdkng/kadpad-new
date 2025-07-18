@@ -57,7 +57,7 @@ const Hero = () => {
   }, []);
 
   return (
-    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pb-20">
+    <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pb-12">
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent-primary/5 rounded-full blur-3xl animate-pulse"></div>
@@ -148,7 +148,7 @@ const Hero = () => {
           {features.map((feature, index) => (
             <div 
               key={index}
-              className="card text-center p-6 group hover:scale-105 transition-all duration-300"
+              className="card text-center p-6 group hover:scale-105 transition-all duration-300 bg-opacity-30"
             >
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-card border border-accent-primary/20 text-accent-primary mb-4 group-hover:scale-110 transition-transform duration-300">
                 {feature.icon}
@@ -165,7 +165,7 @@ const Hero = () => {
       </div>
 
       {/* Scroll Indicator - Positioned absolutely at bottom */}
-      <div className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 transition-all duration-1000 delay-1300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+      {/* <div className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 transition-all duration-1000 delay-1300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
         <div className="flex flex-col items-center text-secondary">
           <span className="text-xs font-medium mb-3 px-3 py-1 bg-card/80 backdrop-blur-sm rounded-full border border-accent-primary/20">
             Scroll to explore
@@ -175,7 +175,7 @@ const Hero = () => {
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-accent-primary rounded-full animate-bounce"></div>
           </div>
         </div>
-      </div>
+      </div> */}
     </section>
   );
 };

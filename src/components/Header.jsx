@@ -113,8 +113,16 @@ const Header = () => {
       <header 
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isVisible || isMenuOpen ? 'translate-y-0' : '-translate-y-full'
-        } ${scrolled ? 'glass shadow-lg' : 'bg-transparent'}`}
-        style={{ top: '40px' }} // Account for banner height
+        }`}
+        style={{ 
+          top: '40px',
+          background: scrolled 
+            ? 'rgba(0, 0, 0, 0.9)' 
+            : 'transparent',
+          backdropFilter: scrolled ? 'blur(20px)' : 'none',
+          borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+          boxShadow: scrolled ? '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' : 'none'
+        }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -184,7 +192,13 @@ const Header = () => {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="lg:hidden glass border-t border-border-color">
+          <div 
+            className="lg:hidden border-t border-border-color"
+            style={{
+              background: 'rgba(0, 0, 0, 0.35)',
+              backdropFilter: 'blur(20px)'
+            }}
+          >
             <div className="max-w-7xl mx-auto px-4 py-4">
               <nav className="flex flex-col space-y-2 mb-6">
                 {navItems.map((item) => (
@@ -248,7 +262,7 @@ const Header = () => {
       </header>
 
       {/* Spacer to prevent content overlap */}
-      <div className="h-24"></div>
+      <div className={`transition-all duration-300 ${isMenuOpen ? 'h-[34rem]' : 'h-28'}`}></div>
     </>
   );
 };

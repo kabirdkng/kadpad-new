@@ -47,12 +47,12 @@ const SaleCard = ({ sale, index }) => {
   };
 
   return (
-    <div className={`bg-gray-800 bg-opacity-60 p-4 rounded-lg hover:bg-opacity-80 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 h-full group ${isHot ? 'border border-orange-400/30' : 'border border-gray-600/30'}`}
+    <div className={`card group hover:scale-105 transition-all duration-500 animate-fade-in h-full ${isHot ? 'glow border-orange-400/30' : ''}`}
          style={{ animationDelay: `${index * 100}ms` }}>
       
       {/* Card Header */}
-      <div className="relative mb-4">
-        <div className="aspect-video w-full bg-gray-700 rounded-lg overflow-hidden">
+      <div className="relative mb-6">
+        <div className="aspect-video w-full bg-secondary-bg rounded-xl overflow-hidden">
           <img 
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
             src={sale.tokendetails.imageUrl} 
@@ -64,57 +64,57 @@ const SaleCard = ({ sale, index }) => {
         </div>
         
         {/* Badges */}
-        <div className="absolute top-2 left-2 flex gap-1">
+        <div className="absolute top-3 left-3 flex gap-2">
           {isNew && (
-            <span className="px-2 py-1 bg-lime-500 text-black text-xs font-bold rounded-md flex items-center gap-1">
-              <Sparkles size={10} />
+            <span className="px-3 py-1 bg-accent-primary text-black text-xs font-bold rounded-lg flex items-center gap-1">
+              <Sparkles size={12} />
               New
             </span>
           )}
           {isHot && (
-            <span className="px-2 py-1 bg-orange-500 text-white text-xs font-bold rounded-md flex items-center gap-1">
-              <Flame size={10} />
+            <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-lg flex items-center gap-1">
+              <Flame size={12} />
               Hot
             </span>
           )}
         </div>
 
-        <div className="absolute top-2 right-2">
-          <span className={`px-2 py-1 text-xs font-medium rounded-md border ${getStatusColor(sale.salesDetails.phase0startDate)}`}>
+        <div className="absolute top-3 right-3">
+          <span className={`px-3 py-1 text-xs font-medium rounded-lg border ${getStatusColor(sale.salesDetails.phase0startDate)}`}>
             {getTimeStatus()}
           </span>
         </div>
       </div>
 
       {/* Token Info */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-bold text-white truncate">{sale.moduleName}</h3>
-          <span className="text-lime-400 font-mono text-sm">${sale.tokendetails.SYMBOL}</span>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-xl font-bold text-primary-text truncate">{sale.moduleName}</h3>
+          <span className="text-accent-primary font-mono text-sm font-medium">${sale.tokendetails.SYMBOL}</span>
         </div>
         
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center gap-2 text-gray-400">
-            <Calendar size={12} />
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="flex items-center gap-2 text-secondary">
+            <Calendar size={14} />
             <span className="text-xs">{new Date(sale.salesDetails.phase0startDate).toLocaleDateString()}</span>
           </div>
-          <div className="flex items-center gap-2 text-gray-400">
-            <Target size={12} />
+          <div className="flex items-center gap-2 text-secondary">
+            <Target size={14} />
             <span className="text-xs">{formatNumber(sale.salesDetails.totalTokensToSale)} tokens</span>
           </div>
         </div>
       </div>
 
       {/* Progress Section */}
-      <div className="mb-4">
-        <div className="flex justify-between text-sm font-medium text-gray-400 mb-2">
+      <div className="mb-6">
+        <div className="flex justify-between text-sm font-medium text-secondary mb-3">
           <span>{formatNumber(sale.salesDetails.counters.sold)} sold</span>
           <span>{progressBarPercent.toFixed(1)}%</span>
         </div>
-        <div className="w-full bg-gray-700 rounded-full h-2">
+        <div className="progress-bar">
           <div 
-            className={`h-full rounded-full transition-all duration-1000 ${
-              isHot ? 'bg-gradient-to-r from-orange-500 to-red-500' : 'bg-lime-400'
+            className={`progress-fill transition-all duration-1000 ${
+              isHot ? 'bg-gradient-to-r from-orange-500 to-red-500' : ''
             }`}
             style={{ width: `${progressBarPercent}%` }}
           ></div>
@@ -122,12 +122,12 @@ const SaleCard = ({ sale, index }) => {
       </div>
 
       {/* Price Info */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <div className="text-sm">
-          <span className="text-gray-400">Price: </span>
-          <span className="text-lime-400 font-bold">{sale.salesDetails.phase0price} KDA</span>
+          <span className="text-secondary">Price: </span>
+          <span className="text-accent-primary font-bold">{sale.salesDetails.phase0price} KDA</span>
         </div>
-        <div className="flex items-center gap-1 text-xs text-gray-400">
+        <div className="flex items-center gap-2 text-xs text-secondary">
           <Users size={12} />
           <span>{Math.floor(Math.random() * 500) + 100}</span>
         </div>
@@ -137,7 +137,7 @@ const SaleCard = ({ sale, index }) => {
       <div className="mt-auto">
         <Link 
           to={`/presale/${sale.namespace}/${sale.moduleName}`}
-          className="w-full bg-lime-500 hover:bg-lime-600 text-black font-bold py-2 px-4 rounded transition duration-300 block text-center group flex items-center justify-center gap-2"
+          className="btn btn-primary w-full group flex items-center justify-center gap-2"
         >
           View Sale
           <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
@@ -154,22 +154,22 @@ const SaleSection = ({ title, sales, icon: Icon, gradient = false }) => {
   if (sales.length === 0) return null;
 
   return (
-    <div className="mb-16">
+    <div className="mb-20">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-          <div className={`p-3 rounded-xl ${gradient ? 'bg-lime-500' : 'bg-gray-700'} border border-gray-600`}>
-            <Icon size={24} className={gradient ? 'text-black' : 'text-lime-400'} />
+          <div className={`p-3 rounded-xl border ${gradient ? 'bg-accent-primary border-accent-primary' : 'bg-card border-border-color'}`}>
+            <Icon size={24} className={gradient ? 'text-black' : 'text-accent-primary'} />
           </div>
           <div>
-            <h2 className="text-3xl font-bold text-lime-400">{title}</h2>
-            <p className="text-gray-400">{sales.length} project{sales.length !== 1 ? 's' : ''} available</p>
+            <h2 className="text-3xl font-bold text-accent-primary">{title}</h2>
+            <p className="text-secondary">{sales.length} project{sales.length !== 1 ? 's' : ''} available</p>
           </div>
         </div>
         
         {sales.length > 8 && (
           <button 
             onClick={() => setExpanded(!expanded)}
-            className="text-lime-400 hover:text-lime-500 transition duration-300 flex items-center gap-2 font-medium"
+            className="btn btn-ghost flex items-center gap-2"
           >
             {expanded ? 'Show Less' : 'Show All'}
             <ChevronRight size={16} className={`transition-transform ${expanded ? 'rotate-90' : ''}`} />
@@ -258,51 +258,51 @@ const Buy = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 bg-opacity-15 text-white flex items-center justify-center">
+      <div className="min-h-screen bg-primary-bg text-primary-text flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-lime-400 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading amazing projects...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-accent-primary mx-auto mb-4"></div>
+          <p className="text-secondary">Loading amazing projects...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 bg-opacity-0 text-white py-8 lg:py-12">
+    <div className="min-h-screen bg-primary-bg text-primary-text py-8 lg:py-12">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="text-center mb-12 lg:mb-16">
-          <div className="inline-flex items-center px-4 py-2 rounded-full bg-gray-800 bg-opacity-60 border border-lime-400/20 mb-6">
-            <TrendingUp className="w-4 h-4 text-lime-400 mr-2" />
-            <span className="text-sm font-medium text-lime-400">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-card border border-accent-primary/20 mb-6">
+            <TrendingUp className="w-4 h-4 text-accent-primary mr-2" />
+            <span className="text-sm font-medium text-accent-primary">
               Discover Next-Gen Projects
             </span>
           </div>
           
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
-            Explore <span className="text-lime-400">Token Sales</span>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-text mb-6">
+            Explore <span className="text-gradient">Token Sales</span>
           </h1>
-          <p className="text-lg lg:text-xl text-gray-400 max-w-3xl mx-auto mb-8 lg:mb-12">
+          <p className="text-lg lg:text-xl text-secondary max-w-3xl mx-auto mb-8 lg:mb-12">
             Discover and invest in the most promising token launches on Kadena. 
             Join early-stage projects and be part of the future.
           </p>
 
           {/* Enhanced Search and Filter Section */}
-          <div className="bg-gray-800 bg-opacity-60 rounded-2xl p-6 border border-gray-600/30 backdrop-blur-sm max-w-6xl mx-auto">
-            {/* Search Bar - Full Width on All Screens */}
+          <div className="card max-w-6xl mx-auto">
+            {/* Search Bar */}
             <div className="relative mb-6">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 z-10" size={20} />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-secondary z-10" size={20} />
               <input
                 type="text"
                 placeholder="Search projects, tokens, or symbols..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 bg-gray-700 border border-gray-600 rounded-xl text-white placeholder-gray-400 text-mb md:text-lg focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent transition-all duration-200"
+                className="w-full pl-12 pr-4 py-4 bg-secondary-bg border border-border-color rounded-xl text-primary-text placeholder-secondary text-base md:text-lg focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent transition-all duration-200"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm('')}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-secondary hover:text-primary-text"
                 >
                   ✕
                 </button>
@@ -314,11 +314,11 @@ const Buy = () => {
               {/* Sort Dropdown */}
               <div className="flex-1 lg:flex-none lg:min-w-[200px]">
                 <div className="relative">
-                  <ArrowUpDown className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                  <ArrowUpDown className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary" size={16} />
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent appearance-none cursor-pointer"
+                    className="w-full pl-10 pr-4 py-3 bg-secondary-bg border border-border-color rounded-lg text-primary-text text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent appearance-none cursor-pointer"
                   >
                     <option value="newest">Newest First</option>
                     <option value="popular">Most Popular</option>
@@ -330,11 +330,11 @@ const Buy = () => {
               {/* Status Filter */}
               <div className="flex-1 lg:flex-none lg:min-w-[200px]">
                 <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-secondary" size={16} />
                   <select
                     value={filterStatus}
                     onChange={(e) => setFilterStatus(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-lime-400 focus:border-transparent appearance-none cursor-pointer"
+                    className="w-full pl-10 pr-4 py-3 bg-secondary-bg border border-border-color rounded-lg text-primary-text text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent appearance-none cursor-pointer"
                   >
                     <option value="all">All Status</option>
                     <option value="live">Live Sales</option>
@@ -347,10 +347,10 @@ const Buy = () => {
               {/* Advanced Filters Toggle */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-3 rounded-lg border transition-all duration-200 flex items-center gap-2 ${
+                className={`btn px-4 py-3 rounded-lg transition-all duration-200 flex items-center gap-2 ${
                   showFilters 
-                    ? 'bg-lime-500 text-black border-lime-500' 
-                    : 'bg-transparent text-gray-400 border-gray-600 hover:border-lime-400 hover:text-lime-400'
+                    ? 'btn-primary' 
+                    : 'btn-ghost'
                 }`}
               >
                 <SlidersHorizontal size={16} />
@@ -360,25 +360,25 @@ const Buy = () => {
 
             {/* Advanced Filters Panel */}
             {showFilters && (
-              <div className="mt-6 pt-6 border-t border-gray-600 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="mt-6 pt-6 border-t border-border-color grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Price Range</label>
+                  <label className="block text-sm font-medium text-secondary mb-2">Price Range</label>
                   <div className="flex gap-2">
                     <input
                       type="number"
                       placeholder="Min"
-                      className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-lime-400"
+                      className="flex-1 px-3 py-2 bg-secondary-bg border border-border-color rounded-lg text-primary-text text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary"
                     />
                     <input
                       type="number"
                       placeholder="Max"
-                      className="flex-1 px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-lime-400"
+                      className="flex-1 px-3 py-2 bg-secondary-bg border border-border-color rounded-lg text-primary-text text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Token Type</label>
-                  <select className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-lime-400">
+                  <label className="block text-sm font-medium text-secondary mb-2">Token Type</label>
+                  <select className="w-full px-3 py-2 bg-secondary-bg border border-border-color rounded-lg text-primary-text text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary">
                     <option>All Types</option>
                     <option>Utility</option>
                     <option>Governance</option>
@@ -386,11 +386,11 @@ const Buy = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">Market Cap</label>
-                  <select className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-lime-400">
+                  <label className="block text-sm font-medium text-secondary mb-2">Market Cap</label>
+                  <select className="w-full px-3 py-2 bg-secondary-bg border border-border-color rounded-lg text-primary-text text-sm focus:outline-none focus:ring-2 focus:ring-accent-primary">
                     <option>All Sizes</option>
-                    <option> $1M</option>
-                    <option> $1M - $10M</option>
+                    <option>$1M</option>
+                    <option>$1M - $10M</option>
                     <option> $10M</option>
                   </select>
                 </div>
@@ -398,10 +398,10 @@ const Buy = () => {
             )}
 
             {/* Results Summary */}
-            <div className="mt-6 flex items-center justify-between text-sm text-gray-400">
+            <div className="mt-6 flex items-center justify-between text-sm text-secondary">
               <span>{sortedProjects.length} projects found</span>
               {searchTerm && (
-                <span>Search results for &quot;{searchTerm}&quot;</span>
+                <span>Search results for "{searchTerm}"</span>
               )}
             </div>
           </div>
@@ -409,21 +409,21 @@ const Buy = () => {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-12 lg:mb-16">
-          <div className="bg-gray-800 bg-opacity-60 rounded-lg p-4 lg:p-6 text-center border border-gray-600/30">
-            <div className="text-xl lg:text-2xl font-bold text-lime-400 mb-1">{projects.length}</div>
-            <div className="text-sm text-gray-400">Total Projects</div>
+          <div className="card text-center">
+            <div className="text-xl lg:text-2xl font-bold text-accent-primary mb-1">{projects.length}</div>
+            <div className="text-sm text-secondary">Total Projects</div>
           </div>
-          <div className="bg-gray-800 bg-opacity-60 rounded-lg p-4 lg:p-6 text-center border border-gray-600/30">
-            <div className="text-xl lg:text-2xl font-bold text-lime-400 mb-1">{ongoingSales.length}</div>
-            <div className="text-sm text-gray-400">Live Sales</div>
+          <div className="card text-center">
+            <div className="text-xl lg:text-2xl font-bold text-accent-primary mb-1">{ongoingSales.length}</div>
+            <div className="text-sm text-secondary">Live Sales</div>
           </div>
-          <div className="bg-gray-800 bg-opacity-60 rounded-lg p-4 lg:p-6 text-center border border-gray-600/30">
-            <div className="text-xl lg:text-2xl font-bold text-lime-400 mb-1">{upcomingSales.length}</div>
-            <div className="text-sm text-gray-400">Upcoming</div>
+          <div className="card text-center">
+            <div className="text-xl lg:text-2xl font-bold text-accent-primary mb-1">{upcomingSales.length}</div>
+            <div className="text-sm text-secondary">Upcoming</div>
           </div>
-          <div className="bg-gray-800 bg-opacity-60 rounded-lg p-4 lg:p-6 text-center border border-gray-600/30">
-            <div className="text-xl lg:text-2xl font-bold text-lime-400 mb-1">0</div>
-            <div className="text-sm text-gray-400">Total Raised</div>
+          <div className="card text-center">
+            <div className="text-xl lg:text-2xl font-bold text-accent-primary mb-1">0</div>
+            <div className="text-sm text-secondary">Total Raised</div>
           </div>
         </div>
 
@@ -465,35 +465,39 @@ const Buy = () => {
         {/* Empty State */}
         {projects.length === 0 && (
           <div className="text-center py-20">
-            <div className="w-24 h-24 bg-gray-800 bg-opacity-60 rounded-full flex items-center justify-center mx-auto mb-6">
-              <TrendingUp size={40} className="text-lime-400" />
+            <div className="card max-w-md mx-auto text-center">
+              <div className="w-24 h-24 bg-secondary-bg rounded-full flex items-center justify-center mx-auto mb-6">
+                <TrendingUp size={40} className="text-accent-primary" />
+              </div>
+              <h3 className="text-xl font-semibold text-primary-text mb-2">No Projects Yet</h3>
+              <p className="text-secondary mb-8">Be the first to launch your project on KadPad!</p>
+              <Link to="/launch" className="btn btn-primary">
+                Launch Your Project
+              </Link>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No Projects Yet</h3>
-            <p className="text-gray-400 mb-8">Be the first to launch your project on KadPad!</p>
-            <Link to="/launch" className="bg-lime-500 hover:bg-lime-600 text-black font-bold py-3 px-6 rounded-lg transition duration-300">
-              Launch Your Project
-            </Link>
           </div>
         )}
 
         {/* No search results */}
         {projects.length > 0 && sortedProjects.length === 0 && (
           <div className="text-center py-20">
-            <div className="w-24 h-24 bg-gray-800 bg-opacity-60 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Search size={40} className="text-gray-400" />
+            <div className="card max-w-md mx-auto text-center">
+              <div className="w-24 h-24 bg-secondary-bg rounded-full flex items-center justify-center mx-auto mb-6">
+                <Search size={40} className="text-secondary" />
+              </div>
+              <h3 className="text-xl font-semibold text-primary-text mb-2">No Results Found</h3>
+              <p className="text-secondary mb-8">Try adjusting your search terms or filters</p>
+              <button 
+                onClick={() => {
+                  setSearchTerm('');
+                  setFilterStatus('all');
+                  setSortBy('newest');
+                }}
+                className="btn btn-primary"
+              >
+                Clear Filters
+              </button>
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">No Results Found</h3>
-            <p className="text-gray-400 mb-8">Try adjusting your search terms or filters</p>
-            <button 
-              onClick={() => {
-                setSearchTerm('');
-                setFilterStatus('all');
-                setSortBy('newest');
-              }}
-              className="bg-lime-500 hover:bg-lime-600 text-black font-bold py-3 px-6 rounded-lg transition duration-300"
-            >
-              Clear Filters
-            </button>
           </div>
         )}
       </div>

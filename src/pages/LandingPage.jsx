@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import Footer from '../components/Footer';
+import { useEffect } from 'react';
 import Hero from '../components/Hero';
 import Features from '../components/Features';
 
