@@ -1,0 +1,47 @@
+.tm-bg-dark-n {
+  background-color: #485f2daa !important;
+  border-radius: 2px;
+}
+.wallet-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  z-index: 5000;
+  overflow-y: auto;
+}
+.wallet-modal {
+  background-color: rgba(0, 0, 0, 0.9);
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  width: 100%;
+  height: auto;
+  max-width: 500px;
+  margin: 0 auto;
+  padding-block: 2rem;
+  display: grid;
+  place-items: center;
+  grid-auto-rows: 1fr;
+}
+.provider-button {
+  width: 90%;
+  height: 80%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  border: 1px solid var(--accent-color) !important;
+}
+
+.provider-button img{
+   width: 50px;
+   height: 50px;
+   margin-block: 0.5rem !important;
+}
+
+.provider-button:hover {
+  background: var(--accent-color) !important;
+}
