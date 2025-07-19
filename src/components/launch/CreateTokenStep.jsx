@@ -167,7 +167,7 @@ const CreateTokenStep = () => {
           What's Next?
         </h4>
         <p className="text-secondary">
-          Once you've created your token with a presale contract, you'll verify ownership 
+          Once you've created your token, you'll verify ownership 
           by connecting your wallet and proving you control the token's governance keys.
         </p>
       </div>

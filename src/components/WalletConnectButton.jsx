@@ -63,7 +63,7 @@ const WalletConnectButton = () => {
     return (
       <button
         onClick={handleClick}
-        className="btn btn-primary flex items-center gap-2 relative group px-3 py-2 sm:px-6 sm:py-3"
+        className="btn btn-primary flex items-center gap-2 relative group px-3 py-2 sm:px-6 sm:py-3 z-10"
       >
         <Wallet size={16} className="sm:w-[18px] sm:h-[18px]" />
         <span className="hidden sm:inline text-sm sm:text-base">Connect Wallet</span>
@@ -73,10 +73,10 @@ const WalletConnectButton = () => {
   }
 
   return (
-    <div className="relative wallet-dropdown-container">
+    <div className="wallet-dropdown-container relative">
       <button
         onClick={handleClick}
-        className="btn btn-secondary flex items-center gap-1 sm:gap-2 relative group px-2 py-2 sm:px-4 sm:py-3 min-w-[100px] sm:min-w-[120px] justify-center"
+        className="btn btn-secondary flex items-center gap-1 sm:gap-2 relative group px-2 py-2 sm:px-4 sm:py-3 min-w-[100px] sm:min-w-[120px] justify-center z-10"
       >
         <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-accent-primary rounded-full animate-pulse"></div>
         <span className="font-mono text-xs sm:text-sm truncate max-w-[60px] sm:max-w-none">
@@ -87,14 +87,22 @@ const WalletConnectButton = () => {
       {/* Dropdown Menu */}
       {showDropdown && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop - Fixed positioning for mobile */}
           <div 
-            className="fixed inset-0 z-40" 
+            className="fixed inset-0 bg-transparent z-[9998]" 
             onClick={() => setShowDropdown(false)}
+            style={{ 
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 9998
+            }}
           ></div>
           
           {/* Dropdown Content */}
-          <div className="wallet-dropdown-mobile">
+          <div className="wallet-dropdown-mobile" style={{ zIndex: 9999 }}>
             {/* Header */}
             <div className="p-3 sm:p-4 border-b border-border-color">
               <div className="flex items-center justify-between">

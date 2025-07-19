@@ -81,8 +81,8 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
         color: 'green',
         icon: CheckCircle,
         title: 'Approved',
-        description: 'Your submission has been approved and is ready for launch.',
-        message: 'Congratulations! Your submission has been approved.',
+        description: 'Your submission has been approved and is ready for sales contract setup.',
+        message: 'Congratulations! Your submission has been approved. You can now configure your sales contract.',
         bgColor: 'bg-green-500/5',
         borderColor: 'border-green-500/20',
         iconColor: 'text-green-400'
@@ -156,6 +156,18 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
             <DollarSign size={16} />
             Pay Launch Fees
           </button>
+        );
+      case 'approved':
+        return (
+          <div className="text-center">
+            <p className="text-sm text-secondary mb-4">
+              Your project has been approved! You can now configure your sales contract in the next step.
+            </p>
+            <div className="inline-flex items-center px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
+              <CheckCircle size={16} className="text-green-400 mr-2" />
+              <span className="text-green-400 font-medium">Ready to Configure Sales</span>
+            </div>
+          </div>
         );
       case 'ready_to_launch':
         return (
@@ -232,19 +244,15 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
                 <label className="block text-sm font-medium text-secondary mb-1">Contract Address</label>
                 <p className="text-primary-text font-mono text-sm break-all">{tokenDetails.contractAddress}</p>
               </div>
-              {tokenDetails.salesDetails && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-secondary mb-1">Phase 0 Price</label>
-                    <p className="text-primary-text font-medium">{tokenDetails.salesDetails.phase0price} KDA</p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-secondary mb-1">Phase 0 Start</label>
-                    <p className="text-primary-text font-medium">
-                      {tokenDetails.salesDetails.phase0startDate?.toLocaleDateString()}
-                    </p>
-                  </div>
-                </>
+              {tokenDetails.imageUrl && (
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Token Image</label>
+                  <img 
+                    src={tokenDetails.imageUrl} 
+                    alt={tokenDetails.name}
+                    className="w-16 h-16 rounded-lg object-cover border border-border-color"
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -284,9 +292,9 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
             <div className="text-sm text-secondary">
               <p>By submitting, you agree that:</p>
               <ul className="mt-2 space-y-1 text-xs">
-                <li>• Your token contract includes a proper presale mechanism</li>
-                <li>• Phase 0 start date is at least 2 weeks from today</li>
+                <li>• Your token contract has been properly deployed and tested</li>
                 <li>• All token details are accurate and verified</li>
+                <li>• You understand that sales contract configuration comes after approval</li>
               </ul>
             </div>
           )}
@@ -307,7 +315,7 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
               </div>
               <div>
                 <p className="text-sm text-primary-text font-medium">Initial Review</p>
-                <p className="text-xs text-secondary">We verify your token contract and presale configuration</p>
+                <p className="text-xs text-secondary">We verify your token contract and basic information</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -315,8 +323,8 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
                 2
               </div>
               <div>
-                <p className="text-sm text-primary-text font-medium">Security Check</p>
-                <p className="text-xs text-secondary">Our team performs security and compliance checks</p>
+                <p className="text-sm text-primary-text font-medium">Team Verification</p>
+                <p className="text-xs text-secondary">Our team performs due diligence on your project and team</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -324,8 +332,8 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
                 3
               </div>
               <div>
-                <p className="text-sm text-primary-text font-medium">Approval & Launch</p>
-                <p className="text-xs text-secondary">Once approved, your token will be ready for launch</p>
+                <p className="text-sm text-primary-text font-medium">Approval & Sales Setup</p>
+                <p className="text-xs text-secondary">Once approved, you'll configure your sales contract details</p>
               </div>
             </div>
           </div>

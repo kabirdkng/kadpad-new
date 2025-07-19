@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import { pactCalls, pactCallsSig } from '../../wallet/kadena';
 
 const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => {
-  const { pubkey, provider, account } = useWalletStore();
+  const { pubKey, provider, account } = useWalletStore();
   const { client, session } = useWalletConnectClient();
 
   const [contractAddress, setContractAddress] = useState('');
@@ -37,7 +37,6 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
         toast.success('Ownership verified successfully!');
         setIsVerified(true);
         await fetchTokenDetails();
-        await fetchSalesDetails();
       } else {
         toast.error('Ownership verification failed');
         setIsVerified(false);
@@ -55,7 +54,7 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
     const code = `(use ${contractAddress}) DETAILS`;
     const chain = config.chainId;
     try {
-      const res = await pactCalls(code, chain, pubkey);
+      const res = await pactCalls(code, chain, pubKey);
       console.log(res);
       if (res.result.status === 'success') {
         setTokenDetails({
@@ -74,51 +73,6 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
     }
   };
 
-  const fetchSalesDetails = async () => {
-    const chain = config.chainId;
-    const NS = contractAddress.split('.')[0];
-    const MODULE_NAME = contractAddress.split('.')[1];
-    const SALES_MODULE_NAME = `${MODULE_NAME}-sales`;
-    
-    try {
-      const salesDetailsPromises = [
-        pactCalls(`(use ${NS}.${SALES_MODULE_NAME}) PHASE-0-START`, chain),
-        pactCalls(`(use ${NS}.${SALES_MODULE_NAME}) PHASE-1-START`, chain),
-        pactCalls(`(use ${NS}.${SALES_MODULE_NAME}) END-OF-PRESALES`, chain),
-        pactCalls(`(use ${NS}.${SALES_MODULE_NAME}) AMOUNT-PER-BATCH`, chain),
-        pactCalls(`(${NS}.${SALES_MODULE_NAME}.get-p0-price)`, chain),
-        pactCalls(`(${NS}.${SALES_MODULE_NAME}.get-p1-price)`, chain),
-        pactCalls(`(${NS}.${SALES_MODULE_NAME}.get-sales)`, chain),
-      ];
-
-      const [
-        phase0Start,
-        phase1Start,
-        salesEnd,
-        amountPerBatch,
-        p0Price,
-        p1Price,
-        totalSales
-      ] = await Promise.all(salesDetailsPromises);
-
-      setTokenDetails(prevDetails => ({
-        ...prevDetails,
-        salesDetails: {
-          phase0startDate: new Date(phase0Start.result.data.time),
-          phase1StartDate: new Date(phase1Start.result.data.time),
-          salesEndDate: new Date(salesEnd.result.data.time),
-          tokensPerBatch: amountPerBatch.result.data,
-          phase0price: p0Price.result.data,
-          phase1Price: p1Price.result.data,
-          totalTokensToSale: totalSales.result.data
-        }
-      }));
-    } catch (error) {
-      console.error('Error fetching sales details:', error);
-      toast.error('Failed to fetch sales details');
-    }
-  };
-
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -126,59 +80,59 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
     toast.success('Copied to clipboard!');
   };
 
-  const exampleAddress = "n_e923e3cfd7a34ddf356fc1a6eb6085c9b80a3e52.Kadena2";
+  const exampleAddress = "n_b9880e372b7ec49d21ef4afe82ece29c3a536bde.sweet-token";
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8 px-4 md:px-0">
       {/* Header */}
       <div className="text-center">
-        <div className="w-16 h-16 rounded-2xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center mx-auto mb-6">
-          <Lock className="w-8 h-8 text-blue-400" />
+        <div className="w-12 h-12 md:w-16 md:h-16 rounded-2xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center mx-auto mb-4 md:mb-6">
+          <Lock className="w-6 h-6 md:w-8 md:h-8 text-blue-400" />
         </div>
-        <h2 className="text-2xl md:text-3xl font-bold text-primary-text mb-4">
+        <h2 className="text-xl md:text-2xl lg:text-3xl font-bold text-primary-text mb-3 md:mb-4 px-2">
           Verify Token Ownership
         </h2>
-        <p className="text-secondary max-w-2xl mx-auto">
+        <p className="text-sm md:text-base text-secondary max-w-2xl mx-auto px-2">
           We need to verify that your connected wallet is the owner/creator of the token you want to launch. 
-          This ensures you have the authority to manage the token sale.
+          This ensures you have the authority to manage the token.
         </p>
       </div>
 
       {/* Wallet Status */}
       <div className="card">
-        <div className="flex items-center gap-4 mb-4">
-          <div className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center ${
+        <div className="flex items-center gap-3 md:gap-4 mb-4">
+          <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl border-2 flex items-center justify-center flex-shrink-0 ${
             account ? 'bg-green-500/20 border-green-500/30' : 'bg-gray-500/20 border-gray-500/30'
           }`}>
-            <Wallet className={`w-6 h-6 ${account ? 'text-green-400' : 'text-gray-400'}`} />
+            <Wallet className={`w-5 h-5 md:w-6 md:h-6 ${account ? 'text-green-400' : 'text-gray-400'}`} />
           </div>
-          <div className="flex-1">
-            <h3 className="font-semibold text-primary-text">Wallet Connection</h3>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm md:text-base font-semibold text-primary-text">Wallet Connection</h3>
             {account ? (
               <div className="space-y-1">
-                <p className="text-sm text-green-400">✓ Wallet Connected</p>
-                <p className="text-xs text-secondary font-mono">{account}</p>
+                <p className="text-xs md:text-sm text-green-400">✓ Wallet Connected</p>
+                <p className="text-xs text-secondary font-mono break-all">{account}</p>
               </div>
             ) : (
-              <p className="text-sm text-secondary">Please connect your wallet to continue</p>
+              <p className="text-xs md:text-sm text-secondary">Please connect your wallet to continue</p>
             )}
           </div>
           {account && (
-            <CheckCircle className="w-6 h-6 text-green-400" />
+            <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-400 flex-shrink-0" />
           )}
         </div>
       </div>
 
       {/* Contract Address Input */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-primary-text mb-4 flex items-center gap-2">
-          <Shield className="w-5 h-5 text-accent-primary" />
+        <h3 className="text-base md:text-lg font-semibold text-primary-text mb-3 md:mb-4 flex items-center gap-2">
+          <Shield className="w-4 h-4 md:w-5 md:h-5 text-accent-primary" />
           Enter Contract Address
         </h3>
         
-        <div className="space-y-4">
+        <div className="space-y-3 md:space-y-4">
           <div>
-            <label className="block text-sm font-medium text-secondary mb-2">
+            <label className="block text-xs md:text-sm font-medium text-secondary mb-2">
               Token Contract Address
             </label>
             <div className="relative">
@@ -187,13 +141,13 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
                 value={contractAddress}
                 onChange={(e) => setContractAddress(e.target.value)}
                 placeholder="Enter your token contract address"
-                className="w-full px-4 py-3 bg-secondary-bg border border-border-color rounded-xl text-primary-text placeholder-secondary focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent transition-all duration-200"
+                className="w-full px-3 py-2 md:px-4 md:py-3 bg-secondary-bg border border-border-color rounded-xl text-sm md:text-base text-primary-text placeholder-secondary focus:outline-none focus:ring-2 focus:ring-accent-primary focus:border-transparent transition-all duration-200"
                 disabled={isLoading}
               />
               {contractAddress && (
                 <button
                   onClick={() => setContractAddress('')}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-secondary hover:text-primary-text"
+                  className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2 text-secondary hover:text-primary-text text-sm md:text-base"
                 >
                   ✕
                 </button>
@@ -202,18 +156,18 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
           </div>
 
           {/* Example */}
-          <div className="p-4 bg-secondary-bg rounded-xl border border-border-color">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-secondary">Example format:</span>
+          <div className="p-3 md:p-4 bg-secondary-bg rounded-xl border border-border-color">
+            <div className="flex items-center justify-between mb-2 gap-2">
+              <span className="text-xs md:text-sm font-medium text-secondary">Example format:</span>
               <button
                 onClick={() => copyToClipboard(exampleAddress)}
-                className="btn btn-ghost text-xs flex items-center gap-1"
+                className="btn btn-ghost text-xs flex items-center gap-1 px-2 py-1"
               >
                 <Copy size={12} />
-                {copied ? 'Copied!' : 'Copy'}
+                <span className="hidden sm:inline">{copied ? 'Copied!' : 'Copy'}</span>
               </button>
             </div>
-            <code className="text-sm text-accent-primary font-mono break-all">
+            <code className="text-xs md:text-sm text-accent-primary font-mono break-all block">
               {exampleAddress}
             </code>
           </div>
@@ -222,7 +176,7 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
           <button
             onClick={handleVerify}
             disabled={!account || !contractAddress.trim() || isLoading}
-            className={`btn w-full flex items-center justify-center gap-2 ${
+            className={`btn w-full flex items-center justify-center gap-2 py-3 text-sm md:text-base ${
               !account || !contractAddress.trim() 
                 ? 'btn-ghost opacity-50 cursor-not-allowed' 
                 : 'btn-primary'
@@ -230,13 +184,13 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
           >
             {isLoading ? (
               <>
-                <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-current"></div>
-                Verifying...
+                <div className="animate-spin rounded-full h-4 w-4 md:h-5 md:w-5 border-t-2 border-current"></div>
+                <span>Verifying...</span>
               </>
             ) : (
               <>
                 <Shield size={16} />
-                Verify Ownership
+                <span>Verify Ownership</span>
               </>
             )}
           </button>
@@ -246,13 +200,13 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
       {/* Verification Status */}
       {isVerified && (
         <div className="card bg-green-500/5 border-green-500/20 animate-fade-in">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center justify-center">
-              <CheckCircle className="w-6 h-6 text-green-400" />
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-400" />
             </div>
             <div className="flex-1">
-              <h4 className="font-semibold text-green-400 mb-1">Verification Successful!</h4>
-              <p className="text-sm text-secondary">
+              <h4 className="text-sm md:text-base font-semibold text-green-400 mb-1">Verification Successful!</h4>
+              <p className="text-xs md:text-sm text-secondary">
                 You have been verified as the owner of this token contract. You can now proceed to the next step.
               </p>
             </div>
@@ -262,36 +216,36 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
 
       {/* How it Works */}
       <div className="card">
-        <h3 className="text-lg font-semibold text-primary-text mb-4 flex items-center gap-2">
-          <span className="text-xl">🔍</span>
-          How Verification Works
+        <h3 className="text-base md:text-lg font-semibold text-primary-text mb-3 md:mb-4 flex items-center gap-2">
+          <span className="text-lg md:text-xl">🔍</span>
+          <span>How Verification Works</span>
         </h3>
         <div className="space-y-3">
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 rounded-full bg-accent-primary/20 border border-accent-primary/30 flex items-center justify-center text-xs font-bold text-accent-primary mt-0.5">
+            <div className="w-6 h-6 rounded-full bg-accent-primary/20 border border-accent-primary/30 flex items-center justify-center text-xs font-bold text-accent-primary mt-0.5 flex-shrink-0">
               1
             </div>
             <div>
-              <p className="text-sm text-primary-text font-medium">Check Governance Keys</p>
+              <p className="text-xs md:text-sm text-primary-text font-medium">Check Governance Keys</p>
               <p className="text-xs text-secondary">We verify that your wallet controls the token's governance keyset</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 rounded-full bg-accent-primary/20 border border-accent-primary/30 flex items-center justify-center text-xs font-bold text-accent-primary mt-0.5">
+            <div className="w-6 h-6 rounded-full bg-accent-primary/20 border border-accent-primary/30 flex items-center justify-center text-xs font-bold text-accent-primary mt-0.5 flex-shrink-0">
               2
             </div>
             <div>
-              <p className="text-sm text-primary-text font-medium">Fetch Token Details</p>
-              <p className="text-xs text-secondary">We retrieve your token's information and presale configuration</p>
+              <p className="text-xs md:text-sm text-primary-text font-medium">Fetch Token Details</p>
+              <p className="text-xs text-secondary">We retrieve your token's basic information (name, symbol, supply)</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <div className="w-6 h-6 rounded-full bg-accent-primary/20 border border-accent-primary/30 flex items-center justify-center text-xs font-bold text-accent-primary mt-0.5">
+            <div className="w-6 h-6 rounded-full bg-accent-primary/20 border border-accent-primary/30 flex items-center justify-center text-xs font-bold text-accent-primary mt-0.5 flex-shrink-0">
               3
             </div>
             <div>
-              <p className="text-sm text-primary-text font-medium">Validate Requirements</p>
-              <p className="text-xs text-secondary">We ensure your token meets KadPad's launch requirements</p>
+              <p className="text-xs md:text-sm text-primary-text font-medium">Ready for Review</p>
+              <p className="text-xs text-secondary">Token details are ready for team information and submission</p>
             </div>
           </div>
         </div>
@@ -299,13 +253,13 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
 
       {/* Security Notice */}
       <div className="card border-yellow-500/20 bg-yellow-500/5">
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-yellow-500/20 border border-yellow-500/30 flex items-center justify-center">
-            <AlertCircle className="w-6 h-6 text-yellow-400" />
+        <div className="flex items-start gap-3 md:gap-4">
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-yellow-500/20 border border-yellow-500/30 flex items-center justify-center flex-shrink-0">
+            <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-yellow-400" />
           </div>
           <div>
-            <h4 className="font-semibold text-yellow-400 mb-2">Security Notice</h4>
-            <p className="text-sm text-secondary mb-3">
+            <h4 className="text-sm md:text-base font-semibold text-yellow-400 mb-2">Security Notice</h4>
+            <p className="text-xs md:text-sm text-secondary mb-3">
               This verification process only checks that you control the governance keys. 
               No tokens will be transferred, and no permanent changes will be made to your contract.
             </p>
@@ -313,6 +267,7 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
               <li>• We only read your contract's public information</li>
               <li>• Your private keys never leave your wallet</li>
               <li>• No tokens or funds are at risk during verification</li>
+              <li>• Sales contract details will be configured later in the process</li>
             </ul>
           </div>
         </div>

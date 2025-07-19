@@ -7,7 +7,7 @@ const LandingPage = () => {
     window.scrollTo(0, 0);
   }, []);
   return (
-    <div className="landing-page">
+    <div className="pt-16">
       <section className="combined-section">
         <Hero />
         <Features />

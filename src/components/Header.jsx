@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { Menu, X, Rocket, TrendingUp, Coins, BookOpen } from 'lucide-react';
 import kadPadLogo from '../assets/KADPAD_Green-Rocket-01.svg';
 import WalletConnectButton from './WalletConnectButton';
@@ -11,10 +11,48 @@ const Header = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [scrolled, setScrolled] = useState(false);
   const { account } = useWalletStore();
+  const location = useLocation();
+  const headerRef = useRef(null);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
+
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+  };
+
+  // Close menu when route changes
+  useEffect(() => {
+    closeMenu();
+  }, [location.pathname]);
+
+  // Handle click outside to close mobile menu
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Only close if menu is open and click is outside header
+      // Don't interfere with wallet dropdown clicks
+      if (
+        isMenuOpen && 
+        headerRef.current && 
+        !headerRef.current.contains(event.target) &&
+        !event.target.closest('.wallet-dropdown-container') // Exclude wallet dropdown area
+      ) {
+        closeMenu();
+      }
+    };
+
+    if (isMenuOpen) {
+      // Use capture phase to handle clicks before wallet dropdown
+      document.addEventListener('mousedown', handleClickOutside, true);
+      document.addEventListener('touchstart', handleClickOutside, true);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside, true);
+      document.removeEventListener('touchstart', handleClickOutside, true);
+    };
+  }, [isMenuOpen]);
 
   const controlNavbar = useCallback(() => {
     if (typeof window !== 'undefined') {
@@ -111,13 +149,14 @@ const Header = () => {
 
       {/* Main Header */}
       <header 
+        ref={headerRef}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isVisible || isMenuOpen ? 'translate-y-0' : '-translate-y-full'
         }`}
         style={{ 
           top: '40px',
           background: scrolled 
-            ? 'rgba(0, 0, 0, 0.9)' 
+            ? 'rgba(0, 0, 0, 0.3)' 
             : 'transparent',
           backdropFilter: scrolled ? 'blur(20px)' : 'none',
           borderBottom: scrolled ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
@@ -130,6 +169,7 @@ const Header = () => {
             <Link 
               to="/" 
               className="flex items-center space-x-3 group"
+              onClick={closeMenu}
             >
               <img 
                 src={kadPadLogo} 
@@ -209,7 +249,7 @@ const Header = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between p-3 rounded-xl hover:bg-hover-bg transition-all duration-200 group"
-                      onClick={() => setIsMenuOpen(false)}
+                      onClick={() => closeMenu()}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="text-accent">
@@ -226,7 +266,7 @@ const Header = () => {
                       key={item.to}
                       to={item.to}
                       className="flex items-center justify-between p-3 rounded-xl hover:bg-hover-bg transition-all duration-200 group"
-                      onClick={() => setIsMenuOpen(false)}
+                      onClick={() => closeMenu()}
                     >
                       <div className="flex items-center space-x-3">
                         <div className="text-accent">

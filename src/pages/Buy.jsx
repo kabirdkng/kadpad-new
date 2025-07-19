@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   TrendingUp, 
@@ -16,6 +16,7 @@ import {
   ArrowUpDown
 } from 'lucide-react';
 import { getPublicProjects } from '../api';
+import { presales } from '../demoData/demoPresales';
 import { toast } from 'react-toastify';
 
 const SaleCard = ({ sale, index }) => {
@@ -66,7 +67,7 @@ const SaleCard = ({ sale, index }) => {
         {/* Badges */}
         <div className="absolute top-3 left-3 flex gap-2">
           {isNew && (
-            <span className="px-3 py-1 bg-accent-primary text-black text-xs font-bold rounded-lg flex items-center gap-1">
+            <span className="px-3 py-1 bg-[var(--accent-primary)] text-black text-xs font-bold rounded-lg flex items-center gap-1">
               <Sparkles size={12} />
               New
             </span>
@@ -100,7 +101,7 @@ const SaleCard = ({ sale, index }) => {
           </div>
           <div className="flex items-center gap-2 text-secondary">
             <Target size={14} />
-            <span className="text-xs">{formatNumber(sale.salesDetails.totalTokensToSale)} tokens</span>
+            <span className="text-xs">{formatNumber(sale.salesDetails.totalTokensToSale)} batches</span>
           </div>
         </div>
       </div>
@@ -158,7 +159,7 @@ const SaleSection = ({ title, sales, icon: Icon, gradient = false }) => {
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <div className={`p-3 rounded-xl border ${gradient ? 'bg-accent-primary border-accent-primary' : 'bg-card border-border-color'}`}>
-            <Icon size={24} className={gradient ? 'text-black' : 'text-accent-primary'} />
+            <Icon size={24} className={`text-accent-primary`} />
           </div>
           <div>
             <h2 className="text-3xl font-bold text-accent-primary">{title}</h2>
@@ -193,6 +194,7 @@ const Buy = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [useDemo, setUseDemo] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -204,10 +206,22 @@ const Buy = () => {
       setLoading(true);
       const response = await getPublicProjects();
       const launchedProjects = response.data.data.projects?.filter(project => project.status === 'launched') || [];
-      setProjects(launchedProjects);
+      
+      // If no real projects, use demo data
+      if (launchedProjects.length === 0) {
+        setProjects(presales);
+        setUseDemo(true);
+        toast.info('Showing demo projects - real projects will appear here once launched!');
+      } else {
+        setProjects(launchedProjects);
+        setUseDemo(false);
+      }
     } catch (error) {
       console.error('Error fetching projects:', error);
-      toast.error('Failed to load projects. Please try again later.');
+      // Fallback to demo data on error
+      setProjects(presales);
+      setUseDemo(true);
+      toast.info('Using demo data - check your connection for live projects');
     } finally {
       setLoading(false);
     }
@@ -280,7 +294,7 @@ const Buy = () => {
           </div>
           
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-text mb-6">
-            Explore <span className="text-gradient">Token Sales</span>
+            Explore <span className="text-gradient">Token Sales</span> <span className="text-secondary text-2xl md:text-3xl lg:text-4xl">(Demo Data)</span>
           </h1>
           <p className="text-lg lg:text-xl text-secondary max-w-3xl mx-auto mb-8 lg:mb-12">
             Discover and invest in the most promising token launches on Kadena. 

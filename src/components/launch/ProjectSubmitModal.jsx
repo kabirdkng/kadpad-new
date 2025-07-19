@@ -1,56 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { toast } from 'react-toastify';
-import { submitProject, getPublicProjects } from '../../api';
-import { useTokenDetails } from '../../hooks/useTokenDetails';
+import { submitProject } from '../../api';
 
-const ProjectSubmitModal = ({ tokenDetails: initialTokenDetails, onClose, onSubmit }) => {
+const ProjectSubmitModal = ({ tokenDetails, onClose, onSubmit }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [existingSubmission, setExistingSubmission] = useState(null);
   const [website, setWebsite] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
-  const [teamDetails, setTeamDetails] = useState([]);
-  const [status, setStatus] = useState('');
+  const [teamDetails, setTeamDetails] = useState([{ name: '', email: '', about: '' }]);
 
-  const { tokenDetails, salesDetails, isLoading, error, fetchTokenDetails, fetchSalesDetails } = useTokenDetails();
-
-  useEffect(() => {
-    const fetchDetails = async () => {
-      if (initialTokenDetails && initialTokenDetails.contractAddress) {
-        await fetchTokenDetails(initialTokenDetails.contractAddress);
-        await fetchSalesDetails(initialTokenDetails.contractAddress);
-      }
-    };
-    fetchDetails();
-  }, [initialTokenDetails, fetchTokenDetails, fetchSalesDetails]);
-
-  useEffect(() => {
-    const checkExistingSubmission = async () => {
-      if (tokenDetails && tokenDetails.contractAddress) {
-        try {
-          const response = await getPublicProjects();
-          const existing = response.data.data.projects.find(
-            project => project.namespace === tokenDetails.contractAddress.split('.')[0] && project.moduleName === tokenDetails.name
-          );
-          if (existing) {
-            setExistingSubmission(existing);
-            setStatus(existing.status);
-          }
-        } catch (error) {
-          console.error('Error checking existing submission:', error);
-        }
-      }
-    };
-
-    checkExistingSubmission();
-  }, [tokenDetails]);
-
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    if (existingSubmission) {
-      toast.error('A submission for this contract address already exists.');
+    // Validate team details
+    const validTeamMembers = teamDetails.filter(member => 
+      member.name.trim() && member.email.trim()
+    );
+
+    if (validTeamMembers.length === 0) {
+      toast.error('Please add at least one team member with name and email.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate emails
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalidEmails = validTeamMembers.filter(member => !emailRegex.test(member.email));
+    if (invalidEmails.length > 0) {
+      toast.error('Please enter valid email addresses for all team members.');
       setIsSubmitting(false);
       return;
     }
@@ -58,23 +35,17 @@ const ProjectSubmitModal = ({ tokenDetails: initialTokenDetails, onClose, onSubm
     try {
       const projectData = {
         namespace: tokenDetails.contractAddress.split('.')[0],
-        moduleName: tokenDetails.name,
+        moduleName: tokenDetails.contractAddress.split('.')[1],
         tokendetails: {
           SYMBOL: tokenDetails.symbol,
           totalSupply: tokenDetails.supply.int,
           imageUrl: tokenDetails.imageUrl
         },
-        salesDetails: {
-          totalTokensToSale: salesDetails.totalTokensToSale,
-          tokensPerBatch: salesDetails.tokensPerBatch,
-          phase0price: salesDetails.phase0price,
-          phase0startDate: salesDetails.phase0startDate.toISOString(),
-          phase0whitelist: salesDetails.phase0whitelist,
-          phase1Price: salesDetails.phase1Price,
-          phase1StartDate: salesDetails.phase1StartDate.toISOString(),
-          salesEndDate: salesDetails.salesEndDate.toISOString()
-        },
-        team: teamDetails
+        website: website.trim(),
+        projectDescription: projectDescription.trim(),
+        team: validTeamMembers,
+        // Note: Sales details will be configured later after approval
+        status: 'pending'
       };
 
       const response = await submitProject(projectData);
@@ -104,128 +75,194 @@ const ProjectSubmitModal = ({ tokenDetails: initialTokenDetails, onClose, onSubm
   };
 
   const deleteTeamMember = (index) => {
-    const updatedTeamDetails = teamDetails.filter((_, i) => i !== index);
-    setTeamDetails(updatedTeamDetails);
+    if (teamDetails.length > 1) {
+      const updatedTeamDetails = teamDetails.filter((_, i) => i !== index);
+      setTeamDetails(updatedTeamDetails);
+    }
   };
-
-  const isValidEmail = (email) => {
-    const re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-    return re.test(String(email).toLowerCase());
-  };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
 
   return (
-    <div className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4' style={{ zIndex: 1000 }}>
-      <div className='bg-gray-800 rounded-lg shadow-lg w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden'>
-        <div className='relative h-24 sm:h-32 overflow-hidden flex-shrink-0'>
-          <div 
-            className='absolute inset-0 bg-cover bg-center blur-sm'
-            style={{ backgroundImage: `url(${tokenDetails?.imageUrl})` }}
-          ></div>
-          <img 
-            src={tokenDetails?.imageUrl} 
-            alt={tokenDetails?.name} 
-            className='absolute inset-0 m-auto h-full w-full object-contain'
-          />
+    <div className='fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 p-4 z-50'>
+      <div className='bg-card border border-border-color rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden'>
+        {/* Header */}
+        <div className='relative h-32 overflow-hidden flex-shrink-0 bg-gradient-primary'>
+          <div className='absolute inset-0 bg-black/20'></div>
+          <div className='relative h-full flex items-center justify-center'>
+            {tokenDetails?.imageUrl && (
+              <img 
+                src={tokenDetails.imageUrl} 
+                alt={tokenDetails.name} 
+                className='w-20 h-20 rounded-xl object-cover border-2 border-white/20'
+              />
+            )}
+          </div>
         </div>
+
+        {/* Content */}
         <div className='p-6 overflow-y-auto flex-grow'>
-          <h3 className='text-xl sm:text-2xl font-bold mb-4 text-white'>Review Details</h3>
-          {existingSubmission ? (
-            <div className='bg-gray-700 p-3 rounded-md mb-4'>
-              <p className='text-white'>Status: {status}</p>
+          <h3 className='text-2xl font-bold mb-6 text-primary-text text-center'>
+            Submit Project for Review
+          </h3>
+
+          <form onSubmit={handleSubmit} className='space-y-6'>
+            {/* Token Details Display */}
+            <div className='card bg-secondary-bg'>
+              <h4 className='font-semibold text-primary-text mb-3'>Token Information</h4>
+              <div className='grid grid-cols-2 gap-4 text-sm'>
+                <div>
+                  <span className='text-secondary'>Name:</span>
+                  <span className='text-primary-text ml-2'>{tokenDetails?.name}</span>
+                </div>
+                <div>
+                  <span className='text-secondary'>Symbol:</span>
+                  <span className='text-primary-text ml-2'>{tokenDetails?.symbol}</span>
+                </div>
+                <div className='col-span-2'>
+                  <span className='text-secondary'>Contract:</span>
+                  <span className='text-primary-text ml-2 font-mono text-xs break-all'>
+                    {tokenDetails?.contractAddress}
+                  </span>
+                </div>
+                <div>
+                  <span className='text-secondary'>Supply:</span>
+                  <span className='text-primary-text ml-2'>
+                    {tokenDetails?.supply?.int?.toLocaleString()}
+                  </span>
+                </div>
+              </div>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className='space-y-4'>
-              <div className='bg-gray-700 p-3 rounded-md'>
-                <label className='block text-sm font-medium text-gray-300 mb-1'>Token Details</label>
-                <p className='text-white'>Name: {tokenDetails?.name}</p>
-                <p className='text-white'>Symbol: {tokenDetails?.symbol}</p>
-                <p className='text-white'>Total Supply: {tokenDetails?.supply.int}</p>
-                <p className='text-white'>Contract Address: <span className=' break-words'>{tokenDetails?.contractAddress}</span></p>
+
+            {/* Project Information */}
+            <div className='space-y-4'>
+              <div>
+                <label className='block text-sm font-medium text-secondary mb-2'>
+                  Project Website (Optional)
+                </label>
+                <input
+                  type='url'
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                  placeholder='https://yourproject.com'
+                  className='w-full bg-secondary-bg text-primary-text p-3 rounded-xl border border-border-color focus:border-accent-primary focus:outline-none'
+                />
               </div>
-              <div className='bg-gray-700 p-3 rounded-md'>
-                <label className='block text-sm font-medium text-gray-300 mb-1'>Sales Details</label>
-                <p className='text-white'>Total Batches to Sale: {salesDetails?.totalTokensToSale}</p>
-                <p className='text-white'>Tokens per Batch: {salesDetails?.tokensPerBatch}</p>
-                <p className='text-white'>Phase 0 Price: {salesDetails?.phase0price}</p>
-                <p className='text-white'>Phase 0 Start Date: {salesDetails?.phase0startDate.toLocaleString()}</p>
-                <p className='text-white'>Phase 1 Price: {salesDetails?.phase1Price}</p>
-                <p className='text-white'>Phase 1 Start Date: {salesDetails?.phase1StartDate.toLocaleString()}</p>
-                <p className='text-white'>Sales End Date: {salesDetails?.salesEndDate.toLocaleString()}</p>
+
+              <div>
+                <label className='block text-sm font-medium text-secondary mb-2'>
+                  Project Description
+                </label>
+                <textarea
+                  value={projectDescription}
+                  onChange={(e) => setProjectDescription(e.target.value)}
+                  placeholder='Describe your project, its goals, and what makes it unique...'
+                  className='w-full bg-secondary-bg text-primary-text p-3 rounded-xl border border-border-color focus:border-accent-primary focus:outline-none'
+                  rows='4'
+                  required
+                />
               </div>
-              
-              <div className='bg-gray-700 p-3 rounded-md'>
-                <label className='block text-sm font-medium text-gray-300 mb-1'>Team Details</label>
-                {teamDetails.map((member, index) => (
-                  <div key={index} className='mb-3'>
-                    <input
-                      type='text'
-                      value={member.name}
-                      onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
-                      placeholder='Name'
-                      className='w-full bg-gray-600 text-white p-2 rounded-md mb-2'
-                      required
-                    />
-                    <input
-                      type='email'
-                      value={member.email}
-                      onChange={(e) => handleTeamMemberChange(index, 'email', e.target.value)}
-                      onBlur={(e) => {
-                        if (!isValidEmail(e.target.value)) {
-                          toast.error('Please enter a valid email address');
-                        }
-                      }}
-                      placeholder='Email'
-                      className='w-full bg-gray-600 text-white p-2 rounded-md mb-2'
-                      required
-                    />
-                    <textarea
-                      value={member.about}
-                      onChange={(e) => handleTeamMemberChange(index, 'about', e.target.value)}
-                      placeholder='About'
-                      className='w-full bg-gray-600 text-white p-2 rounded-md mb-2'
-                      rows='2'
-                    />
-                    <button
-                      type='button'
-                      onClick={() => deleteTeamMember(index)}
-                      className='bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-2 rounded text-sm'
-                    >
-                      Delete Member
-                    </button>
-                  </div>
-                ))}
+            </div>
+
+            {/* Team Details */}
+            <div className='card bg-secondary-bg'>
+              <div className='flex items-center justify-between mb-4'>
+                <h4 className='font-semibold text-primary-text'>Team Members</h4>
                 <button
                   type='button'
                   onClick={addTeamMember}
-                  className='mt-2 bg-gray-600 text-white p-2 rounded-md w-full'
+                  className='btn btn-ghost text-sm'
                 >
-                  Add Team Member
+                  + Add Member
                 </button>
               </div>
+
+              <div className='space-y-4'>
+                {teamDetails.map((member, index) => (
+                  <div key={index} className='p-4 bg-card border border-border-color rounded-xl'>
+                    <div className='flex items-center justify-between mb-3'>
+                      <span className='text-sm font-medium text-secondary'>
+                        Team Member {index + 1}
+                      </span>
+                      {teamDetails.length > 1 && (
+                        <button
+                          type='button'
+                          onClick={() => deleteTeamMember(index)}
+                          className='text-red-400 hover:text-red-300 text-sm'
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+
+                    <div className='space-y-3'>
+                      <input
+                        type='text'
+                        value={member.name}
+                        onChange={(e) => handleTeamMemberChange(index, 'name', e.target.value)}
+                        placeholder='Full Name'
+                        className='w-full bg-primary-bg text-primary-text p-3 rounded-lg border border-border-color focus:border-accent-primary focus:outline-none'
+                        required
+                      />
+                      <input
+                        type='email'
+                        value={member.email}
+                        onChange={(e) => handleTeamMemberChange(index, 'email', e.target.value)}
+                        placeholder='Email Address'
+                        className='w-full bg-primary-bg text-primary-text p-3 rounded-lg border border-border-color focus:border-accent-primary focus:outline-none'
+                        required
+                      />
+                      <textarea
+                        value={member.about}
+                        onChange={(e) => handleTeamMemberChange(index, 'about', e.target.value)}
+                        placeholder='Brief bio/background (optional)'
+                        className='w-full bg-primary-bg text-primary-text p-3 rounded-lg border border-border-color focus:border-accent-primary focus:outline-none'
+                        rows='2'
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Submission Note */}
+            <div className='card border-yellow-500/20 bg-yellow-500/5'>
+              <div className='flex items-start gap-3'>
+                <div className='text-yellow-400 text-xl'>ℹ️</div>
+                <div>
+                  <h4 className='font-semibold text-yellow-400 mb-2'>Important Note</h4>
+                  <p className='text-sm text-secondary'>
+                    After your project is approved, you'll be able to configure your sales contract details 
+                    including presale phases, pricing, and whitelist settings in the next step.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className='flex gap-4'>
+              <button
+                type='button'
+                onClick={onClose}
+                className='btn btn-ghost flex-1'
+              >
+                Cancel
+              </button>
               <button
                 type='submit'
-                className='w-full bg-lime-500 hover:bg-lime-600 text-white font-bold py-3 px-4 rounded transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed'
+                className='btn btn-primary flex-1'
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Project'}
+                {isSubmitting ? (
+                  <div className='flex items-center gap-2'>
+                    <div className='animate-spin rounded-full h-4 w-4 border-t-2 border-current'></div>
+                    Submitting...
+                  </div>
+                ) : (
+                  'Submit for Review'
+                )}
               </button>
-            </form>
-          )}
+            </div>
+          </form>
         </div>
-        <button
-          onClick={onClose}
-          className='w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 transition duration-300'
-        >
-          Close
-        </button>
       </div>
     </div>
   );

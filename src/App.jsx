@@ -81,7 +81,7 @@ const App = () => {
       
       <ClientContextProvider>
         <BrowserRouter>
-          <div className="relative z-10 flex flex-col min-h-screen bg-primary-bg/95 backdrop-blur-sm">
+          <div className="relative z-10 flex flex-col min-h-screen bg-primary-bg/95 backdrop-blur-[1px]">
             <Header />
             
             <main className="flex-1">

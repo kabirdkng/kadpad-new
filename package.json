@@ -7,8 +7,7 @@
     "dev": "vite --host",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "json-server": "json-server --watch db.json --port 3001"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
@@ -17,22 +16,15 @@
     "@kadena/client": "^1.18.0",
     "@kadena/client-utils": "^0.13.0",
     "@kadena/spirekey-sdk": "^1.0.1",
-    "@react-spring/web": "^10.0.1",
     "@walletconnect/modal": "^2.7.0",
     "@walletconnect/sign-client": "^2.21.5",
     "@walletconnect/utils": "^2.21.5",
-    "@web3modal/standalone": "^2.4.3",
     "axios": "^1.10.0",
-    "browserify-zlib": "^0.2.0",
-    "json-server": "^1.0.0-beta.3",
     "lucide-react": "^0.525.0",
-    "process": "^0.11.10",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.7.0",
     "react-toastify": "^11.0.5",
-    "stream-browserify": "^3.0.0",
-    "util": "^0.12.5",
     "zustand": "^5.0.6"
   },
   "devDependencies": {

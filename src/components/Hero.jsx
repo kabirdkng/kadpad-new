@@ -148,7 +148,7 @@ const Hero = () => {
           {features.map((feature, index) => (
             <div 
               key={index}
-              className="card text-center p-6 group hover:scale-105 transition-all duration-300 bg-opacity-30"
+              className="card text-center p-6 group hover:scale-105 transition-all duration-300"
             >
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-card border border-accent-primary/20 text-accent-primary mb-4 group-hover:scale-110 transition-transform duration-300">
                 {feature.icon}
