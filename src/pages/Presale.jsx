@@ -6,11 +6,7 @@ import BuyModal from './BuyModal';
 import { toast } from 'react-toastify';
 import { useWalletConnectClient } from '../wallet/providers/ClientContextProvider';
 import { useParams } from 'react-router-dom';
-
-
-export const addComma = (num) => {
-    return num?.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  };
+import { addComma } from '../utils/numberUtils';
 
 const truncateAccount = (account) => {
   if (!account) return '';

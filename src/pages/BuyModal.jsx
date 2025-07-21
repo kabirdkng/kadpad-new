@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import usePresaleStore from '../store/usePresaleStore';
-import { addComma } from './Presale';
+import { addComma } from '../utils/numberUtils';
 
 const BuyModal = ({ tokenSymbol, batchCount, amountPerBatch, kdaInput, handleBuy, setShowBuyModal, availableBatches }) => {
   const { setBatchCount } = usePresaleStore();
