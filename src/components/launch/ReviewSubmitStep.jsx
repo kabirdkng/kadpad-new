@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ClipboardCheck, Clock, CheckCircle, AlertCircle, Send, Eye, DollarSign } from 'lucide-react';
+import { ClipboardCheck, Clock, CheckCircle, AlertCircle, Send, Eye, DollarSign, Globe, FileText } from 'lucide-react';
 import ProjectSubmitModal from './ProjectSubmitModal';
-import { getPublicProjects, submitProject } from '../../api';
+import { getPublicProjects, submitProject, checkProjectByContract } from '../../api';
 import { toast } from 'react-toastify';
 
 const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => {
@@ -13,32 +13,33 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
     if (tokenDetails && tokenDetails.contractAddress) {
       setIsLoading(true);
       try {
-        const response = await getPublicProjects();
-        const existing = response.data.data.projects.find(
-          project => 
-            project.namespace === tokenDetails.contractAddress.split('.')[0] && 
-            project.moduleName === tokenDetails.contractAddress.split('.')[1]
-        );
-        if (existing) {
-          if (existing.status === 'launched' || isVerified) {
-            setExistingProject(existing);
-            setSubmissionStatus(existing.status);
-          } else {
-            setExistingProject(null);
-            setSubmissionStatus(null);
-          }
+        const [namespace, moduleName] = tokenDetails.contractAddress.split('.');
+        
+        // Use the new API endpoint to check for any project with this contract
+        const response = await checkProjectByContract(namespace, moduleName);
+        
+        if (response.data.data.project) {
+          const existing = response.data.data.project;
+          setExistingProject(existing);
+          setSubmissionStatus(existing.status);
         } else {
           setExistingProject(null);
           setSubmissionStatus(null);
         }
       } catch (error) {
-        console.error('Error checking existing submission:', error);
-        toast.error('Failed to check for existing submissions. Please try again.');
+        // If 404, no project exists
+        if (error.response && error.response.status === 404) {
+          setExistingProject(null);
+          setSubmissionStatus(null);
+        } else {
+          console.error('Error checking existing submission:', error);
+          toast.error('Failed to check for existing submissions. Please try again.');
+        }
       } finally {
         setIsLoading(false);
       }
     }
-  }, [tokenDetails, setSubmissionStatus, isVerified]);
+  }, [tokenDetails, setSubmissionStatus]);
 
   useEffect(() => {
     checkExistingSubmission();
@@ -145,43 +146,8 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
       );
     }
 
-    const status = existingProject.status;
-    switch (status) {
-      case 'awaiting_fees':
-        return (
-          <button 
-            className="btn btn-primary flex items-center gap-2"
-            onClick={() => {/* Handle fee payment */}}
-          >
-            <DollarSign size={16} />
-            Pay Launch Fees
-          </button>
-        );
-      case 'approved':
-        return (
-          <div className="text-center">
-            <p className="text-sm text-secondary mb-4">
-              Your project has been approved! You can now configure your sales contract in the next step.
-            </p>
-            <div className="inline-flex items-center px-4 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
-              <CheckCircle size={16} className="text-green-400 mr-2" />
-              <span className="text-green-400 font-medium">Ready to Configure Sales</span>
-            </div>
-          </div>
-        );
-      case 'ready_to_launch':
-        return (
-          <button 
-            className="btn btn-primary flex items-center gap-2"
-            onClick={() => {/* Handle project launch */}}
-          >
-            <CheckCircle size={16} />
-            Launch Project
-          </button>
-        );
-      default:
-        return null;
-    }
+    // If project exists, don't show the submit button - show status instead
+    return null;
   };
 
   if (isLoading) {
@@ -259,36 +225,138 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
         </div>
       )}
 
-      {/* Status Card */}
+      {/* Project Status Card - Only show if project exists */}
       {existingProject && (
-        <div className={`card ${getStatusInfo(existingProject.status).bgColor} ${getStatusInfo(existingProject.status).borderColor}`}>
-          <div className="flex items-start gap-4">
-            <div className={`w-12 h-12 rounded-xl bg-secondary-bg border ${getStatusInfo(existingProject.status).borderColor} flex items-center justify-center`}>
-              {React.createElement(getStatusInfo(existingProject.status).icon, {
-                className: `w-6 h-6 ${getStatusInfo(existingProject.status).iconColor}`
-              })}
+        <div className="space-y-6">
+          {/* Status Display */}
+          <div className={`card ${getStatusInfo(existingProject.status).bgColor} ${getStatusInfo(existingProject.status).borderColor}`}>
+            <div className="flex items-start gap-4">
+              <div className={`w-12 h-12 rounded-xl bg-secondary-bg border ${getStatusInfo(existingProject.status).borderColor} flex items-center justify-center`}>
+                {React.createElement(getStatusInfo(existingProject.status).icon, {
+                  className: `w-6 h-6 ${getStatusInfo(existingProject.status).iconColor}`
+                })}
+              </div>
+              <div className="flex-1">
+                <h4 className={`font-semibold mb-1 ${getStatusInfo(existingProject.status).iconColor}`}>
+                  {getStatusInfo(existingProject.status).title}
+                </h4>
+                <p className="text-secondary mb-2">
+                  {getStatusInfo(existingProject.status).description}
+                </p>
+                <p className="text-sm text-secondary">
+                  {getStatusInfo(existingProject.status).message}
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h4 className={`font-semibold mb-1 ${getStatusInfo(existingProject.status).iconColor}`}>
-                {getStatusInfo(existingProject.status).title}
-              </h4>
-              <p className="text-secondary mb-2">
-                {getStatusInfo(existingProject.status).description}
-              </p>
-              <p className="text-sm text-secondary">
-                {getStatusInfo(existingProject.status).message}
-              </p>
+          </div>
+
+          {/* Project Details Display */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-primary-text mb-4 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-accent-primary" />
+              Submitted Project Details
+            </h3>
+            
+            <div className="space-y-4">
+              {/* Basic Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Project Status</label>
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusInfo(existingProject.status).bgColor} ${getStatusInfo(existingProject.status).iconColor}`}>
+                    {getStatusInfo(existingProject.status).title}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Submission Date</label>
+                  <p className="text-primary-text text-sm">
+                    {new Date(existingProject.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Website */}
+              {existingProject.website && (
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1 flex items-center gap-2">
+                    <Globe className="w-4 h-4" />
+                    Project Website
+                  </label>
+                  <a 
+                    href={existingProject.website} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-accent-primary hover:text-accent-primary/80 text-sm underline"
+                  >
+                    {existingProject.website}
+                  </a>
+                </div>
+              )}
+
+              {/* Project Description */}
+              {existingProject.projectDescription && (
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Project Description</label>
+                  <div className="bg-secondary-bg p-3 rounded-lg">
+                    <p className="text-primary-text text-sm whitespace-pre-wrap">
+                      {existingProject.projectDescription}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Team Members */}
+              {existingProject.team && existingProject.team.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-2">Team Members</label>
+                  <div className="space-y-3">
+                    {existingProject.team.map((member, index) => (
+                      <div key={index} className="bg-secondary-bg p-3 rounded-lg">
+                        <div className="flex items-center justify-between mb-1">
+                          <h5 className="font-medium text-primary-text">{member.name}</h5>
+                          <span className="text-xs text-secondary">{member.email}</span>
+                        </div>
+                        {member.about && (
+                          <p className="text-sm text-secondary mt-1">{member.about}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fee Details if applicable */}
+              {existingProject.feeDetails && existingProject.feeDetails.amount > 0 && (
+                <div className="bg-blue-500/5 border border-blue-500/20 p-3 rounded-lg">
+                  <label className="block text-sm font-medium text-blue-400 mb-1">Fee Information</label>
+                  <div className="text-sm space-y-1">
+                    <p className="text-primary-text">
+                      Amount: <span className="font-medium">${existingProject.feeDetails.amount}</span>
+                    </p>
+                    {existingProject.feeDetails.dueDate && (
+                      <p className="text-secondary">
+                        Due: {new Date(existingProject.feeDetails.dueDate).toLocaleDateString()}
+                      </p>
+                    )}
+                    <p className="text-secondary">
+                      Status: {existingProject.feeDetails.paid ? 
+                        <span className="text-green-400">Paid</span> : 
+                        <span className="text-yellow-400">Pending</span>
+                      }
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Action Section */}
-      <div className="card text-center">
-        <div className="space-y-4">
-          {renderActionButton()}
-          
-          {!existingProject && (
+      {/* Action Section - Only show submit button if no existing project */}
+      {!existingProject && (
+        <div className="card text-center">
+          <div className="space-y-4">
+            {renderActionButton()}
+            
             <div className="text-sm text-secondary">
               <p>By submitting, you agree that:</p>
               <ul className="mt-2 space-y-1 text-xs">
@@ -297,11 +365,11 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
                 <li>• You understand that sales contract configuration comes after approval</li>
               </ul>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Review Process */}
+      {/* Review Process - Only show if no existing project */}
       {!existingProject && (
         <div className="card-gradient">
           <h3 className="text-lg font-semibold text-primary-text mb-4 flex items-center gap-2">
@@ -346,7 +414,6 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
           onClose={() => setShowSubmitModal(false)}
           onSubmit={handleProjectSubmit}
           tokenDetails={tokenDetails}
-          existingProject={existingProject}
         />
       )}
     </div>

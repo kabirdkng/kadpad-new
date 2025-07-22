@@ -61,5 +61,8 @@ export const checkProjectStatus = async (namespace, moduleName) => {
     throw error;
   }
 };
+export const checkProjectByContract = (namespace, moduleName) => {
+  return api.get(`/projects/check-by-contract/${namespace}/${moduleName}`);
+};
 
 export default api;

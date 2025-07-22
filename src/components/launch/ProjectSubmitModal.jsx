@@ -44,6 +44,13 @@ const ProjectSubmitModal = ({ tokenDetails, onClose, onSubmit }) => {
       return;
     }
 
+    // Validate project description (optional but recommended)
+    if (projectDescription.trim() && projectDescription.trim().length < 10) {
+      toast.error('Project description should be at least 10 characters long.');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const projectData = {
         namespace: tokenDetails.contractAddress.split('.')[0],
@@ -55,6 +62,16 @@ const ProjectSubmitModal = ({ tokenDetails, onClose, onSubmit }) => {
         },
         team: validTeamMembers
       };
+
+      // Add optional fields if provided
+      if (website.trim()) {
+        projectData.website = website.trim();
+      }
+
+      if (projectDescription.trim()) {
+        projectData.projectDescription = projectDescription.trim();
+      }
+
       console.log('Form data before submit:', projectData);
       const response = await submitProject(projectData);
       toast.success('Project submitted successfully!');
@@ -63,7 +80,8 @@ const ProjectSubmitModal = ({ tokenDetails, onClose, onSubmit }) => {
     } catch (error) {
       console.error('Error submitting project:', error);
       if (error.response && error.response.status === 400) {
-        toast.error('Invalid input data or duplicate project. Please check your submission.');
+        const errorMessage = error.response.data?.message || 'Invalid input data or duplicate project. Please check your submission.';
+        toast.error(errorMessage);
       } else {
         toast.error('Failed to submit project. Please try again.');
       }
@@ -164,20 +182,27 @@ const ProjectSubmitModal = ({ tokenDetails, onClose, onSubmit }) => {
                     placeholder="https://yourproject.com"
                     className="w-full bg-secondary-bg text-primary-text p-3 rounded-xl border border-border-color focus:border-accent-primary focus:outline-none"
                   />
+                  <p className="text-xs text-secondary mt-1">
+                    Optional: Link to your project's official website
+                  </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-secondary mb-2">
-                    Project Description
+                    Project Description (Recommended)
                   </label>
                   <textarea
                     value={projectDescription}
                     onChange={(e) => setProjectDescription(e.target.value)}
                     placeholder="Describe your project, its goals, and what makes it unique..."
-                    className="w-full bg-secondary-bg text-primary-text p-3 rounded-xl border border-border-color focus:border-accent-primary focus:outline-none"
+                    className="w-full bg-secondary-bg text-primary-text p-3 rounded-xl border border-border-color focus:border-accent-primary focus:outline-none resize-none"
                     rows="4"
-                    required
+                    maxLength="2000"
                   />
+                  <div className="flex justify-between text-xs text-secondary mt-1">
+                    <span>Recommended: Help reviewers understand your project</span>
+                    <span>{projectDescription.length}/2000</span>
+                  </div>
                 </div>
               </div>
 
@@ -220,6 +245,7 @@ const ProjectSubmitModal = ({ tokenDetails, onClose, onSubmit }) => {
                           placeholder="Full Name"
                           className="w-full bg-primary-bg text-primary-text p-3 rounded-lg border border-border-color focus:border-accent-primary focus:outline-none"
                           required
+                          maxLength="100"
                         />
                         <input
                           type="email"
@@ -233,9 +259,13 @@ const ProjectSubmitModal = ({ tokenDetails, onClose, onSubmit }) => {
                           value={member.about}
                           onChange={(e) => handleTeamMemberChange(index, 'about', e.target.value)}
                           placeholder="Brief bio/background (optional)"
-                          className="w-full bg-primary-bg text-primary-text p-3 rounded-lg border border-border-color focus:border-accent-primary focus:outline-none"
+                          className="w-full bg-primary-bg text-primary-text p-3 rounded-lg border border-border-color focus:border-accent-primary focus:outline-none resize-none"
                           rows="2"
+                          maxLength="500"
                         />
+                        <div className="text-xs text-secondary text-right">
+                          {member.about.length}/500
+                        </div>
                       </div>
                     </div>
                   ))}
