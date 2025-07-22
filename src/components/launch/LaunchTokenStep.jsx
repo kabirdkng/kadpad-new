@@ -25,7 +25,12 @@ const LaunchTokenStep = ({ submissionStatus, namespace, moduleName, tokenDetails
     salesEndDate: ''
   });
 
-  if (submissionStatus !== 'approved' && submissionStatus !== 'ready_to_launch' && submissionStatus !== 'launched') {
+  if (
+  submissionStatus !== 'approved' &&
+  submissionStatus !== 'ready_to_launch' &&
+  submissionStatus !== 'launched' &&
+  submissionStatus !== 'sales_configured'
+)  {
     return (
       <div className="space-y-8">
         <div className="text-center">
@@ -46,7 +51,7 @@ const LaunchTokenStep = ({ submissionStatus, namespace, moduleName, tokenDetails
     );
   }
 
-  if (submissionStatus === 'launched') {
+  if (submissionStatus === 'sales_configured') {
     return (
       <div className="space-y-8">
         {/* Success Header */}
@@ -116,6 +121,7 @@ const LaunchTokenStep = ({ submissionStatus, namespace, moduleName, tokenDetails
   // Sales Configuration Form for approved projects
   return (
     <div className="space-y-8">
+
       {/* Header */}
       <div className="text-center">
         <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mx-auto mb-6">
@@ -144,7 +150,40 @@ const LaunchTokenStep = ({ submissionStatus, namespace, moduleName, tokenDetails
           </div>
         </div>
       </div>
-
+      {/* Token Info Card */}
+      {tokenDetails && (
+        <div className="card bg-secondary-bg mb-4">
+          <div className="flex items-center gap-4">
+            {tokenDetails.imageUrl && (
+              <img
+                src={tokenDetails.imageUrl}
+                alt={tokenDetails.name}
+                className="w-16 h-16 rounded-lg object-cover border border-border-color"
+              />
+            )}
+            <div className="flex-1">
+              <div className="flex flex-wrap gap-4 items-center">
+                <div>
+                  <span className="text-secondary text-xs">Name:</span>
+                  <span className="ml-2 font-semibold text-primary-text">{tokenDetails.name}</span>
+                </div>
+                <div>
+                  <span className="text-secondary text-xs">Symbol:</span>
+                  <span className="ml-2 font-semibold text-primary-text">{tokenDetails.symbol}</span>
+                </div>
+                <div>
+                  <span className="text-secondary text-xs">Supply:</span>
+                  <span className="ml-2 font-semibold text-primary-text">{tokenDetails.supply?.int?.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className="mt-2">
+                <span className="text-secondary text-xs">Contract:</span>
+                <span className="ml-2 font-mono text-xs text-primary-text break-all">{tokenDetails.contractAddress}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Sales Configuration Form */}
       <div className="card">
         <h3 className="text-xl font-semibold text-primary-text mb-6 flex items-center gap-2">

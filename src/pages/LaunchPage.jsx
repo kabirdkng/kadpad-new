@@ -5,7 +5,7 @@ import CreateTokenStep from '../components/launch/CreateTokenStep';
 import VerifyOwnershipStep from '../components/launch/VerifyOwnershipStep';
 import ReviewSubmitStep from '../components/launch/ReviewSubmitStep';
 import LaunchTokenStep from '../components/launch/LaunchTokenStep';
-import { getPublicProjects } from '../api';
+import { checkProjectByContract } from '../api';
 
 const StepContent = ({ step, onNextStep, onPrevStep, isVerified, setIsVerified, tokenDetails, setTokenDetails, submissionStatus, setSubmissionStatus }) => {
   const steps = [
@@ -45,11 +45,15 @@ const StepContent = ({ step, onNextStep, onPrevStep, isVerified, setIsVerified, 
           <button 
             onClick={onNextStep} 
             className={`btn order-1 sm:order-2 ${
-              (step === 1 && !isVerified) || (step === 2 && submissionStatus !== 'approved') 
+              (step === 1 && !isVerified) ||
+              (step === 2 && !canProceedFromReviewStep(submissionStatus))
                 ? 'btn-ghost opacity-50 cursor-not-allowed' 
                 : 'btn-primary'
             }`}
-            disabled={(step === 1 && !isVerified) || (step === 2 && submissionStatus !== 'approved')}
+            disabled={
+              (step === 1 && !isVerified) ||
+              (step === 2 && !canProceedFromReviewStep(submissionStatus))
+            }
           >
             Next Step →
           </button>
@@ -59,66 +63,88 @@ const StepContent = ({ step, onNextStep, onPrevStep, isVerified, setIsVerified, 
   );
 };
 
+// Helper function to determine if user can proceed from review step (step 2) to launch step (step 3)
+const canProceedFromReviewStep = (submissionStatus) => {
+  // Can proceed if status is 'launched' (ready for sales configuration)
+  return submissionStatus === 'launched' || submissionStatus === 'sales_configured';
+};
+
 const LaunchPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVerified, setIsVerified] = useState(false);
   const [tokenDetails, setTokenDetails] = useState(null);
   const [submissionStatus, setSubmissionStatus] = useState(null);
-  const { account } = useWalletStore();
-  
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Check submission status whenever tokenDetails changes
   useEffect(() => {
     const checkSubmissionStatus = async () => {
       if (tokenDetails && tokenDetails.contractAddress) {
         try {
-          const response = await getPublicProjects();
-          const existingProject = response.data.data.projects.find(
-            project => project.namespace === tokenDetails.contractAddress.split('.')[0] && 
-                       project.moduleName === tokenDetails.contractAddress.split('.')[1]
-          );
-          if (existingProject) {
+          const [namespace, moduleName] = tokenDetails.contractAddress.split('.');
+          const response = await checkProjectByContract(namespace, moduleName);
+          if (response.data.data.project) {
+            const existingProject = response.data.data.project;
             setSubmissionStatus(existingProject.status);
           } else {
             setSubmissionStatus(null);
           }
         } catch (error) {
-          console.error('Error checking submission status:', error);
+          // If 404, no project exists
+          if (error.response && error.response.status === 404) {
+            setSubmissionStatus(null);
+          } else {
+            console.error('Error checking submission status:', error);
+          }
         }
       }
     };
 
     checkSubmissionStatus();
-  }, [tokenDetails]);
+    // Add currentStep as dependency so it can update step if needed
+  }, [tokenDetails, currentStep]);
 
   const handleNextStep = () => {
-    if (currentStep === 1 && !isVerified) {
+    // If on Verify step and project is launched/sales_configured, skip Review and go to LaunchToken
+    if (
+      currentStep === 1 &&
+      (submissionStatus === 'launched' || submissionStatus === 'sales_configured')
+    ) {
+      setCurrentStep(3);
       return;
     }
-    if (currentStep === 2 && submissionStatus !== 'approved') {
+    // If on Review step, only allow next if project is launched/sales_configured
+    if (currentStep === 2 && !canProceedFromReviewStep(submissionStatus)) {
       return;
     }
+    // Normal next step
     setCurrentStep((prevStep) => Math.min(prevStep + 1, 3));
   };
 
   const handlePrevStep = () => {
-    setCurrentStep((prevStep) => Math.max(prevStep - 1, 0));
+    // Always go to Verify step from LaunchToken
+    if (currentStep === 3) {
+      setCurrentStep(1);
+    } else {
+      setCurrentStep((prevStep) => Math.max(prevStep - 1, 0));
+    }
   };
 
   const stepTitles = [
     "Create Your Token",
     "Verify Ownership", 
     "Review & Submit",
-    "Launch Success"
+    "Configure Sales"
   ];
 
   const stepDescriptions = [
     "Start by creating your token using our recommended tools",
     "Verify that you own and control the token contract",
     "Review your details and submit for our approval process",
-    "Your token is now live and ready for the community"
+    "Configure your presale details and launch your token"
   ];
 
   return (
@@ -149,6 +175,15 @@ const LaunchPage = () => {
               </div>
               <h3 className="font-semibold text-primary-text mb-1">{stepTitles[currentStep]}</h3>
               <p className="text-sm text-secondary">{stepDescriptions[currentStep]}</p>
+              
+              {/* Show submission status indicator if applicable */}
+              {submissionStatus && currentStep === 2 && (
+                <div className="mt-3">
+                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColorClasses(submissionStatus)}`}>
+                    Status: {getStatusDisplayName(submissionStatus)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -202,7 +237,7 @@ const LaunchPage = () => {
               Get help from our community and team
             </p>
             <a 
-              href="https://discord.gg/Me8k8wsd" 
+              href="https://discord.gg/kadpad" 
               target="_blank" 
               rel="noopener noreferrer"
               className="btn btn-ghost text-sm"
@@ -215,55 +250,46 @@ const LaunchPage = () => {
             <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">🛠️</span>
             </div>
-            <h4 className="font-semibold text-primary-text mb-2">Token Tools</h4>
+            <h4 className="font-semibold text-primary-text mb-2">Development Tools</h4>
             <p className="text-sm text-secondary mb-4">
-              Use TokenGo to create your token easily
+              Access our suite of development tools
             </p>
             <a 
-              href="https://tokengo.fun" 
-              target="_blank" 
-              rel="noopener noreferrer"
+              href="/tools" 
               className="btn btn-ghost text-sm"
             >
-              Open TokenGo
+              Explore Tools
             </a>
-          </div>
-        </div>
-
-        {/* Progress Info */}
-        <div className="mt-12">
-          <div className="card max-w-3xl mx-auto text-center">
-            <h3 className="text-xl font-bold text-primary-text mb-4">
-              Why Choose KadPad for Your Launch?
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <div className="text-2xl mb-2">⚡</div>
-                <h4 className="font-semibold text-primary-text mb-1">Fast & Secure</h4>
-                <p className="text-sm text-secondary">
-                  Built on Kadena's high-performance blockchain
-                </p>
-              </div>
-              <div>
-                <div className="text-2xl mb-2">🤝</div>
-                <h4 className="font-semibold text-primary-text mb-1">Expert Support</h4>
-                <p className="text-sm text-secondary">
-                  Our team reviews every project for quality
-                </p>
-              </div>
-              <div>
-                <div className="text-2xl mb-2">🎯</div>
-                <h4 className="font-semibold text-primary-text mb-1">Fair Launch</h4>
-                <p className="text-sm text-secondary">
-                  Transparent process for all participants
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </div>
     </div>
   );
+};
+
+// Helper functions for status display
+const getStatusColorClasses = (status) => {
+  const colorMap = {
+    pending: 'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20',
+    approved: 'bg-green-500/10 text-green-400 border border-green-500/20',
+    rejected: 'bg-red-500/10 text-red-400 border border-red-500/20',
+    awaiting_fees: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
+    ready_to_launch: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+    launched: 'bg-green-500/10 text-green-400 border border-green-500/20'
+  };
+  return colorMap[status] || 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
+};
+
+const getStatusDisplayName = (status) => {
+  const nameMap = {
+    pending: 'Under Review',
+    approved: 'Approved',
+    rejected: 'Rejected',
+    awaiting_fees: 'Awaiting Fees',
+    ready_to_launch: 'Ready to Launch',
+    launched: 'Launched'
+  };
+  return nameMap[status] || status;
 };
 
 export default LaunchPage;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -10,7 +10,6 @@ import Buy from './pages/Buy';
 import Stake from './pages/Stake';
 import Presale from './pages/Presale';
 import Dashboard from './pages/Dashboard';
-import SalesConfigPage from './pages/SalesConfigPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Loader from './components/Loader';
@@ -93,7 +92,6 @@ const App = () => {
                 <Route path='/staking' element={<Stake />} />
                 <Route path='/presale/:namespace/:moduleName' element={<Presale />} />
                 <Route path='/dashboard/:namespace/:moduleName' element={<Dashboard />} />
-                <Route path='/configure-sales/:namespace/:moduleName' element={<SalesConfigPage />} />
               </Routes>
             </main>
             

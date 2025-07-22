@@ -5,6 +5,7 @@ import config from '../../wallet/config';
 import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
 import { toast } from 'react-toastify';
 import { pactCalls, pactCallsSig } from '../../wallet/kadena';
+import WalletConnectButton from '../WalletConnectButton'; 
 
 const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => {
   const { pubKey, provider, account } = useWalletStore();
@@ -121,6 +122,12 @@ const VerifyOwnershipStep = ({ isVerified, setIsVerified, setTokenDetails }) => 
             <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-400 flex-shrink-0" />
           )}
         </div>
+        {/* Add this block below wallet status */}
+        {!account && (
+          <div className="flex justify-center mt-4">
+            <WalletConnectButton />
+          </div>
+        )}
       </div>
 
       {/* Contract Address Input */}
