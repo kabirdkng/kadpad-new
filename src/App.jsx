@@ -10,6 +10,7 @@ import Buy from './pages/Buy';
 import Stake from './pages/Stake';
 import Presale from './pages/Presale';
 import Dashboard from './pages/Dashboard';
+import SalesConfigPage from './pages/SalesConfigPage'; // New component
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Loader from './components/Loader';
@@ -92,6 +93,8 @@ const App = () => {
                 <Route path='/staking' element={<Stake />} />
                 <Route path='/presale/:namespace/:moduleName' element={<Presale />} />
                 <Route path='/dashboard/:namespace/:moduleName' element={<Dashboard />} />
+                {/* New route for sales configuration */}
+                <Route path='/configure-sales/:namespace/:moduleName' element={<SalesConfigPage />} />
               </Routes>
             </main>
             

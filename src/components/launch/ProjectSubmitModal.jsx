@@ -53,12 +53,9 @@ const ProjectSubmitModal = ({ tokenDetails, onClose, onSubmit }) => {
           totalSupply: tokenDetails.supply.int,
           imageUrl: tokenDetails.imageUrl
         },
-        website: website.trim(),
-        projectDescription: projectDescription.trim(),
-        team: validTeamMembers,
-        status: 'pending'
+        team: validTeamMembers
       };
-
+      console.log('Form data before submit:', projectData);
       const response = await submitProject(projectData);
       toast.success('Project submitted successfully!');
       onSubmit(response.data);
