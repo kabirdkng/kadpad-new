@@ -49,10 +49,12 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
     setShowSubmitModal(false);
     setIsLoading(true);
     try {
-      const response = await submitProject(projectData);
-      setExistingProject(response.data);
-      setSubmissionStatus(response.data.status);
-      toast.success('Project submitted successfully!');
+      // Remove this line:
+      // const response = await submitProject(projectData);
+
+      // Instead, just update state with the project data returned from the modal
+      setExistingProject(projectData);
+      setSubmissionStatus(projectData.status);
     } catch (error) {
       console.error('Error submitting project:', error);
       if (error.response && error.response.data && error.response.data.message.includes('already exists')) {
@@ -82,7 +84,7 @@ const ReviewSubmitStep = ({ tokenDetails, setSubmissionStatus, isVerified }) => 
         color: 'green',
         icon: CheckCircle,
         title: 'Approved',
-        description: 'Your submission has been approved and is ready for sales contract setup.',
+        description: 'Your submission has been approved.',
         message: 'Congratulations! Your submission has been approved.',
         bgColor: 'bg-green-500/5',
         borderColor: 'border-green-500/20',
