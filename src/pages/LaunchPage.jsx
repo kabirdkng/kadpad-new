@@ -65,8 +65,8 @@ const StepContent = ({ step, onNextStep, onPrevStep, isVerified, setIsVerified, 
 
 // Helper function to determine if user can proceed from review step (step 2) to launch step (step 3)
 const canProceedFromReviewStep = (submissionStatus) => {
-  // Can proceed if status is 'launched' (ready for sales configuration)
-  return submissionStatus === 'launched' || submissionStatus === 'sales_configured';
+  // Can proceed if status is 'sales_configured' or 'launched'
+  return submissionStatus === 'sales_configured' || submissionStatus === 'launched';
 };
 
 const LaunchPage = () => {
@@ -108,15 +108,15 @@ const LaunchPage = () => {
   }, [tokenDetails, currentStep]);
 
   const handleNextStep = () => {
-    // If on Verify step and project is launched/sales_configured, skip Review and go to LaunchToken
+    // If on Verify step and project has sales configured, skip Review and go to LaunchToken
     if (
       currentStep === 1 &&
-      (submissionStatus === 'launched' || submissionStatus === 'sales_configured')
+      (submissionStatus === 'sales_configured' || submissionStatus === 'launched')
     ) {
       setCurrentStep(3);
       return;
     }
-    // If on Review step, only allow next if project is launched/sales_configured
+    // If on Review step, only allow next if project has sales configured
     if (currentStep === 2 && !canProceedFromReviewStep(submissionStatus)) {
       return;
     }
@@ -275,6 +275,7 @@ const getStatusColorClasses = (status) => {
     rejected: 'bg-red-500/10 text-red-400 border border-red-500/20',
     awaiting_fees: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
     ready_to_launch: 'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+    sales_configured: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20',
     launched: 'bg-green-500/10 text-green-400 border border-green-500/20'
   };
   return colorMap[status] || 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
@@ -287,6 +288,7 @@ const getStatusDisplayName = (status) => {
     rejected: 'Rejected',
     awaiting_fees: 'Awaiting Fees',
     ready_to_launch: 'Ready to Launch',
+    sales_configured: 'Sales Configured',
     launched: 'Launched'
   };
   return nameMap[status] || status;
