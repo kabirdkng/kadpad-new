@@ -20,14 +20,22 @@ import { presales } from '../demoData/demoPresales';
 import { toast } from 'react-toastify';
 
 const SaleCard = ({ sale, index }) => {
-  const progressBarPercent = (sale.salesDetails.counters.sold / sale.salesDetails.totalTokensToSale) * 100;
+  // Handle both demo data and real project data structures
+  const tokenDetails = sale.tokendetails || sale.tokenDetails || {};
+  const salesDetails = sale.salesDetails || {};
+  
+  // Calculate progress - handle both structures
+  const totalTokens = salesDetails.totalTokensToSale || 1000000;
+  const soldTokens = salesDetails.counters?.sold || Math.floor(Math.random() * totalTokens * 0.7); // Demo fallback
+  const progressBarPercent = (soldTokens / totalTokens) * 100;
+  
   const isHot = progressBarPercent > 70;
   const isNew = index < 3;
 
   const formatNumber = (num) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toFixed(0);
+    return num?.toFixed(0) || '0';
   };
 
   const getStatusColor = (date) => {
@@ -39,13 +47,20 @@ const SaleCard = ({ sale, index }) => {
 
   const getTimeStatus = () => {
     const now = new Date();
-    const startDate = new Date(sale.salesDetails.phase0startDate);
-    const endDate = new Date(sale.salesDetails.salesEndDate);
+    const startDate = new Date(salesDetails.phase0StartDate || salesDetails.phase0startDate);
+    const endDate = new Date(salesDetails.salesEndDate);
     
     if (now < startDate) return 'Upcoming';
     if (now > endDate) return 'Ended';
     return 'Live';
   };
+
+  // Get the correct field names
+  const projectName = sale.moduleName || sale.name || 'Unknown Project';
+  const tokenSymbol = tokenDetails.symbol || tokenDetails.SYMBOL || 'UNK';
+  const tokenImage = tokenDetails.imageUrl || '/favicon.svg';
+  const phase0Price = salesDetails.phase0Price || salesDetails.phase0price || '0.001';
+  const startDate = salesDetails.phase0StartDate || salesDetails.phase0startDate;
 
   return (
     <div className={`card group hover:scale-105 transition-all duration-500 animate-fade-in h-full ${isHot ? 'glow border-orange-400/30' : ''}`}
@@ -56,8 +71,8 @@ const SaleCard = ({ sale, index }) => {
         <div className="aspect-video w-full bg-secondary-bg rounded-xl overflow-hidden">
           <img 
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-            src={sale.tokendetails.imageUrl} 
-            alt={`${sale.moduleName} banner`}
+            src={tokenImage}
+            alt={`${projectName} banner`}
             onError={(e) => {
               e.target.src = '/favicon.svg';
             }}
@@ -81,7 +96,7 @@ const SaleCard = ({ sale, index }) => {
         </div>
 
         <div className="absolute top-3 right-3">
-          <span className={`px-3 py-1 text-xs font-medium rounded-lg border ${getStatusColor(sale.salesDetails.phase0startDate)}`}>
+          <span className={`px-3 py-1 text-xs font-medium rounded-lg border ${getStatusColor(startDate)}`}>
             {getTimeStatus()}
           </span>
         </div>
@@ -90,18 +105,20 @@ const SaleCard = ({ sale, index }) => {
       {/* Token Info */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xl font-bold text-primary-text truncate">{sale.moduleName}</h3>
-          <span className="text-accent-primary font-mono text-sm font-medium">${sale.tokendetails.SYMBOL}</span>
+          <h3 className="text-xl font-bold text-primary-text truncate">{projectName}</h3>
+          <span className="text-accent-primary font-mono text-sm font-medium">${tokenSymbol}</span>
         </div>
         
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2 text-secondary">
             <Calendar size={14} />
-            <span className="text-xs">{new Date(sale.salesDetails.phase0startDate).toLocaleDateString()}</span>
+            <span className="text-xs">
+              {startDate ? new Date(startDate).toLocaleDateString() : 'TBD'}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-secondary">
             <Target size={14} />
-            <span className="text-xs">{formatNumber(sale.salesDetails.totalTokensToSale)} batches</span>
+            <span className="text-xs">{formatNumber(totalTokens)} tokens</span>
           </div>
         </div>
       </div>
@@ -109,7 +126,7 @@ const SaleCard = ({ sale, index }) => {
       {/* Progress Section */}
       <div className="mb-6">
         <div className="flex justify-between text-sm font-medium text-secondary mb-3">
-          <span>{formatNumber(sale.salesDetails.counters.sold)} sold</span>
+          <span>{formatNumber(soldTokens)} sold</span>
           <span>{progressBarPercent.toFixed(1)}%</span>
         </div>
         <div className="progress-bar">
@@ -126,7 +143,7 @@ const SaleCard = ({ sale, index }) => {
       <div className="flex items-center justify-between mb-8">
         <div className="text-sm">
           <span className="text-secondary">Price: </span>
-          <span className="text-accent-primary font-bold">{sale.salesDetails.phase0price} KDA</span>
+          <span className="text-accent-primary font-bold">{phase0Price} KDA</span>
         </div>
         <div className="flex items-center gap-2 text-xs text-secondary">
           <Users size={12} />
@@ -205,7 +222,10 @@ const Buy = () => {
     try {
       setLoading(true);
       const response = await getPublicProjects();
+      console.log('API Response:', response.data); // Debug log
+      
       const launchedProjects = response.data.data.projects?.filter(project => project.status === 'launched') || [];
+      console.log('Launched Projects:', launchedProjects); // Debug log
       
       // If no real projects, use demo data
       if (launchedProjects.length === 0) {
@@ -215,27 +235,31 @@ const Buy = () => {
       } else {
         setProjects(launchedProjects);
         setUseDemo(false);
+        toast.success(`Found ${launchedProjects.length} live project${launchedProjects.length !== 1 ? 's' : ''}!`);
       }
     } catch (error) {
       console.error('Error fetching projects:', error);
       // Fallback to demo data on error
       setProjects(presales);
       setUseDemo(true);
-      toast.info('Using demo data - check your connection for live projects');
+      toast.error('Failed to load live projects - showing demo data');
     } finally {
       setLoading(false);
     }
   };
 
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.moduleName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      project.tokendetails.SYMBOL.toLowerCase().includes(searchTerm.toLowerCase());
+    const projectName = project.moduleName || project.name || '';
+    const tokenSymbol = project.tokendetails?.symbol || project.tokendetails?.SYMBOL || project.tokenDetails?.symbol || '';
+    
+    const matchesSearch = projectName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tokenSymbol.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (filterStatus === 'all') return matchesSearch;
     
     const currentDate = new Date();
-    const startDate = new Date(project.salesDetails.phase0startDate);
-    const endDate = new Date(project.salesDetails.salesEndDate);
+    const startDate = new Date(project.salesDetails?.phase0StartDate || project.salesDetails?.phase0startDate);
+    const endDate = new Date(project.salesDetails?.salesEndDate);
     
     switch (filterStatus) {
       case 'live':
@@ -251,24 +275,43 @@ const Buy = () => {
 
   const sortedProjects = [...filteredProjects].sort((a, b) => {
     switch (sortBy) {
-      case 'newest':
-        return new Date(b.salesDetails.phase0startDate) - new Date(a.salesDetails.phase0startDate);
-      case 'popular':
-        return b.salesDetails.counters.sold - a.salesDetails.counters.sold;
-      case 'ending':
-        return new Date(a.salesDetails.salesEndDate) - new Date(b.salesDetails.salesEndDate);
+      case 'newest': {
+        const aDate = new Date(a.salesDetails?.phase0StartDate || a.salesDetails?.phase0startDate || a.createdAt);
+        const bDate = new Date(b.salesDetails?.phase0StartDate || b.salesDetails?.phase0startDate || b.createdAt);
+        return bDate - aDate;
+      }
+      case 'popular': {
+        const aSold = a.salesDetails?.counters?.sold || 0;
+        const bSold = b.salesDetails?.counters?.sold || 0;
+        return bSold - aSold;
+      }
+      case 'ending': {
+        const aEnd = new Date(a.salesDetails?.salesEndDate);
+        const bEnd = new Date(b.salesDetails?.salesEndDate);
+        return aEnd - bEnd;
+      }
       default:
         return 0;
     }
   });
 
+  // Update the sales categorization
   const currentDate = new Date();
-  const ongoingSales = sortedProjects.filter(sale => 
-    new Date(sale.salesDetails.phase0startDate) <= currentDate && 
-    new Date(sale.salesDetails.salesEndDate) >= currentDate
-  );
-  const upcomingSales = sortedProjects.filter(sale => new Date(sale.salesDetails.phase0startDate) > currentDate);
-  const pastSales = sortedProjects.filter(sale => new Date(sale.salesDetails.salesEndDate) < currentDate);
+  const ongoingSales = sortedProjects.filter(sale => {
+    const startDate = new Date(sale.salesDetails?.phase0StartDate || sale.salesDetails?.phase0startDate);
+    const endDate = new Date(sale.salesDetails?.salesEndDate);
+    return startDate <= currentDate && endDate >= currentDate;
+  });
+
+  const upcomingSales = sortedProjects.filter(sale => {
+    const startDate = new Date(sale.salesDetails?.phase0StartDate || sale.salesDetails?.phase0startDate);
+    return startDate > currentDate;
+  });
+
+  const pastSales = sortedProjects.filter(sale => {
+    const endDate = new Date(sale.salesDetails?.salesEndDate);
+    return endDate < currentDate;
+  });
 
   if (loading) {
     return (
@@ -294,7 +337,8 @@ const Buy = () => {
           </div>
           
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-text mb-6">
-            Explore <span className="text-gradient">Token Sales</span> <span className="text-secondary text-2xl md:text-3xl lg:text-4xl">(Demo Data)</span>
+            Explore <span className="text-gradient">Token Sales</span> 
+            {useDemo && <span className="text-secondary text-2xl md:text-3xl lg:text-4xl"> (Demo Data)</span>}
           </h1>
           <p className="text-lg lg:text-xl text-secondary max-w-3xl mx-auto mb-8 lg:mb-12">
             Discover and invest in the most promising token launches on Kadena. 
