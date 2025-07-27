@@ -168,18 +168,18 @@ const LaunchTokenStep = ({ submissionStatus, tokenDetails }) => {
         )}
 
         {/* Sales Configuration Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="card bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-500/20">
             <div className="flex items-center gap-3 mb-3">
               <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
                 <Target className="w-5 h-5 text-blue-400" />
               </div>
-              <h4 className="font-semibold text-blue-400">Total Supply</h4>
+              <h4 className="font-semibold text-blue-400">Total Batches</h4>
             </div>
             <p className="text-2xl font-bold text-primary-text">
-              {salesDetails.totalTokensToSale ? salesDetails.totalTokensToSale.toLocaleString() : 'Not set'}
+              {salesDetails.totalBatches ? salesDetails.totalBatches.toLocaleString() : 'Not set'}
             </p>
-            <p className="text-sm text-secondary mt-1">Tokens for sale</p>
+            <p className="text-sm text-secondary mt-1">Batches for sale</p>
           </div>
 
           <div className="card bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/20">
@@ -190,9 +190,22 @@ const LaunchTokenStep = ({ submissionStatus, tokenDetails }) => {
               <h4 className="font-semibold text-purple-400">Batch Size</h4>
             </div>
             <p className="text-2xl font-bold text-primary-text">
-              {salesDetails.tokensPerBatch ? salesDetails.tokensPerBatch.toLocaleString() : 'Not set'}
+              {(salesDetails.amountPerBatch || salesDetails.tokensPerBatch) ? (salesDetails.amountPerBatch || salesDetails.tokensPerBatch).toLocaleString() : 'Not set'}
             </p>
             <p className="text-sm text-secondary mt-1">Tokens per batch</p>
+          </div>
+
+          <div className="card bg-gradient-to-br from-green-500/10 to-green-600/10 border-green-500/20">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-green-400" />
+              </div>
+              <h4 className="font-semibold text-green-400">Pre-sales</h4>
+            </div>
+            <p className="text-2xl font-bold text-primary-text">
+              {(salesDetails.presalesAmount || ((salesDetails.totalBatches || 0) * (salesDetails.amountPerBatch || salesDetails.tokensPerBatch || 0))).toLocaleString()}
+            </p>
+            <p className="text-sm text-secondary mt-1">Total tokens</p>
           </div>
 
           <div className="card bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 border-emerald-500/20">
@@ -203,7 +216,7 @@ const LaunchTokenStep = ({ submissionStatus, tokenDetails }) => {
               <h4 className="font-semibold text-emerald-400">Starting Price</h4>
             </div>
             <p className="text-2xl font-bold text-primary-text">
-              {formatPrice(salesDetails.phase0Price)}
+              {formatPrice(salesDetails.phase0Price || salesDetails.phase0price)}
             </p>
             <p className="text-sm text-secondary mt-1">Phase 0 price</p>
           </div>
@@ -221,6 +234,111 @@ const LaunchTokenStep = ({ submissionStatus, tokenDetails }) => {
             </div>
           </div>
           
+          {/* Batch Configuration */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-6">
+              <h4 className="text-lg font-semibold text-blue-400 mb-4 flex items-center gap-2">
+                <Target className="w-5 h-5" />
+                Batch Configuration
+              </h4>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Total Batches</label>
+                  <p className="text-xl font-bold text-primary-text">
+                    {(salesDetails.totalBatches || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Tokens per Batch</label>
+                  <p className="text-xl font-bold text-primary-text">
+                    {(salesDetails.amountPerBatch || salesDetails.tokensPerBatch || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Whitelist Limit</label>
+                  <p className="text-lg font-bold text-accent-primary">
+                    {salesDetails.whitelistLimit || 'Not set'} batches per user
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-green-500/5 border border-green-500/20 rounded-lg p-6">
+              <h4 className="text-lg font-semibold text-green-400 mb-4 flex items-center gap-2">
+                <Sparkles className="w-5 h-5" />
+                Token Distribution
+              </h4>
+              
+              {/* Visual Distribution Bar */}
+              {project?.tokendetails?.totalSupply && (
+                <div className="mb-6">
+                  <div className="h-8 bg-secondary-bg border border-border-color rounded-lg overflow-hidden flex">
+                    <div 
+                      className="bg-blue-500 h-full flex items-center justify-center text-white text-xs font-medium transition-all duration-300"
+                      style={{ width: `${((salesDetails.presalesAmount || ((salesDetails.totalBatches || 0) * (salesDetails.amountPerBatch || salesDetails.tokensPerBatch || 0))) / project.tokendetails.totalSupply) * 100}%` }}
+                      title={`Pre-sales: ${(((salesDetails.presalesAmount || ((salesDetails.totalBatches || 0) * (salesDetails.amountPerBatch || salesDetails.tokensPerBatch || 0))) / project.tokendetails.totalSupply) * 100).toFixed(2)}%`}
+                    >
+                      {(((salesDetails.presalesAmount || ((salesDetails.totalBatches || 0) * (salesDetails.amountPerBatch || salesDetails.tokensPerBatch || 0))) / project.tokendetails.totalSupply) * 100) > 12 && 'Sales'}
+                    </div>
+                    <div 
+                      className="bg-purple-500 h-full flex items-center justify-center text-white text-xs font-medium transition-all duration-300"
+                      style={{ width: `${((salesDetails.liquidityLockupAmount || 0) / project.tokendetails.totalSupply) * 100}%` }}
+                      title={`Liquidity: ${(((salesDetails.liquidityLockupAmount || 0) / project.tokendetails.totalSupply) * 100).toFixed(2)}%`}
+                    >
+                      {(((salesDetails.liquidityLockupAmount || 0) / project.tokendetails.totalSupply) * 100) > 8 && 'Liquidity'}
+                    </div>
+                    <div 
+                      className="bg-green-500 h-full flex items-center justify-center text-white text-xs font-medium transition-all duration-300"
+                      style={{ width: `${((salesDetails.treasuryAmount || 0) / project.tokendetails.totalSupply) * 100}%` }}
+                      title={`Treasury: ${(((salesDetails.treasuryAmount || 0) / project.tokendetails.totalSupply) * 100).toFixed(2)}%`}
+                    >
+                      {(((salesDetails.treasuryAmount || 0) / project.tokendetails.totalSupply) * 100) > 15 && 'Treasury'}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Pre-sales Amount</label>
+                  <p className="text-xl font-bold text-primary-text">
+                    {(salesDetails.presalesAmount || ((salesDetails.totalBatches || 0) * (salesDetails.amountPerBatch || salesDetails.tokensPerBatch || 0))).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-blue-400 mt-1">
+                    {project?.tokendetails?.totalSupply ? 
+                      (((salesDetails.presalesAmount || ((salesDetails.totalBatches || 0) * (salesDetails.amountPerBatch || salesDetails.tokensPerBatch || 0))) / project.tokendetails.totalSupply) * 100).toFixed(2) + '%' 
+                      : '0%'
+                    }
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Liquidity Amount</label>
+                  <p className="text-xl font-bold text-primary-text">
+                    {(salesDetails.liquidityLockupAmount || 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-purple-400 mt-1">
+                    {project?.tokendetails?.totalSupply ? 
+                      (((salesDetails.liquidityLockupAmount || 0) / project.tokendetails.totalSupply) * 100).toFixed(2) + '%' 
+                      : '0%'
+                    }
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">Treasury Amount</label>
+                  <p className="text-xl font-bold text-green-400">
+                    {(salesDetails.treasuryAmount || 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-green-300 mt-1">
+                    {project?.tokendetails?.totalSupply ? 
+                      (((salesDetails.treasuryAmount || 0) / project.tokendetails.totalSupply) * 100).toFixed(2) + '%' 
+                      : '0%'
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           {/* Phase Information */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Phase 0 (Early Access) */}
@@ -229,14 +347,14 @@ const LaunchTokenStep = ({ submissionStatus, tokenDetails }) => {
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-orange-500 to-red-500 flex items-center justify-center">
                   <span className="text-white font-bold text-sm">0</span>
                 </div>
-                <h4 className="text-lg font-semibold text-primary-text">Phase 0 - Early Access</h4>
+                <h4 className="text-lg font-semibold text-primary-text">Phase 0 - Whitelist</h4>
               </div>
               
               <div className="space-y-4">
                 <div className="bg-gradient-to-r from-orange-500/5 to-red-500/5 border border-orange-500/20 rounded-lg p-4">
-                  <label className="block text-sm font-medium text-orange-400 mb-2">Price per Token</label>
+                  <label className="block text-sm font-medium text-orange-400 mb-2">Price per Batch</label>
                   <p className="text-xl font-bold text-primary-text">
-                    {formatPrice(salesDetails.phase0Price)}
+                    {formatPrice(salesDetails.phase0Price || salesDetails.phase0price)}
                   </p>
                 </div>
                 
@@ -246,7 +364,7 @@ const LaunchTokenStep = ({ submissionStatus, tokenDetails }) => {
                     Start Date
                   </label>
                   <p className="text-primary-text font-medium">
-                    {formatDateTime(salesDetails.phase0StartDate)}
+                    {formatDateTime(salesDetails.phase0StartDate || salesDetails.phase0startDate)}
                   </p>
                 </div>
               </div>
@@ -263,7 +381,7 @@ const LaunchTokenStep = ({ submissionStatus, tokenDetails }) => {
               
               <div className="space-y-4">
                 <div className="bg-gradient-to-r from-blue-500/5 to-purple-500/5 border border-blue-500/20 rounded-lg p-4">
-                  <label className="block text-sm font-medium text-blue-400 mb-2">Price per Token</label>
+                  <label className="block text-sm font-medium text-blue-400 mb-2">Price per Batch</label>
                   <p className="text-xl font-bold text-primary-text">
                     {formatPrice(salesDetails.phase1Price)}
                   </p>

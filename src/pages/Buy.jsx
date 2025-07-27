@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { 
   TrendingUp, 
@@ -24,8 +25,10 @@ const SaleCard = ({ sale, index }) => {
   const tokenDetails = sale.tokendetails || sale.tokenDetails || {};
   const salesDetails = sale.salesDetails || {};
   
-  // Calculate progress - handle both structures
-  const totalTokens = salesDetails.totalTokensToSale || 1000000;
+  // Calculate progress - handle both old and new structures
+  const totalTokens = salesDetails.presalesAmount || 
+                     (salesDetails.totalBatches * salesDetails.amountPerBatch) ||
+                     salesDetails.totalTokensToSale || 1000000;
   const soldTokens = salesDetails.counters?.sold || Math.floor(Math.random() * totalTokens * 0.7); // Demo fallback
   const progressBarPercent = (soldTokens / totalTokens) * 100;
   
@@ -118,9 +121,16 @@ const SaleCard = ({ sale, index }) => {
           </div>
           <div className="flex items-center gap-2 text-secondary">
             <Target size={14} />
-            <span className="text-xs">{formatNumber(totalTokens)} tokens</span>
+            <span className="text-xs">{formatNumber(totalTokens)} for sale</span>
           </div>
         </div>
+        
+        {/* Batch Info - Show if using new structure */}
+        {salesDetails.totalBatches && salesDetails.amountPerBatch && (
+          <div className="mt-3 text-xs text-secondary">
+            <span>{salesDetails.totalBatches} batches × {formatNumber(salesDetails.amountPerBatch)} tokens</span>
+          </div>
+        )}
       </div>
 
       {/* Progress Section */}
@@ -140,15 +150,27 @@ const SaleCard = ({ sale, index }) => {
       </div>
 
       {/* Price Info */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="text-sm">
-          <span className="text-secondary">Price: </span>
-          <span className="text-accent-primary font-bold">{phase0Price} KDA</span>
+      <div className="space-y-4 mb-8">
+        <div className="flex items-center justify-between">
+          <div className="text-sm">
+            <span className="text-secondary">Price: </span>
+            <span className="text-accent-primary font-bold">{phase0Price} KDA</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-secondary">
+            <Users size={12} />
+            <span>{Math.floor(Math.random() * 500) + 100}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-xs text-secondary">
-          <Users size={12} />
-          <span>{Math.floor(Math.random() * 500) + 100}</span>
-        </div>
+        
+        {/* Additional Sales Info */}
+        {salesDetails.totalBatches && (
+          <div className="text-xs text-secondary flex justify-between">
+            <span>Batches: {salesDetails.totalBatches}</span>
+            {salesDetails.whitelistLimit && (
+              <span>WL Limit: {formatNumber(salesDetails.whitelistLimit)}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Action Button */}
@@ -163,6 +185,11 @@ const SaleCard = ({ sale, index }) => {
       </div>
     </div>
   );
+};
+
+SaleCard.propTypes = {
+  sale: PropTypes.object.isRequired,
+  index: PropTypes.number.isRequired
 };
 
 const SaleSection = ({ title, sales, icon: Icon, gradient = false }) => {
@@ -202,6 +229,13 @@ const SaleSection = ({ title, sales, icon: Icon, gradient = false }) => {
       </div>
     </div>
   );
+};
+
+SaleSection.propTypes = {
+  title: PropTypes.string.isRequired,
+  sales: PropTypes.array.isRequired,
+  icon: PropTypes.elementType.isRequired,
+  gradient: PropTypes.bool
 };
 
 const Buy = () => {
@@ -459,7 +493,7 @@ const Buy = () => {
             <div className="mt-6 flex items-center justify-between text-sm text-secondary">
               <span>{sortedProjects.length} projects found</span>
               {searchTerm && (
-                <span>Search results for "{searchTerm}"</span>
+                <span>Search results for &ldquo;{searchTerm}&rdquo;</span>
               )}
             </div>
           </div>
