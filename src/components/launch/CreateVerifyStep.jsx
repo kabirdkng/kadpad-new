@@ -7,7 +7,7 @@ import useWalletStore from '../../wallet/walletStore';
 import config from '../../wallet/config';
 import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
 import { toast } from 'react-toastify';
-import { pactCalls, pactCallsSig } from '../../wallet/kadena';
+import { pactCalls, pactCallsSig } from '../../pactcalls/kadena';
 import WalletConnectButton from '../WalletConnectButton';
 import tokenGoLogo from '../../assets/tokengo-logo.png';
 

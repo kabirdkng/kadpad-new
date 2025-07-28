@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import { Settings } from 'lucide-react';
 import TokenInfoCard from './TokenInfoCard';
 import SalesOverview from './SalesOverview';
@@ -8,7 +9,7 @@ const SalesConfiguredView = ({
   tokenDetails, 
   salesDetails, 
   project, 
-  isDeploying, 
+  deploymentState = {}, 
   onDeploy 
 }) => {
   return (
@@ -37,12 +38,19 @@ const SalesConfiguredView = ({
 
       {/* Deploy Action Card */}
       <DeploymentCard 
-        tokenDetails={tokenDetails}
-        isDeploying={isDeploying}
+        deploymentState={deploymentState}
         onDeploy={onDeploy}
       />
     </div>
   );
+};
+
+SalesConfiguredView.propTypes = {
+  tokenDetails: PropTypes.object,
+  salesDetails: PropTypes.object,
+  project: PropTypes.object,
+  deploymentState: PropTypes.object,
+  onDeploy: PropTypes.func.isRequired
 };
 
 export default SalesConfiguredView;

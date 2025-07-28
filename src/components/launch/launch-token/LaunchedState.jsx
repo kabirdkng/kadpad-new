@@ -26,7 +26,7 @@ const LaunchedState = ({ tokenDetails, project }) => {
           </div>
           <div>
             <label className="block text-sm font-medium text-secondary mb-1">Contract Address</label>
-            <p className="text-primary-text font-mono text-sm">{tokenDetails.contractAddress}</p>
+            <p className="text-primary-text font-mono text-sm break-all">{tokenDetails.contractAddress}</p>
           </div>
           <div>
             <label className="block text-sm font-medium text-secondary mb-1">Status</label>

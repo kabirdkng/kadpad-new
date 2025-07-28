@@ -66,8 +66,8 @@ export const checkProjectByContract = (namespace, moduleName) => {
   return api.get(`/projects/check-by-contract/${namespace}/${moduleName}`);
 };
 
-export const markProjectAsDeployed = (namespace, moduleName) => {
-  return api.patch(`/projects/deployed/${namespace}/${moduleName}`);
+export const markProjectAsDeployed = (namespace, moduleName, deploymentData = {}) => {
+  return api.patch(`/projects/deployed/${namespace}/${moduleName}`, deploymentData);
 };
 
 export default api;
