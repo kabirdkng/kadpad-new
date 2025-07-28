@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import useWalletStore from '../wallet/walletStore';
 import StepIndicator from '../components/launch/StepIndicator';
-import CreateTokenStep from '../components/launch/CreateTokenStep';
-import VerifyOwnershipStep from '../components/launch/VerifyOwnershipStep';
+import CreateVerifyStep from '../components/launch/CreateVerifyStep';
 import ReviewSubmitStep from '../components/launch/ReviewSubmitStep';
 import LaunchTokenStep from '../components/launch/LaunchTokenStep';
 import { checkProjectByContract } from '../api';
 
 const StepContent = ({ step, onNextStep, onPrevStep, isVerified, setIsVerified, tokenDetails, setTokenDetails, submissionStatus, setSubmissionStatus }) => {
   const steps = [
-    CreateTokenStep,
-    VerifyOwnershipStep,
+    CreateVerifyStep,
     ReviewSubmitStep,
     LaunchTokenStep
   ];
@@ -45,14 +43,14 @@ const StepContent = ({ step, onNextStep, onPrevStep, isVerified, setIsVerified, 
           <button 
             onClick={onNextStep} 
             className={`btn order-1 sm:order-2 ${
-              (step === 1 && !isVerified) ||
-              (step === 2 && !canProceedFromReviewStep(submissionStatus))
+              (step === 0 && !isVerified) ||
+              (step === 1 && !canProceedFromReviewStep(submissionStatus))
                 ? 'btn-ghost opacity-50 cursor-not-allowed' 
                 : 'btn-primary'
             }`}
             disabled={
-              (step === 1 && !isVerified) ||
-              (step === 2 && !canProceedFromReviewStep(submissionStatus))
+              (step === 0 && !isVerified) ||
+              (step === 1 && !canProceedFromReviewStep(submissionStatus))
             }
           >
             Next Step →
@@ -78,6 +76,17 @@ const LaunchPage = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Scroll to main content when step changes
+  useEffect(() => {
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      mainContent.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }
+  }, [currentStep]);
 
   // Check submission status whenever tokenDetails changes
   useEffect(() => {
@@ -108,41 +117,39 @@ const LaunchPage = () => {
   }, [tokenDetails, currentStep]);
 
   const handleNextStep = () => {
-    // If on Verify step and project has sales configured, skip Review and go to LaunchToken
+    // If on CreateVerify step and project has sales configured, skip Review and go to LaunchToken
     if (
-      currentStep === 1 &&
+      currentStep === 0 &&
       (submissionStatus === 'sales_configured' || submissionStatus === 'launched')
     ) {
-      setCurrentStep(3);
+      setCurrentStep(2);
       return;
     }
     // If on Review step, only allow next if project has sales configured
-    if (currentStep === 2 && !canProceedFromReviewStep(submissionStatus)) {
+    if (currentStep === 1 && !canProceedFromReviewStep(submissionStatus)) {
       return;
     }
     // Normal next step
-    setCurrentStep((prevStep) => Math.min(prevStep + 1, 3));
+    setCurrentStep((prevStep) => Math.min(prevStep + 1, 2));
   };
 
   const handlePrevStep = () => {
-    // Always go to Verify step from LaunchToken
-    if (currentStep === 3) {
-      setCurrentStep(1);
+    // Always go to CreateVerify step from LaunchToken
+    if (currentStep === 2) {
+      setCurrentStep(0);
     } else {
       setCurrentStep((prevStep) => Math.max(prevStep - 1, 0));
     }
   };
 
   const stepTitles = [
-    "Create Your Token",
-    "Verify Ownership", 
+    "Create & Verify Your Token",
     "Review & Submit",
     "Configure Sales"
   ];
 
   const stepDescriptions = [
-    "Start by creating your token using our recommended tools",
-    "Verify that you own and control the token contract",
+    "Create your token using our tools and verify ownership with your wallet",
     "Review your details and submit for our approval process",
     "Configure your presale details and launch your token"
   ];
@@ -190,8 +197,10 @@ const LaunchPage = () => {
 
         {/* Step Indicator */}
         <div className="mb-12">
-          <StepIndicator currentStep={currentStep} totalSteps={4} />
+          <StepIndicator currentStep={currentStep} totalSteps={3} />
         </div>
+
+        <div className='main-content'></div>
 
         {/* Main Content Card */}
         <div className="card max-w-4xl mx-auto">

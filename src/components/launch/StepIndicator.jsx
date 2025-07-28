@@ -3,8 +3,7 @@ import { Check } from 'lucide-react';
 
 const StepIndicator = ({ currentStep, totalSteps }) => {
   const steps = [
-    { title: "Create", icon: "🚀" },
-    { title: "Verify", icon: "🔒" },
+    { title: "Create & Verify", icon: "�" },
     { title: "Review", icon: "📋" },
     { title: "Launch", icon: "✨" }
   ];

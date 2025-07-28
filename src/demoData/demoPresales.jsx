@@ -12,6 +12,13 @@ export const presales = [
             imageUrl: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=400&fit=crop&crop=center'
         },
         salesDetails: {
+            totalBatches: 50,
+            amountPerBatch: 1000,
+            presalesAmount: 50000,
+            liquidityLockupAmount: 10000,
+            treasuryAmount: 39950000,
+            whitelistLimit: 5,
+            // Legacy fields for compatibility
             totalTokensToSale: 50000,
             tokensPerBatch: 1000,
             phase0price: 0.5,
@@ -34,6 +41,13 @@ export const presales = [
             imageUrl: 'https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=400&h=400&fit=crop&crop=center'
         },
         salesDetails: {
+            totalBatches: 100,
+            amountPerBatch: 5000,
+            presalesAmount: 500000,
+            liquidityLockupAmount: 100000,
+            treasuryAmount: 399500000,
+            whitelistLimit: 3,
+            // Legacy fields for compatibility
             totalTokensToSale: 500000,
             tokensPerBatch: 5000,
             phase0price: 0.001,

@@ -342,3 +342,40 @@ export const transferCoinTreasury = async (token, code, chain, pubKey, sender, r
     console.error(error);
   }
 };
+
+// Poll for transaction result
+export const pollForTransactionResult = async (pactClient, transactionDescriptor, maxRetries = 30, retryInterval = 3000) => {
+  console.log('Polling for transaction result:', transactionDescriptor.requestKey);
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      console.log(`Poll attempt ${i + 1}/${maxRetries} for transaction:`, transactionDescriptor.requestKey);
+      
+      const result = await pactClient.listen({
+        requestKey: transactionDescriptor.requestKey
+      });
+      
+      console.log(`Poll attempt ${i + 1} result:`, result);
+      
+      if (result && result.result) {
+        console.log('Transaction confirmed:', result);
+        return result;
+      }
+      
+      // Wait before next retry
+      console.log(`Waiting ${retryInterval}ms before next poll attempt...`);
+      await new Promise(resolve => setTimeout(resolve, retryInterval));
+    } catch (error) {
+      console.error(`Error polling for transaction result (attempt ${i + 1}):`, error);
+      
+      if (i === maxRetries - 1) {
+        throw new Error(`Transaction polling failed after ${maxRetries} attempts: ${error.message}`);
+      }
+      
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, retryInterval));
+    }
+  }
+  
+  throw new Error(`Transaction did not complete after ${maxRetries} attempts`);
+};
