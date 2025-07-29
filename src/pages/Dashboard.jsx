@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import ManageSales from './ManageSales';
-import AccessTresury from './AccessTresury';
+import AccessTreasury from './AccessTreasury';
 import usePresaleStore from '../store/usePresaleStore';
 
 const Dashboard = () => {
@@ -19,19 +19,22 @@ const Dashboard = () => {
     const now = new Date().getTime();
     let targetDate;
 
-    if (now < phase0startTime.getTime()) {
+    // Check if dates exist and are valid before calling getTime()
+    if (phase0startTime && now < phase0startTime.getTime()) {
       targetDate = phase0startTime;
-    } else if (now < phase1startTime.getTime()) {
+    } else if (phase1startTime && now < phase1startTime.getTime()) {
       targetDate = phase1startTime;
-    } else if (now < salesEndTime.getTime()) {
+    } else if (salesEndTime && now < salesEndTime.getTime()) {
       targetDate = salesEndTime;
     }
 
-    const intervalId = setInterval(() => {
-      setCountdown(calculateCountdown(targetDate.getTime()));
-    }, 1000);
+    if (targetDate) {
+      const intervalId = setInterval(() => {
+        setCountdown(calculateCountdown(targetDate.getTime()));
+      }, 1000);
 
-    return () => clearInterval(intervalId);
+      return () => clearInterval(intervalId);
+    }
   }, [phase0startTime, phase1startTime, salesEndTime]);
 
   const calculateCountdown = (endTime) => {
@@ -53,16 +56,16 @@ const Dashboard = () => {
       case 'manageSales':
         return <ManageSales namespace={namespace} moduleName={moduleName} />;
       case 'accessTreasury':
-        return <AccessTresury namespace={namespace} moduleName={moduleName} />;
+        return <AccessTreasury namespace={namespace} moduleName={moduleName} />;
       default:
         return null;
     }
   };
 
   const now = new Date();
-  const isPreWl = now < phase0startTime;
-  const isPhase0 = now >= phase0startTime && now < phase1startTime;
-  const isPhase1 = now >= phase1startTime && now < salesEndTime;
+  const isPreWl = phase0startTime && now < phase0startTime;
+  const isPhase0 = phase0startTime && phase1startTime && now >= phase0startTime && now < phase1startTime;
+  const isPhase1 = phase1startTime && salesEndTime && now >= phase1startTime && now < salesEndTime;
 
   return (
     <div className='deployer-panel'>

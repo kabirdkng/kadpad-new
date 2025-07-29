@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { generateSalesContract, generateTreasuryContract } from '../utils/contractGeneration';
-import { deploySalesAndTreasuryContracts } from '../utils/deployContractLikeTokengen';
+import { deploySalesAndTreasuryContracts } from '../utils/deployContract';
 import { pollForTransactionResult } from '../pactcalls/kadena';
 import { useWalletConnectClient } from '../wallet/providers/ClientContextProvider';
 import useWalletStore from '../wallet/walletStore';
