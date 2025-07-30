@@ -216,22 +216,40 @@ export const deploySalesAndTreasuryContracts = async (
       'sales'
     );
 
-    // Combine all transactions
-    const allTransactions = [...treasuryTransactions, ...salesTransactions];
-
-    // Sign and process all transactions
-    console.log('Signing and processing all transactions...');
-    const processedTransactions = await signAndProcessDeployTransactions(
+    // Sign and process transactions SEQUENTIALLY: treasury first, then sales
+    console.log('Signing and processing transactions sequentially (treasury first)...');
+    
+    // Process treasury first
+    console.log('Step 1: Processing treasury deployment...');
+    const treasuryResults = await signAndProcessDeployTransactions(
       networkApi,
       network,
       null, // not used in this context
       namespace,
       moduleName,
-      allTransactions,
+      treasuryTransactions,
       providerName,
       client,
       session
     );
+
+    console.log('Treasury deployment completed, now processing sales...');
+    
+    // Process sales second (after treasury is deployed)
+    console.log('Step 2: Processing sales deployment...');
+    const salesResults = await signAndProcessDeployTransactions(
+      networkApi,
+      network,
+      null, // not used in this context
+      namespace,
+      moduleName,
+      salesTransactions,
+      providerName,
+      client,
+      session
+    );
+
+    const processedTransactions = [...treasuryResults, ...salesResults];
 
     console.log('=== Deployment transactions completed ===');
     console.log('Processed transactions:', processedTransactions.length);
