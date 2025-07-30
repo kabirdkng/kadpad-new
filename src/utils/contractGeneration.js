@@ -21,7 +21,7 @@ export const generateCompleteContracts = (tokenDetails, salesDetails) => {
   const [namespace, moduleName] = contractAddress.split('.');
   
   const salesContract = generateSalesContract(moduleName, namespace, salesDetails);
-  const treasuryContract = generateTreasuryContract(moduleName, namespace);
+  const treasuryContract = generateTreasuryContract(moduleName, namespace, salesDetails);
   
   return {
     salesContract,

@@ -377,9 +377,12 @@ ${keys}
 
   (defun init:string (p0:decimal p1:decimal)
     (with-capability (GOVERNANCE)
-      (insert global-counters "" {'sold:0, 'reserved:0})
-      (insert fees "phase-0" {'price:p0, 'count:0})
-      (insert fees "phase-1" {'price:p1, 'count:0})
+      (try (insert global-counters "" {'sold:0, 'reserved:0}) 
+           (update global-counters "" {'sold:0, 'reserved:0}))
+      (try (insert fees "phase-0" {'price:p0, 'count:0})
+           (update fees "phase-0" {'price:p0, 'count:0}))
+      (try (insert fees "phase-1" {'price:p1, 'count:0})
+           (update fees "phase-1" {'price:p1, 'count:0}))
       )
     "Sales counters initialized"
   )
@@ -433,9 +436,11 @@ ${keys}
 
 )
 
-(create-table global-counters)
-(create-table accounts-table)
-(create-table fees)
-(create-table tail-table)
+; Create tables with error handling
+(try (create-table global-counters) "global-counters table already exists")
+(try (create-table accounts-table) "accounts-table already exists")
+(try (create-table fees) "fees table already exists")
+(try (create-table tail-table) "tail-table already exists")
+
 (init ${formattedPhase0Price} ${formattedPhase1Price})`;
 };
