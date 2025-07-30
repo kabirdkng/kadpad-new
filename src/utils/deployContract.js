@@ -1,6 +1,7 @@
 import { Pact, createClient } from "@kadena/client";
 import providers from "../wallet/providers/providers";
 import config from "../wallet/config";
+import { pollForTransactionResult } from "../pactcalls/kadena";
 
 const createTx = async (code, chain, account, pubKey, providerName, networkApi, network, capabilities = []) => {
   let provider = providers[providerName];
@@ -152,11 +153,23 @@ export const signAndProcessDeployTransactions = async (
       const transactionDescriptor = await tx.pactClient.submit(bodyPayload);
       console.log(`Contract deployment TX Key for chain ${tx.chain}:`, transactionDescriptor.requestKey);
 
+      // Wait for transaction to be mined using existing polling function
+      console.log(`Waiting for transaction to be mined on chain ${tx.chain}...`);
+      const result = await pollForTransactionResult(tx.pactClient, transactionDescriptor);
+      
+      if (result.result.status === 'success') {
+        console.log(`✅ Transaction successfully mined on chain ${tx.chain}`);
+      } else {
+        console.error(`❌ Transaction failed on chain ${tx.chain}:`, result.result.error);
+        throw new Error(`Transaction failed: ${result.result.error.message}`);
+      }
+
       signedTransactions.push({
         ...tx,
         requestKey: transactionDescriptor.requestKey,
         pactClient: tx.pactClient,
-        transactionDescriptor
+        transactionDescriptor,
+        result
       });
 
     } catch (error) {
@@ -166,6 +179,50 @@ export const signAndProcessDeployTransactions = async (
   }
 
   return signedTransactions;
+};
+
+// Helper function to wait for contract to be available on blockchain
+const waitForContractToBeAvailable = async (networkApi, network, chain, namespace, moduleName, contractType, maxRetries = 30, delayMs = 5000) => {
+  const pactClient = createClient(`${networkApi}/chainweb/0.0/${network}/chain/${chain}/pact`);
+  const contractName = `${namespace}.${moduleName}-${contractType}`;
+  
+  console.log(`Polling for contract availability: ${contractName}`);
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`Attempt ${attempt}/${maxRetries}: Checking if ${contractName} exists...`);
+      
+      // Try to describe the module to see if it exists
+      const checkCommand = Pact.builder
+        .execution(`(describe-module "${contractName}")`)
+        .setMeta({
+          chainId: String(chain),
+          gasLimit: 1000,
+          gasPrice: 0.00000001,
+          sender: "",
+          ttl: 600,
+        })
+        .setNetworkId(network)
+        .createTransaction();
+
+      const result = await pactClient.dirtyRead(checkCommand);
+      
+      if (result.result.status === 'success') {
+        console.log(`✅ Contract ${contractName} is available on blockchain`);
+        return true;
+      } else {
+        console.log(`❌ Contract ${contractName} not yet available, waiting...`);
+      }
+    } catch (error) {
+      console.log(`⏳ Contract ${contractName} not available yet (attempt ${attempt}), waiting ${delayMs}ms...`);
+    }
+    
+    if (attempt < maxRetries) {
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  
+  throw new Error(`Contract ${contractName} did not become available after ${maxRetries} attempts`);
 };
 
 // Function to deploy sales and treasury contracts following tokengen's pattern
@@ -233,7 +290,13 @@ export const deploySalesAndTreasuryContracts = async (
       session
     );
 
-    console.log('Treasury deployment completed, now processing sales...');
+    console.log('Treasury deployment completed, waiting for contract availability...');
+    
+    // Wait for treasury contract to be available on blockchain before deploying sales
+    console.log('Step 1.5: Waiting for treasury contract to be available on blockchain...');
+    await waitForContractToBeAvailable(networkApi, network, chain, namespace, moduleName, 'treasury');
+    
+    console.log('Treasury contract confirmed available, now processing sales...');
     
     // Process sales second (after treasury is deployed)
     console.log('Step 2: Processing sales deployment...');
