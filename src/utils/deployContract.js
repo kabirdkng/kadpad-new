@@ -247,18 +247,57 @@ export const deploySalesAndTreasuryContracts = async (
     const networkApi = config.apiUrl;
     const network = config.networkId;
 
-    // Create treasury deployment transaction
-    console.log('Creating treasury deployment transaction...');
-    const treasuryTransactions = await initiateDeployContract(
-      networkApi,
-      network,
-      account,
-      pubKey,
-      providerName,
-      treasuryContract,
-      [chain],
-      'treasury'
-    );
+    // Check if treasury contract is already available
+    console.log('Checking if treasury contract already exists...');
+    let treasuryExists = false;
+    try {
+      await waitForContractToBeAvailable(networkApi, network, chain, namespace, moduleName, 'treasury', 1, 0);
+      treasuryExists = true;
+      console.log('✅ Treasury contract already exists, skipping treasury deployment');
+    } catch (error) {
+      console.log('ℹ️ Treasury contract does not exist, will deploy it first');
+    }
+
+    let treasuryResults = [];
+    
+    if (!treasuryExists) {
+      // Create treasury deployment transaction
+      console.log('Creating treasury deployment transaction...');
+      const treasuryTransactions = await initiateDeployContract(
+        networkApi,
+        network,
+        account,
+        pubKey,
+        providerName,
+        treasuryContract,
+        [chain],
+        'treasury'
+      );
+
+      // Process treasury first
+      console.log('Step 1: Processing treasury deployment...');
+      treasuryResults = await signAndProcessDeployTransactions(
+        networkApi,
+        network,
+        null, // not used in this context
+        namespace,
+        moduleName,
+        treasuryTransactions,
+        providerName,
+        client,
+        session
+      );
+
+      console.log('Treasury deployment completed, waiting for contract availability...');
+      
+      // Wait for treasury contract to be available on blockchain before deploying sales
+      console.log('Step 1.5: Waiting for treasury contract to be available on blockchain...');
+      await waitForContractToBeAvailable(networkApi, network, chain, namespace, moduleName, 'treasury');
+      
+      console.log('Treasury contract confirmed available, now processing sales...');
+    } else {
+      console.log('Treasury contract already available, proceeding directly to sales deployment...');
+    }
 
     // Create sales deployment transaction
     console.log('Creating sales deployment transaction...');
@@ -272,33 +311,8 @@ export const deploySalesAndTreasuryContracts = async (
       [chain],
       'sales'
     );
-
-    // Sign and process transactions SEQUENTIALLY: treasury first, then sales
-    console.log('Signing and processing transactions sequentially (treasury first)...');
     
-    // Process treasury first
-    console.log('Step 1: Processing treasury deployment...');
-    const treasuryResults = await signAndProcessDeployTransactions(
-      networkApi,
-      network,
-      null, // not used in this context
-      namespace,
-      moduleName,
-      treasuryTransactions,
-      providerName,
-      client,
-      session
-    );
-
-    console.log('Treasury deployment completed, waiting for contract availability...');
-    
-    // Wait for treasury contract to be available on blockchain before deploying sales
-    console.log('Step 1.5: Waiting for treasury contract to be available on blockchain...');
-    await waitForContractToBeAvailable(networkApi, network, chain, namespace, moduleName, 'treasury');
-    
-    console.log('Treasury contract confirmed available, now processing sales...');
-    
-    // Process sales second (after treasury is deployed)
+    // Process sales deployment
     console.log('Step 2: Processing sales deployment...');
     const salesResults = await signAndProcessDeployTransactions(
       networkApi,
