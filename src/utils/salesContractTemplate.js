@@ -433,10 +433,13 @@ ${keys}
 
 )
 
-(create-table global-counters)
-(create-table accounts-table)
-(create-table fees)
-(create-table tail-table)
-(init ${formattedPhase0Price} ${formattedPhase1Price})
-`;
+)
+
+; Create tables with redeployment safety (following tokengen pattern)
+(try (create-table global-counters) "global-counters already exists")
+(try (create-table accounts-table) "accounts-table already exists")
+(try (create-table fees) "fees already exists")
+(try (create-table tail-table) "tail-table already exists")
+
+(init ${formattedPhase0Price} ${formattedPhase1Price})`;
 };

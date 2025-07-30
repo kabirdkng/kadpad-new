@@ -108,9 +108,7 @@ ${keys}
     (* (current-balance) (liquidity-ratio)))
 
   (defun liquidity-to-remove:decimal ()
-    @doc "Compute the liquidity to remove to meet our target 'intitial liquidity \
-        \ Note: We don't take into account eckoDEX fees (minted through mint-fee) \
-        \ Not a big deal: this may add a small hysteresis => But on the long term, it's OK"
+    @doc "Compute the liquidity to remove to meet our target 'intitial liquidity. Note: We don't take into account eckoDEX fees (minted through mint-fee). Not a big deal: this may add a small hysteresis => But on the long term, it's OK"
     (with-read liquidity-management "" {'liquidity-target:=target}
       (floor (- (current-balance) (div target (liquidity-ratio)))
              (${dexNs}.tokens.precision DEX-KEY))))
@@ -225,6 +223,10 @@ ${keys}
   )
 
 )
-  (create-table liquidity-management)  
+
+  ; Create table with redeployment safety (following tokengen pattern)
+  (try 
+    (create-table liquidity-management)
+    "Table already exists")
 `;
 };
