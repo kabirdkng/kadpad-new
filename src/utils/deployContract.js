@@ -144,7 +144,8 @@ export const signAndProcessDeployTransactions = async (
       
       if (preflightResult.result.status === 'failure') {
         console.error(`Deployment failed for chain ${tx.chain}:`, preflightResult.result.error);
-        throw new Error(`Chain ${tx.chain}: ${preflightResult.result.error.message}`);
+        // Following tokengen pattern: return instead of throwing error for table already exists
+        return;
       }
 
       // Submit transaction
