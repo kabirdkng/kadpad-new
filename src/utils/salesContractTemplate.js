@@ -31,7 +31,7 @@ export const generateSalesContract = (moduleName, namespace, salesDetails) => {
   return `(namespace '${namespace})
 ${keys}
 
-(module ${moduleName}-sales GOVERNANCE
+(module ${moduleName}-sales GOVERNANCE ;; Variable
   (use free.util-time)
   (use free.util-math)
 
@@ -39,34 +39,34 @@ ${keys}
   ; Administrative and ops capabilities
   ;-----------------------------------------------------------------------------
   (defcap GOVERNANCE ()
-    (enforce-keyset "${namespace}.gov"))
+    (enforce-keyset "${namespace}.gov")) ;; Variable
 
   (defcap SALES-OPERATOR ()
-    (enforce-keyset "${namespace}.sales-operator")
+    (enforce-keyset "${namespace}.sales-operator") ;; Variable
     (compose-capability (RESERVE))
     )
 
   ;-----------------------------------------------------------------------------
   ; Constants
   ;-----------------------------------------------------------------------------
-  (defconst TOTAL-BATCHES:integer ${batches} @doc "Number of Batches to sell")
+  (defconst TOTAL-BATCHES:integer ${batches} @doc "Number of Batches to sell") ;; Variable
 
-  (defconst P0-RESERVED:integer ${formattedWhitelistLimit} @doc "Number of tokens that Whitelist can purchase")
+  (defconst P0-RESERVED:integer ${formattedWhitelistLimit} @doc "Number of tokens that Whitelist can purchase") ;; Variable
 
   (defconst AMOUNT-PER-BATCH:decimal ${formattedAmountPerBatch} 
-    @doc "Number of tokens per batch Total Batches * Amount-Per-Batch = total sale")
+    @doc "Number of tokens per batch Total Batches * Amount-Per-Batch = total sale") ;; Variable
 
   (defconst PHASE0:string "phase-0" @doc "Whitelist Phase")
 
   (defconst PHASE1:string "phase-1" @doc "Public Sales Phase")
 
   ; Dates must be adjusted before launch
-  (defconst PHASE-0-START (time "${formattedPhase0Start}"))
+  (defconst PHASE-0-START (time "${formattedPhase0Start}")) ;; Variable
   
-  (defconst PHASE-1-START (time "${formattedPhase1Start}"))
+  (defconst PHASE-1-START (time "${formattedPhase1Start}")) ;; Variable
   
   ;; No sales can occur after End-of-Presales
-  (defconst END-OF-PRESALES (time "${formattedEndSales}"))
+  (defconst END-OF-PRESALES (time "${formattedEndSales}")) ;; Variable
 
   (defconst HEAD "HEAD")
 
@@ -219,7 +219,7 @@ ${keys}
     @doc "Verify that the account has reserved a batch"
     (enforce (in-phase-0) "No Reservation found")
           (with-default-read accounts-table account {'reserved:0, 'bought:0} {'reserved:=reserved, 'bought:=bought}
-            (and (< bought reserved) (> reserved 0)))
+            (and (< bought reserved) (> reserved 0))) ;; Needed for update
   )
 
   (defun enforce-has-reservation:bool (account:string)
@@ -273,7 +273,7 @@ ${keys}
         (update global-counters "" {'reserved: (+ x P0-RESERVED)}))
       ; And update the account
       (write accounts-table account {'account:account,
-                                     'reserved:P0-RESERVED,
+                                     'reserved:P0-RESERVED, ;; Needed for update
                                      'bought:0,
                                      'prev-account: ""}
                                      ))
@@ -364,25 +364,22 @@ ${keys}
         ; Transfer remaining to treasury (if not all sold)
         (if (< sold TOTAL-BATCHES)
             (with-capability (RESERVE)
-              (install-capability (${moduleName}.TRANSFER RESERVE-ACCOUNT (${moduleName}-treasury.get-treasury-account) (to-token-amount (- TOTAL-BATCHES sold))))
-              (${moduleName}.transfer-create RESERVE-ACCOUNT (${moduleName}-treasury.get-treasury-account) (${moduleName}-treasury.get-treasury-guard) (to-token-amount (- TOTAL-BATCHES sold))))
+              (install-capability (${moduleName}.TRANSFER RESERVE-ACCOUNT ${moduleName}-treasury.TREASURY-ACCOUNT (to-token-amount (- TOTAL-BATCHES sold))))
+              (${moduleName}.transfer-create RESERVE-ACCOUNT ${moduleName}-treasury.TREASURY-ACCOUNT ${moduleName}-treasury.TREASURY-GUARD (to-token-amount (- TOTAL-BATCHES sold))))
             "")
 
       ; Transfer the income (in KDA) to treasury (for DEX liquidity)
       (with-capability (SALES-INCOME)
-        (install-capability (coin.TRANSFER SALES-ACCOUNT (${moduleName}-treasury.get-liquidity-account) (transfer-amount)))
-        (coin.transfer-create SALES-ACCOUNT (${moduleName}-treasury.get-liquidity-account) (${moduleName}-treasury.get-liquidity-guard) (transfer-amount))))
+        (install-capability (coin.TRANSFER SALES-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT (transfer-amount)))
+        (coin.transfer-create SALES-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT ${moduleName}-treasury.LIQUIDITY-GUARD (transfer-amount))))
       "Pre-sales ended")
   )
 
   (defun init:string (p0:decimal p1:decimal)
     (with-capability (GOVERNANCE)
-      (try (insert global-counters "" {'sold:0, 'reserved:0}) 
-           (update global-counters "" {'sold:0, 'reserved:0}))
-      (try (insert fees "phase-0" {'price:p0, 'count:0})
-           (update fees "phase-0" {'price:p0, 'count:0}))
-      (try (insert fees "phase-1" {'price:p1, 'count:0})
-           (update fees "phase-1" {'price:p1, 'count:0}))
+      (insert global-counters "" {'sold:0, 'reserved:0})
+      (insert fees "phase-0" {'price:p0, 'count:0})
+      (insert fees "phase-1" {'price:p1, 'count:0})
       )
     "Sales counters initialized"
   )
@@ -436,11 +433,10 @@ ${keys}
 
 )
 
-; Create tables with error handling
-(try (create-table global-counters) "global-counters table already exists")
-(try (create-table accounts-table) "accounts-table already exists")
-(try (create-table fees) "fees table already exists")
-(try (create-table tail-table) "tail-table already exists")
-
-(init ${formattedPhase0Price} ${formattedPhase1Price})`;
+(create-table global-counters)
+(create-table accounts-table)
+(create-table fees)
+(create-table tail-table)
+(init ${formattedPhase0Price} ${formattedPhase1Price})
+`;
 };

@@ -1,23 +1,22 @@
 /**
- * Treasury Contract Template
+ * Treasury Contract Template - Exact implementation from TreasuryBlock.jsx
  * Generates complete Pact smart contract for DEX liquidity management and treasury operations
  */
 
-import { getDexConfiguration } from './dexUtils.js';
-import { getNetworkConfig } from './networkUtils.js';
+import { getNetworkDexConfig, getNetworkConfig } from './networkUtils.js';
 
 export const generateTreasuryContract = (moduleName, namespace, options = {}) => {
-  // Follow exact pattern from TreasuryBlock.jsx
-  const networkConfig = getNetworkConfig();
-  const network = networkConfig.networkId; // Use dynamic network instead of hardcoded "testnet04"
   const keys = `(define-keyset "${namespace}.operator" (read-keyset "ks"))`;
+  
+  // Network and chain configuration from config
+  const networkConfig = getNetworkConfig();
+  const supply = networkConfig.supplyChain || options.supplyChain || "1";
+  const { dexNs } = getNetworkDexConfig(supply);
+  
 
-  const supply = options.supplyChain || networkConfig.chainId || "1";
-  const { dexNs } = getDexConfiguration(supply, network);
-
-  return `(namespace '${namespace})
+  return `
+(namespace '${namespace})
 ${keys}
-
 (module ${moduleName}-treasury GOVERNANCE
   (implements ${dexNs}.swap-callable-v1)
   (use ${dexNs}.exchange [get-pair-key get-pair-by-key reserve-for add-liquidity swap remove-liquidity FEE])
@@ -109,9 +108,9 @@ ${keys}
     (* (current-balance) (liquidity-ratio)))
 
   (defun liquidity-to-remove:decimal ()
-    @doc "Compute the liquidity to remove to meet our target 'intitial liquidity \\
-        \\ Note: We don't take into account eckoDEX fees (minted through mint-fee) \\
-        \\ Not a big deal: this may add a small hysteresis => But on the long term, it's OK"
+    @doc "Compute the liquidity to remove to meet our target 'intitial liquidity \
+        \ Note: We don't take into account eckoDEX fees (minted through mint-fee) \
+        \ Not a big deal: this may add a small hysteresis => But on the long term, it's OK"
     (with-read liquidity-management "" {'liquidity-target:=target}
       (floor (- (current-balance) (div target (liquidity-ratio)))
              (${dexNs}.tokens.precision DEX-KEY))))
@@ -133,11 +132,11 @@ ${keys}
     (${moduleName}.get-balance LIQUIDITY-ACCOUNT))
 
   (defun ${moduleName}-t-balance:decimal ()
-    @doc "Token balance of the treasury account"
+    @doc "Token balance of the liquidity account"
     (${moduleName}.get-balance TREASURY-ACCOUNT))
 
   (defun coin-t-balance:decimal ()
-    @doc "Coin balance of the treasury account"
+    @doc "Coin balance of the liquidity account"
     (coin.get-balance TREASURY-ACCOUNT))
 
   ;-----------------------------------------------------------------------------
@@ -225,25 +224,7 @@ ${keys}
                                       'init:true}))
   )
 
-  ;-----------------------------------------------------------------------------
-  ; Public getters for external module access
-  ;-----------------------------------------------------------------------------
-  (defun get-treasury-account:string ()
-    @doc "Get treasury account address"
-    TREASURY-ACCOUNT)
-
-  (defun get-treasury-guard:guard ()
-    @doc "Get treasury guard"
-    TREASURY-GUARD)
-
-  (defun get-liquidity-account:string ()
-    @doc "Get liquidity account address"
-    LIQUIDITY-ACCOUNT)
-
-  (defun get-liquidity-guard:guard ()
-    @doc "Get liquidity guard"
-    LIQUIDITY-GUARD)
-
 )
-  (create-table liquidity-management)`;
+  (create-table liquidity-management)  
+`;
 };
