@@ -1,16 +1,21 @@
 /**
- * Treasury Contract Template
+ * Treasury Contract Template - Exact implementation from TreasuryBlock.jsx
  * Generates complete Pact smart contract for DEX liquidity management and treasury operations
  */
 
-export const generateTreasuryContract = (moduleName, namespace) => {
+import { getNetworkDexConfig, getNetworkConfig } from './networkUtils.js';
+
+export const generateTreasuryContract = (moduleName, namespace, options = {}) => {
   const keys = `(define-keyset "${namespace}.operator" (read-keyset "ks"))`;
   
-  // DEX configuration for KaddEx
-  const dexNs = "kaddex";
+  // Network and chain configuration from config
+  const networkConfig = getNetworkConfig();
+  const supply = networkConfig.chainId || "1";
+  const { dexNs } = getNetworkDexConfig(supply);
 
   return `(namespace '${namespace})
 ${keys}
+
 (module ${moduleName}-treasury GOVERNANCE
   (implements ${dexNs}.swap-callable-v1)
   (use ${dexNs}.exchange [get-pair-key get-pair-by-key reserve-for add-liquidity swap remove-liquidity FEE])

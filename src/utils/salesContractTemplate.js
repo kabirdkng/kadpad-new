@@ -2,9 +2,9 @@
  * Sales Contract Template
  * Generates complete Pact smart contract for token sales with phases, reservations, and distribution
  */
-
 export const generateSalesContract = (moduleName, namespace, salesDetails) => {
   const keys = `(define-keyset "${namespace}.sales-operator" (read-keyset "ks"))`;
+  
   
   const formatDecimal = (value) => `${parseFloat(value || 0).toFixed(1)}`;
   const formatDateTime = (dateTime) => {
