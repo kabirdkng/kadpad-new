@@ -206,6 +206,9 @@ ${keys}
   (defun init-liquidity:string ()
     @doc "To be called only once.. It creates the intial liquidity reserve"
     (with-capability (INIT)
+      ; Create table with redeployment safety
+      (try (create-table liquidity-management) "Table already exists")
+      
       (with-default-read liquidity-management "" {'init:false} {'init:=init}
         (enforce (not init) "Liquidity already init"))
 
@@ -222,9 +225,6 @@ ${keys}
                                       'init:true}))
   )
 
-  ; Create table with redeployment safety (following tokengen pattern)
-  (try 
-    (create-table liquidity-management)
-    "Table already exists")
+)
 `;
 };
