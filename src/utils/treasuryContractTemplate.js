@@ -5,7 +5,7 @@
 
 import { getNetworkDexConfig, getNetworkConfig } from './networkUtils.js';
 
-export const generateTreasuryContract = (moduleName, namespace, options = {}) => {
+export const generateTreasuryContract = (moduleName, namespace) => {
   const keys = `(define-keyset "${namespace}.operator" (read-keyset "ks"))`;
   
   // Network and chain configuration from config
@@ -222,6 +222,25 @@ ${keys}
       (write liquidity-management "" {'liquidity-target:(current-liquidity),
                                       'init:true}))
   )
+
+  ;-----------------------------------------------------------------------------
+  ; Public getters for external module access
+  ;-----------------------------------------------------------------------------
+  (defun get-treasury-account:string ()
+    @doc "Get treasury account address"
+    TREASURY-ACCOUNT)
+
+  (defun get-treasury-guard:guard ()
+    @doc "Get treasury guard"
+    TREASURY-GUARD)
+
+  (defun get-liquidity-account:string ()
+    @doc "Get liquidity account address"
+    LIQUIDITY-ACCOUNT)
+
+  (defun get-liquidity-guard:guard ()
+    @doc "Get liquidity guard"
+    LIQUIDITY-GUARD)
 
 )
   (create-table liquidity-management)`;

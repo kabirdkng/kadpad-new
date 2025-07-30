@@ -364,14 +364,14 @@ ${keys}
         ; Transfer remaining to treasury (if not all sold)
         (if (< sold TOTAL-BATCHES)
             (with-capability (RESERVE)
-              (install-capability (${moduleName}.TRANSFER RESERVE-ACCOUNT ${moduleName}-treasury.TREASURY-ACCOUNT (to-token-amount (- TOTAL-BATCHES sold))))
-              (${moduleName}.transfer-create RESERVE-ACCOUNT ${moduleName}-treasury.TREASURY-ACCOUNT ${moduleName}-treasury.TREASURY-GUARD (to-token-amount (- TOTAL-BATCHES sold))))
+              (install-capability (${moduleName}.TRANSFER RESERVE-ACCOUNT (${moduleName}-treasury.get-treasury-account) (to-token-amount (- TOTAL-BATCHES sold))))
+              (${moduleName}.transfer-create RESERVE-ACCOUNT (${moduleName}-treasury.get-treasury-account) (${moduleName}-treasury.get-treasury-guard) (to-token-amount (- TOTAL-BATCHES sold))))
             "")
 
       ; Transfer the income (in KDA) to treasury (for DEX liquidity)
       (with-capability (SALES-INCOME)
-        (install-capability (coin.TRANSFER SALES-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT (transfer-amount)))
-        (coin.transfer-create SALES-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT ${moduleName}-treasury.LIQUIDITY-GUARD (transfer-amount))))
+        (install-capability (coin.TRANSFER SALES-ACCOUNT (${moduleName}-treasury.get-liquidity-account) (transfer-amount)))
+        (coin.transfer-create SALES-ACCOUNT (${moduleName}-treasury.get-liquidity-account) (${moduleName}-treasury.get-liquidity-guard) (transfer-amount))))
       "Pre-sales ended")
   )
 
