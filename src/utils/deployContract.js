@@ -10,14 +10,6 @@ const createTx = async (code, chain, account, pubKey, providerName, networkApi, 
     throw new Error(`Provider not found: ${providerName}. Available providers: ${Object.keys(providers).join(', ')}`);
   }
 
-  console.log('Creating transaction with:');
-  console.log('- Chain:', chain);
-  console.log('- Account:', account);
-  console.log('- PubKey:', pubKey);
-  console.log('- Provider:', providerName);
-  console.log('- PubKey type:', typeof pubKey);
-  console.log('- PubKey length:', pubKey?.length);
-
   let builder = Pact.builder
     .execution(code)
     .setMeta({
@@ -67,6 +59,66 @@ export const initiateDeployContract = async (networkApi, network, account, pubKe
   return transactions;
 };
 
+// Helper function to check if error is a wallet rejection
+const isWalletRejectionError = (error) => {
+  return error.message && (
+    error.message.includes('rejected') || 
+    error.message.includes('cancelled') || 
+    error.message.includes('denied') ||
+    error.message.includes('User rejected') ||
+    error.message.includes('User canceled')
+  );
+};
+
+// Helper function to process signed transaction response
+const extractSignedTransactionData = (signedTx, provider) => {
+  if (provider.name === "wc" || provider.name === "WC") {
+    return {
+      cmd: signedTx.cmd,
+      sigs: signedTx.sigs,
+      outcomeHash: signedTx.hash
+    };
+  } else {
+    const commandSigData = signedTx.commandSigData;
+    return {
+      cmd: commandSigData.cmd,
+      sigs: commandSigData.sigs,
+      outcomeHash: signedTx.outcome.hash
+    };
+  }
+};
+
+// Helper function to submit and wait for transaction
+const submitAndWaitForTransaction = async (tx, cmd, sigs, outcomeHash) => {
+  const bodyPayload = { cmd, sigs, hash: outcomeHash };
+
+  // Preflight check
+  const preflightResult = await tx.pactClient.dirtyRead(bodyPayload);
+  
+  if (preflightResult.result.status === 'failure') {
+    console.error(`Deployment failed for chain ${tx.chain}:`, preflightResult.result.error);
+    return null;
+  }
+
+  // Submit transaction
+  const transactionDescriptor = await tx.pactClient.submit(bodyPayload);
+
+  // Wait for transaction to be mined
+  const result = await pollForTransactionResult(tx.pactClient, transactionDescriptor);
+  
+  if (result.result.status === 'success') {
+    return {
+      ...tx,
+      requestKey: transactionDescriptor.requestKey,
+      pactClient: tx.pactClient,
+      transactionDescriptor,
+      result
+    };
+  } else {
+    throw new Error(`Transaction failed: ${result.result.error.message}`);
+  }
+};
+
 export const signAndProcessDeployTransactions = async (
   networkApi, 
   network, 
@@ -83,30 +135,31 @@ export const signAndProcessDeployTransactions = async (
     throw new Error(`Provider not found: ${providerName}. Available providers: ${Object.keys(providers).join(', ')}`);
   }
 
-  console.log('=== Starting batch signing process ===');
-  console.log('Provider:', providerName);
-  console.log('Provider object:', provider);
-  console.log('Provider name property:', provider.name);
-  console.log('Transactions to sign:', transactions.length);
-  console.log('Client available:', !!client);
-  console.log('Session available:', !!session);
-
-  // Sign all transactions at once using quickSignAll (like tokengen)
-  console.log('Signing all transactions in batch...');
+  // Sign all transactions at once
   const commands = transactions.map(tx => tx.command);
-  console.log('Commands to sign:', commands.length);
 
   let signedBatch;
-  
-  if (providerName === "WC") {
-    console.log('Using WalletConnect batch signing...');
-    signedBatch = await provider.quickSignAll(commands, client, session);
-  } else {
-    console.log('Using standard provider batch signing...');
-    signedBatch = await provider.quickSignAll(commands);
+  try {
+    if (providerName === "WC") {
+      signedBatch = await provider.quickSignAll(commands, client, session);
+    } else {
+      signedBatch = await provider.quickSignAll(commands);
+    }
+  } catch (error) {
+    if (isWalletRejectionError(error)) {
+      throw new Error('Transaction signing was rejected by user');
+    }
+    throw new Error(`Signing failed: ${error.message}`);
   }
 
-  console.log('Batch signing result:', signedBatch);
+  // Check if signing was successful
+  if (!signedBatch || !signedBatch.responses || signedBatch.responses.length === 0) {
+    throw new Error('Transaction signing was rejected or failed');
+  }
+
+  if (signedBatch.status === 'fail' || signedBatch.error) {
+    throw new Error(signedBatch.error || signedBatch.message || 'Transaction signing failed');
+  }
 
   let signedTransactions = [];
 
@@ -116,62 +169,14 @@ export const signAndProcessDeployTransactions = async (
     const signedTx = signedBatch.responses[i];
     
     try {
-      console.log(`Processing signed transaction for chain ${tx.chain}...`);
+      const { cmd, sigs, outcomeHash } = extractSignedTransactionData(signedTx, provider);
+      const processedTx = await submitAndWaitForTransaction(tx, cmd, sigs, outcomeHash);
       
-      let cmd, sigs, outcomeHash;
-
-      if (provider.name === "wc" || provider.name === "WC") {
-        cmd = signedTx.cmd;
-        sigs = signedTx.sigs;
-        outcomeHash = signedTx.hash;
+      if (processedTx) {
+        signedTransactions.push(processedTx);
       } else {
-        const commandSigData = signedTx.commandSigData;
-        cmd = commandSigData.cmd;
-        sigs = commandSigData.sigs;
-        outcomeHash = signedTx.outcome.hash;
+        return; // Following tokengen pattern: return for table already exists
       }
-
-      const bodyPayload = {
-        cmd,
-        sigs,
-        hash: outcomeHash,
-      };
-
-      console.log('Body payload for preflight:', bodyPayload);
-
-      // Preflight check
-      const preflightResult = await tx.pactClient.dirtyRead(bodyPayload);
-      console.log(`Preflight result for chain ${tx.chain}:`, preflightResult);
-      
-      if (preflightResult.result.status === 'failure') {
-        console.error(`Deployment failed for chain ${tx.chain}:`, preflightResult.result.error);
-        // Following tokengen pattern: return instead of throwing error for table already exists
-        return;
-      }
-
-      // Submit transaction
-      const transactionDescriptor = await tx.pactClient.submit(bodyPayload);
-      console.log(`Contract deployment TX Key for chain ${tx.chain}:`, transactionDescriptor.requestKey);
-
-      // Wait for transaction to be mined using existing polling function
-      console.log(`Waiting for transaction to be mined on chain ${tx.chain}...`);
-      const result = await pollForTransactionResult(tx.pactClient, transactionDescriptor);
-      
-      if (result.result.status === 'success') {
-        console.log(`✅ Transaction successfully mined on chain ${tx.chain}`);
-      } else {
-        console.error(`❌ Transaction failed on chain ${tx.chain}:`, result.result.error);
-        throw new Error(`Transaction failed: ${result.result.error.message}`);
-      }
-
-      signedTransactions.push({
-        ...tx,
-        requestKey: transactionDescriptor.requestKey,
-        pactClient: tx.pactClient,
-        transactionDescriptor,
-        result
-      });
-
     } catch (error) {
       console.error(`Error processing transaction for chain ${tx.chain}:`, error);
       throw error;
@@ -186,13 +191,8 @@ const waitForContractToBeAvailable = async (networkApi, network, chain, namespac
   const pactClient = createClient(`${networkApi}/chainweb/0.0/${network}/chain/${chain}/pact`);
   const contractName = `${namespace}.${moduleName}-${contractType}`;
   
-  console.log(`Polling for contract availability: ${contractName}`);
-  
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Attempt ${attempt}/${maxRetries}: Checking if ${contractName} exists...`);
-      
-      // Try to describe the module to see if it exists
       const checkCommand = Pact.builder
         .execution(`(describe-module "${contractName}")`)
         .setMeta({
@@ -208,13 +208,10 @@ const waitForContractToBeAvailable = async (networkApi, network, chain, namespac
       const result = await pactClient.dirtyRead(checkCommand);
       
       if (result.result.status === 'success') {
-        console.log(`✅ Contract ${contractName} is available on blockchain`);
         return true;
-      } else {
-        console.log(`❌ Contract ${contractName} not yet available, waiting...`);
       }
     } catch (error) {
-      console.log(`⏳ Contract ${contractName} not available yet (attempt ${attempt}), waiting ${delayMs}ms...`);
+      // Contract not available yet, continue waiting
     }
     
     if (attempt < maxRetries) {
@@ -234,62 +231,14 @@ const processPreSignedTransactions = async (transactions, signedResponses, provi
     const signedTx = signedResponses[i];
     
     try {
-      console.log(`Processing pre-signed transaction for chain ${tx.chain}...`);
+      const { cmd, sigs, outcomeHash } = extractSignedTransactionData(signedTx, provider);
+      const processedTx = await submitAndWaitForTransaction(tx, cmd, sigs, outcomeHash);
       
-      let cmd, sigs, outcomeHash;
-
-      if (provider.name === "wc" || provider.name === "WC") {
-        cmd = signedTx.cmd;
-        sigs = signedTx.sigs;
-        outcomeHash = signedTx.hash;
+      if (processedTx) {
+        signedTransactions.push(processedTx);
       } else {
-        const commandSigData = signedTx.commandSigData;
-        cmd = commandSigData.cmd;
-        sigs = commandSigData.sigs;
-        outcomeHash = signedTx.outcome.hash;
+        return []; // Return empty array to indicate failure
       }
-
-      const bodyPayload = {
-        cmd,
-        sigs,
-        hash: outcomeHash,
-      };
-
-      console.log('Body payload for preflight:', bodyPayload);
-
-      // Preflight check
-      const preflightResult = await tx.pactClient.dirtyRead(bodyPayload);
-      console.log(`Preflight result for chain ${tx.chain}:`, preflightResult);
-      
-      if (preflightResult.result.status === 'failure') {
-        console.error(`Deployment failed for chain ${tx.chain}:`, preflightResult.result.error);
-        // Following tokengen pattern: return instead of throwing error for table already exists
-        return signedTransactions;
-      }
-
-      // Submit transaction
-      const transactionDescriptor = await tx.pactClient.submit(bodyPayload);
-      console.log(`Contract deployment TX Key for chain ${tx.chain}:`, transactionDescriptor.requestKey);
-
-      // Wait for transaction to be mined using existing polling function
-      console.log(`Waiting for transaction to be mined on chain ${tx.chain}...`);
-      const result = await pollForTransactionResult(tx.pactClient, transactionDescriptor);
-      
-      if (result.result.status === 'success') {
-        console.log(`✅ Transaction successfully mined on chain ${tx.chain}`);
-      } else {
-        console.error(`❌ Transaction failed on chain ${tx.chain}:`, result.result.error);
-        throw new Error(`Transaction failed: ${result.result.error.message}`);
-      }
-
-      signedTransactions.push({
-        ...tx,
-        requestKey: transactionDescriptor.requestKey,
-        pactClient: tx.pactClient,
-        transactionDescriptor,
-        result
-      });
-
     } catch (error) {
       console.error(`Error processing pre-signed transaction for chain ${tx.chain}:`, error);
       throw error;
@@ -310,14 +259,10 @@ export const deploySalesAndTreasuryContracts = async (
   providerName,
   client,
   session,
-  chain = config.chainId
+  chain = config.chainId,
+  progressCallback = null
 ) => {
   try {
-    console.log('=== Starting optimized batch deployment ===');
-    console.log('Chain:', chain);
-    console.log('Namespace:', namespace);
-    console.log('Module:', moduleName);
-
     const networkApi = config.apiUrl;
     const network = config.networkId;
     const provider = providers[providerName];
@@ -327,66 +272,60 @@ export const deploySalesAndTreasuryContracts = async (
     }
 
     // Check if treasury contract is already available
-    console.log('Checking if treasury contract already exists...');
+    if (progressCallback) progressCallback('Checking existing contracts...');
+    
     let treasuryExists = false;
     try {
       await waitForContractToBeAvailable(networkApi, network, chain, namespace, moduleName, 'treasury', 1, 0);
       treasuryExists = true;
-      console.log('✅ Treasury contract already exists, skipping treasury deployment');
+      if (progressCallback) progressCallback('Treasury exists, deploying sales...');
     } catch (error) {
-      console.log('ℹ️ Treasury contract does not exist, will deploy it first');
+      if (progressCallback) progressCallback('Treasury needed, preparing batch deployment...');
     }
 
     let treasuryResults = [];
     let salesResults = [];
+    let allTransactionKeys = [];
     
     if (!treasuryExists) {
-      // Create both treasury and sales deployment transactions
-      console.log('Creating treasury and sales deployment transactions...');
+      // Deploy both treasury and sales contracts
+      if (progressCallback) progressCallback('Creating transaction batches...');
+      
       const treasuryTransactions = await initiateDeployContract(
-        networkApi,
-        network,
-        account,
-        pubKey,
-        providerName,
-        treasuryContract,
-        [chain],
-        'treasury'
+        networkApi, network, account, pubKey, providerName, treasuryContract, [chain], 'treasury'
       );
 
       const salesTransactions = await initiateDeployContract(
-        networkApi,
-        network,
-        account,
-        pubKey,
-        providerName,
-        salesContract,
-        [chain],
-        'sales'
+        networkApi, network, account, pubKey, providerName, salesContract, [chain], 'sales'
       );
 
       // Batch sign both transactions at once
-      console.log('=== Batch signing both treasury and sales transactions ===');
+      if (progressCallback) progressCallback('Signing transaction batch...');
+      
       const allCommands = [
         ...treasuryTransactions.map(tx => tx.command),
         ...salesTransactions.map(tx => tx.command)
       ];
-      
-      console.log('Signing all transactions in batch...', allCommands.length, 'transactions');
 
       let signedBatch;
       if (providerName === "WC") {
-        console.log('Using WalletConnect batch signing...');
         signedBatch = await provider.quickSignAll(allCommands, client, session);
       } else {
-        console.log('Using standard provider batch signing...');
         signedBatch = await provider.quickSignAll(allCommands);
       }
 
-      console.log('Batch signing completed successfully');
+      // Check if signing was successful
+      if (!signedBatch || !signedBatch.responses || signedBatch.responses.length === 0) {
+        throw new Error('Transaction signing was rejected by user');
+      }
 
-      // Process treasury deployment first with pre-signed transaction
-      console.log('Step 1: Processing treasury deployment with pre-signed transaction...');
+      if (signedBatch.status === 'fail' || signedBatch.error) {
+        throw new Error(signedBatch.error || signedBatch.message || 'Transaction signing was rejected by user');
+      }
+
+      if (progressCallback) progressCallback('Deploying treasury contract...');
+
+      // Process treasury deployment first
       treasuryResults = await processPreSignedTransactions(
         treasuryTransactions,
         signedBatch.responses.slice(0, treasuryTransactions.length),
@@ -395,16 +334,26 @@ export const deploySalesAndTreasuryContracts = async (
         moduleName
       );
 
-      console.log('Treasury deployment completed, waiting for contract availability...');
+      if (treasuryResults.length === 0) {
+        return {
+          success: false,
+          error: 'Treasury contract deployment failed',
+          transactions: [],
+          salesContractAddress: null,
+          treasuryContractAddress: null,
+          transactionKeys: []
+        };
+      }
+
+      allTransactionKeys.push(...treasuryResults.map(tx => tx.requestKey));
       
-      // Wait for treasury contract to be available on blockchain before deploying sales
-      console.log('Step 1.5: Waiting for treasury contract to be available on blockchain...');
+      // Wait for treasury contract to be available
+      if (progressCallback) progressCallback('Waiting for treasury confirmation...');
       await waitForContractToBeAvailable(networkApi, network, chain, namespace, moduleName, 'treasury');
       
-      console.log('Treasury contract confirmed available, now processing sales...');
+      if (progressCallback) progressCallback('Deploying sales contract...');
 
-      // Process sales deployment with pre-signed transaction
-      console.log('Step 2: Processing sales deployment with pre-signed transaction...');
+      // Process sales deployment
       salesResults = await processPreSignedTransactions(
         salesTransactions,
         signedBatch.responses.slice(treasuryTransactions.length),
@@ -413,49 +362,63 @@ export const deploySalesAndTreasuryContracts = async (
         moduleName
       );
 
+      if (salesResults.length > 0) {
+        allTransactionKeys.push(...salesResults.map(tx => tx.requestKey));
+      }
+
     } else {
-      console.log('Treasury contract already available, proceeding directly to sales deployment...');
+      // Only deploy sales contract
+      if (progressCallback) progressCallback('Signing sales transaction...');
       
-      // Only need to sign and deploy sales contract
       const salesTransactions = await initiateDeployContract(
-        networkApi,
-        network,
-        account,
-        pubKey,
-        providerName,
-        salesContract,
-        [chain],
-        'sales'
+        networkApi, network, account, pubKey, providerName, salesContract, [chain], 'sales'
       );
       
-      // Process sales deployment using the original method
-      salesResults = await signAndProcessDeployTransactions(
-        networkApi,
-        network,
-        null,
-        namespace,
-        moduleName,
-        salesTransactions,
-        providerName,
-        client,
-        session
-      );
+      if (progressCallback) progressCallback('Deploying sales contract...');
+      
+      try {
+        salesResults = await signAndProcessDeployTransactions(
+          networkApi, network, null, namespace, moduleName,
+          salesTransactions, providerName, client, session
+        );
+      } catch (error) {
+        if (isWalletRejectionError(error)) {
+          throw new Error('Transaction signing was rejected by user');
+        }
+        throw error;
+      }
+
+      if (salesResults.length > 0) {
+        allTransactionKeys.push(...salesResults.map(tx => tx.requestKey));
+      } else {
+        return {
+          success: false,
+          error: 'Sales contract deployment failed',
+          transactions: [],
+          salesContractAddress: null,
+          treasuryContractAddress: `${namespace}.${moduleName}-treasury`,
+          transactionKeys: []
+        };
+      }
     }
 
     const processedTransactions = [...treasuryResults, ...salesResults];
-
-    console.log('=== Deployment transactions completed ===');
-    console.log('Processed transactions:', processedTransactions.length);
 
     return {
       success: true,
       transactions: processedTransactions,
       salesContractAddress: `${namespace}.${moduleName}-sales`,
-      treasuryContractAddress: `${namespace}.${moduleName}-treasury`
+      treasuryContractAddress: `${namespace}.${moduleName}-treasury`,
+      transactionKeys: allTransactionKeys
     };
 
   } catch (error) {
-    console.error('=== Deployment failed ===', error);
+    console.error('Deployment failed:', error);
+    
+    if (isWalletRejectionError(error)) {
+      throw new Error('Transaction signing was rejected by user');
+    }
+    
     throw error;
   }
 };

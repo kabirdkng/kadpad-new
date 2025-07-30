@@ -55,30 +55,51 @@ export const useSalesContractDeployment = () => {
       updateState({ 
         isLoading: true, 
         error: null, 
-        currentStep: 'Preparing contract deployment...',
+        currentStep: 'Preparing deployment...',
         transactionKeys: []
       });
 
       const { namespace, moduleName } = tokenData;
       console.log('Contract info:', { namespace, moduleName });
 
-      updateState({ currentStep: 'Generating sales contract...' });
+      updateState({ currentStep: 'Generating contract code...' });
 
       // Generate contracts
       const salesContract = generateSalesContract(moduleName, namespace, salesConfig);
       console.log('Generated sales contract (first 500 chars):', salesContract.substring(0, 500));
       console.log('Sales contract starts with namespace?', salesContract.startsWith(`(namespace '${namespace})`));
 
-      updateState({ currentStep: 'Generating treasury contract...' });
+      updateState({ currentStep: 'Generating treasury contract code...' });
       
       const treasuryContract = generateTreasuryContract(moduleName, namespace, salesConfig);
       console.log('Generated treasury contract (first 500 chars):', treasuryContract.substring(0, 500));
       console.log('Treasury contract starts with namespace?', treasuryContract.startsWith(`(namespace '${namespace})`));
 
-      updateState({ currentStep: 'Deploying contracts to blockchain...' });
+      updateState({ currentStep: 'Signing transactions...' });
 
       // Deploy both sales and treasury contracts following tokengen pattern
       console.log('Calling deploySalesAndTreasuryContracts...');
+      updateState({ currentStep: 'Deploying contracts...' });
+      
+      // Create a progress callback to update state during deployment
+      const progressCallback = (step) => {
+        console.log('Progress callback:', step);
+        
+        // Update deployment flags based on progress steps
+        const updates = { currentStep: step };
+        
+        if (step.includes('Waiting for treasury confirmation') || step.includes('treasury deployed')) {
+          updates.treasuryContractDeployed = true;
+        }
+        
+        if (step.includes('Deploying sales contract') && step.includes('treasury')) {
+          // This means we've moved to sales deployment after treasury
+          updates.treasuryContractDeployed = true;
+        }
+        
+        updateState(updates);
+      };
+      
       const deploymentResult = await deploySalesAndTreasuryContracts(
         salesContract,
         treasuryContract,
@@ -88,17 +109,20 @@ export const useSalesContractDeployment = () => {
         pubKey,
         provider,
         client,
-        session
+        session,
+        undefined, // chain (default)
+        progressCallback // Add progress callback
       );
 
       console.log('Deployment result:', deploymentResult);
 
-      // Extract transaction keys for tracking
-      const transactionKeys = deploymentResult.transactions.map(tx => tx.requestKey);
+      // Extract transaction keys for tracking - use the keys from deploymentResult if available
+      const transactionKeys = deploymentResult.transactionKeys || 
+                            deploymentResult.transactions.map(tx => tx.requestKey);
       currentTransactionKeys.push(...transactionKeys);
 
       updateState({ 
-        currentStep: 'Waiting for contract deployment confirmation...',
+        currentStep: 'Confirming deployments...',
         transactionKeys: currentTransactionKeys
       });
 
@@ -107,6 +131,12 @@ export const useSalesContractDeployment = () => {
       const confirmations = [];
       
       for (const tx of deploymentResult.transactions) {
+        const stepMsg = tx.suffix === 'treasury' ? 
+          'Confirming treasury deployment...' : 
+          'Confirming sales deployment...';
+        
+        updateState({ currentStep: stepMsg });
+        
         console.log(`Polling for transaction ${tx.requestKey}...`);
         const confirmation = await pollForTransactionResult(
           tx.pactClient, 
@@ -119,6 +149,19 @@ export const useSalesContractDeployment = () => {
         }
         
         confirmations.push(confirmation);
+        
+        // Update individual contract deployment status
+        if (tx.suffix === 'treasury') {
+          updateState({ 
+            treasuryContractDeployed: true,
+            currentStep: 'Treasury deployed! Confirming sales...'
+          });
+        } else if (tx.suffix === 'sales') {
+          updateState({ 
+            salesContractDeployed: true,
+            currentStep: 'Sales contract deployed!'
+          });
+        }
       }
 
       updateState({ 
@@ -126,12 +169,12 @@ export const useSalesContractDeployment = () => {
         treasuryContractDeployed: true,
         salesContractAddress: deploymentResult.salesContractAddress,
         treasuryContractAddress: deploymentResult.treasuryContractAddress,
-        currentStep: 'All contracts deployed successfully!'
+        currentStep: 'Deployment completed successfully!'
       });
 
       updateState({ 
         isLoading: false,
-        currentStep: 'Deployment completed successfully!',
+        currentStep: 'All contracts deployed successfully!',
         error: null
       });
 
@@ -148,7 +191,7 @@ export const useSalesContractDeployment = () => {
         success: true,
         salesContractAddress: deploymentResult.salesContractAddress,
         treasuryContractAddress: deploymentResult.treasuryContractAddress,
-        transactionKeys: currentTransactionKeys
+        transactionKeys: deploymentResult.transactionKeys || currentTransactionKeys
       };
 
     } catch (error) {

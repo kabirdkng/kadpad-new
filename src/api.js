@@ -11,9 +11,18 @@ const api = axios.create({
 
 // Add a response interceptor for error handling
 api.interceptors.response.use(
-  response => response,
+  response => {
+    console.log('API Success:', response.config.method?.toUpperCase(), response.config.url, response.status);
+    return response;
+  },
   error => {
-    console.error('API Error:', error.response);
+    console.error('API Error:', {
+      method: error.config?.method?.toUpperCase(),
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
     return Promise.reject(error);
   }
 );
@@ -67,6 +76,7 @@ export const checkProjectByContract = (namespace, moduleName) => {
 };
 
 export const markProjectAsDeployed = (namespace, moduleName, deploymentData = {}) => {
+  console.log('API: markProjectAsDeployed called with:', { namespace, moduleName, deploymentData });
   return api.patch(`/projects/deployed/${namespace}/${moduleName}`, deploymentData);
 };
 

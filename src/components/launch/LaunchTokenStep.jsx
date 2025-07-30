@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { checkProjectByContract, markProjectAsDeployed } from '../../api';
 import { toast } from 'react-toastify';
@@ -14,6 +14,7 @@ const LaunchTokenStep = ({ tokenDetails }) => {
   const [salesConfig, setSalesConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [project, setProject] = useState(null);
+  const containerRef = useRef(null);
   
   // Use the sales contract deployment hook
   const { deploymentState, deploySalesAndTreasury, resetDeploymentState } = useSalesContractDeployment();
@@ -46,7 +47,22 @@ const LaunchTokenStep = ({ tokenDetails }) => {
     resetDeploymentState();
   }, [tokenDetails, resetDeploymentState]);
 
+  // Scroll management to prevent view jumping
+  useEffect(() => {
+    if (containerRef.current && project?.status === 'launched') {
+      // Smooth scroll to top of container when transitioning to launched state
+      containerRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start',
+        inline: 'nearest'
+      });
+    }
+  }, [project?.status]);
+
   const handleDeploy = async () => {
+    // Store current scroll position
+    const currentScrollY = window.scrollY;
+    
     try {
       console.log('=== Starting deployment process ===');
       console.log('Token details:', tokenDetails);
@@ -132,7 +148,10 @@ const LaunchTokenStep = ({ tokenDetails }) => {
         const deploymentData = {
           salesContractAddress: result.salesContractAddress,
           treasuryContractAddress: result.treasuryContractAddress,
-          transactionKeys: result.transactionKeys || []
+          deploymentTransactionKeys: result.transactionKeys || [],
+          deployedAt: new Date().toISOString(),
+          chainId: tokenDetails.contractAddress.split('.')[0], // Extract chain from namespace
+          status: 'launched'
         };
 
         console.log('Deployment data for backend:', deploymentData);
@@ -141,24 +160,47 @@ const LaunchTokenStep = ({ tokenDetails }) => {
         const [namespace, moduleName] = tokenDetails.contractAddress.split('.');
         console.log('Calling markProjectAsDeployed API...');
         
-        const apiResponse = await markProjectAsDeployed(namespace, moduleName, deploymentData);
-        console.log('API response:', apiResponse);
+        try {
+          const apiResponse = await markProjectAsDeployed(namespace, moduleName, deploymentData);
+          console.log('API response:', apiResponse);
 
-        toast.success('🎉 Project successfully deployed and launched!');
-        
-        // Refresh project details to show updated status
-        await fetchProjectDetails();
-        
-        // Reset deployment state for next use
-        resetDeploymentState();
+          toast.success('🎉 Project successfully deployed and launched!');
+          
+          // Refresh project details to show updated status
+          await fetchProjectDetails();
+          
+          // Reset deployment state for next use
+          resetDeploymentState();
+
+          // Maintain scroll position after state changes
+          setTimeout(() => {
+            if (containerRef.current) {
+              containerRef.current.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start',
+                inline: 'nearest'
+              });
+            }
+          }, 100);
+        } catch (apiError) {
+          console.error('Failed to update backend with deployment data:', apiError);
+          // Still show success for blockchain deployment, but warn about backend update
+          toast.warning('Contracts deployed successfully, but failed to update project status. Please refresh the page.');
+        }
         
       } else {
         console.error('❌ Deployment failed:', result?.error || 'Unknown error');
         toast.error(`Deployment failed: ${result?.error || 'Unknown error'}`);
+        
+        // Restore scroll position on error
+        window.scrollTo({ top: currentScrollY, behavior: 'smooth' });
       }
     } catch (error) {
       console.error('=== Error in handleDeploy ===', error);
       toast.error(`Failed to deploy contracts: ${error.message}`);
+      
+      // Restore scroll position on error
+      window.scrollTo({ top: currentScrollY, behavior: 'smooth' });
     }
   };
 
@@ -175,22 +217,26 @@ const LaunchTokenStep = ({ tokenDetails }) => {
     const salesDetails = project.salesDetails;
     
     return (
-      <SalesConfiguredView
-        tokenDetails={tokenDetails}
-        salesDetails={salesDetails}
-        project={project}
-        deploymentState={deploymentState}
-        onDeploy={handleDeploy}
-      />
+      <div ref={containerRef}>
+        <SalesConfiguredView
+          tokenDetails={tokenDetails}
+          salesDetails={salesDetails}
+          project={project}
+          deploymentState={deploymentState}
+          onDeploy={handleDeploy}
+        />
+      </div>
     );
   }
 
   if (project.status === 'launched') {
     return (
-      <LaunchedState
-        tokenDetails={tokenDetails}
-        project={project}
-      />
+      <div ref={containerRef}>
+        <LaunchedState
+          tokenDetails={tokenDetails}
+          project={project}
+        />
+      </div>
     );
   }
 
