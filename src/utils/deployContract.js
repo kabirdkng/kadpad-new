@@ -225,7 +225,81 @@ const waitForContractToBeAvailable = async (networkApi, network, chain, namespac
   throw new Error(`Contract ${contractName} did not become available after ${maxRetries} attempts`);
 };
 
-// Function to deploy sales and treasury contracts following tokengen's pattern
+// Helper function to process pre-signed transactions
+const processPreSignedTransactions = async (transactions, signedResponses, provider, namespace, moduleName) => {
+  const signedTransactions = [];
+
+  for (let i = 0; i < transactions.length; i++) {
+    const tx = transactions[i];
+    const signedTx = signedResponses[i];
+    
+    try {
+      console.log(`Processing pre-signed transaction for chain ${tx.chain}...`);
+      
+      let cmd, sigs, outcomeHash;
+
+      if (provider.name === "wc" || provider.name === "WC") {
+        cmd = signedTx.cmd;
+        sigs = signedTx.sigs;
+        outcomeHash = signedTx.hash;
+      } else {
+        const commandSigData = signedTx.commandSigData;
+        cmd = commandSigData.cmd;
+        sigs = commandSigData.sigs;
+        outcomeHash = signedTx.outcome.hash;
+      }
+
+      const bodyPayload = {
+        cmd,
+        sigs,
+        hash: outcomeHash,
+      };
+
+      console.log('Body payload for preflight:', bodyPayload);
+
+      // Preflight check
+      const preflightResult = await tx.pactClient.dirtyRead(bodyPayload);
+      console.log(`Preflight result for chain ${tx.chain}:`, preflightResult);
+      
+      if (preflightResult.result.status === 'failure') {
+        console.error(`Deployment failed for chain ${tx.chain}:`, preflightResult.result.error);
+        // Following tokengen pattern: return instead of throwing error for table already exists
+        return signedTransactions;
+      }
+
+      // Submit transaction
+      const transactionDescriptor = await tx.pactClient.submit(bodyPayload);
+      console.log(`Contract deployment TX Key for chain ${tx.chain}:`, transactionDescriptor.requestKey);
+
+      // Wait for transaction to be mined using existing polling function
+      console.log(`Waiting for transaction to be mined on chain ${tx.chain}...`);
+      const result = await pollForTransactionResult(tx.pactClient, transactionDescriptor);
+      
+      if (result.result.status === 'success') {
+        console.log(`✅ Transaction successfully mined on chain ${tx.chain}`);
+      } else {
+        console.error(`❌ Transaction failed on chain ${tx.chain}:`, result.result.error);
+        throw new Error(`Transaction failed: ${result.result.error.message}`);
+      }
+
+      signedTransactions.push({
+        ...tx,
+        requestKey: transactionDescriptor.requestKey,
+        pactClient: tx.pactClient,
+        transactionDescriptor,
+        result
+      });
+
+    } catch (error) {
+      console.error(`Error processing pre-signed transaction for chain ${tx.chain}:`, error);
+      throw error;
+    }
+  }
+
+  return signedTransactions;
+};
+
+// Function to deploy sales and treasury contracts with batch signing optimization
 export const deploySalesAndTreasuryContracts = async (
   salesContract,
   treasuryContract,
@@ -239,13 +313,18 @@ export const deploySalesAndTreasuryContracts = async (
   chain = config.chainId
 ) => {
   try {
-    console.log('=== Starting tokengen-style deployment ===');
+    console.log('=== Starting optimized batch deployment ===');
     console.log('Chain:', chain);
     console.log('Namespace:', namespace);
     console.log('Module:', moduleName);
 
     const networkApi = config.apiUrl;
     const network = config.networkId;
+    const provider = providers[providerName];
+    
+    if (!provider) {
+      throw new Error(`Provider not found: ${providerName}. Available providers: ${Object.keys(providers).join(', ')}`);
+    }
 
     // Check if treasury contract is already available
     console.log('Checking if treasury contract already exists...');
@@ -259,10 +338,11 @@ export const deploySalesAndTreasuryContracts = async (
     }
 
     let treasuryResults = [];
+    let salesResults = [];
     
     if (!treasuryExists) {
-      // Create treasury deployment transaction
-      console.log('Creating treasury deployment transaction...');
+      // Create both treasury and sales deployment transactions
+      console.log('Creating treasury and sales deployment transactions...');
       const treasuryTransactions = await initiateDeployContract(
         networkApi,
         network,
@@ -274,18 +354,45 @@ export const deploySalesAndTreasuryContracts = async (
         'treasury'
       );
 
-      // Process treasury first
-      console.log('Step 1: Processing treasury deployment...');
-      treasuryResults = await signAndProcessDeployTransactions(
+      const salesTransactions = await initiateDeployContract(
         networkApi,
         network,
-        null, // not used in this context
-        namespace,
-        moduleName,
-        treasuryTransactions,
+        account,
+        pubKey,
         providerName,
-        client,
-        session
+        salesContract,
+        [chain],
+        'sales'
+      );
+
+      // Batch sign both transactions at once
+      console.log('=== Batch signing both treasury and sales transactions ===');
+      const allCommands = [
+        ...treasuryTransactions.map(tx => tx.command),
+        ...salesTransactions.map(tx => tx.command)
+      ];
+      
+      console.log('Signing all transactions in batch...', allCommands.length, 'transactions');
+
+      let signedBatch;
+      if (providerName === "WC") {
+        console.log('Using WalletConnect batch signing...');
+        signedBatch = await provider.quickSignAll(allCommands, client, session);
+      } else {
+        console.log('Using standard provider batch signing...');
+        signedBatch = await provider.quickSignAll(allCommands);
+      }
+
+      console.log('Batch signing completed successfully');
+
+      // Process treasury deployment first with pre-signed transaction
+      console.log('Step 1: Processing treasury deployment with pre-signed transaction...');
+      treasuryResults = await processPreSignedTransactions(
+        treasuryTransactions,
+        signedBatch.responses.slice(0, treasuryTransactions.length),
+        provider,
+        namespace,
+        moduleName
       );
 
       console.log('Treasury deployment completed, waiting for contract availability...');
@@ -295,36 +402,45 @@ export const deploySalesAndTreasuryContracts = async (
       await waitForContractToBeAvailable(networkApi, network, chain, namespace, moduleName, 'treasury');
       
       console.log('Treasury contract confirmed available, now processing sales...');
+
+      // Process sales deployment with pre-signed transaction
+      console.log('Step 2: Processing sales deployment with pre-signed transaction...');
+      salesResults = await processPreSignedTransactions(
+        salesTransactions,
+        signedBatch.responses.slice(treasuryTransactions.length),
+        provider,
+        namespace,
+        moduleName
+      );
+
     } else {
       console.log('Treasury contract already available, proceeding directly to sales deployment...');
+      
+      // Only need to sign and deploy sales contract
+      const salesTransactions = await initiateDeployContract(
+        networkApi,
+        network,
+        account,
+        pubKey,
+        providerName,
+        salesContract,
+        [chain],
+        'sales'
+      );
+      
+      // Process sales deployment using the original method
+      salesResults = await signAndProcessDeployTransactions(
+        networkApi,
+        network,
+        null,
+        namespace,
+        moduleName,
+        salesTransactions,
+        providerName,
+        client,
+        session
+      );
     }
-
-    // Create sales deployment transaction
-    console.log('Creating sales deployment transaction...');
-    const salesTransactions = await initiateDeployContract(
-      networkApi,
-      network,
-      account,
-      pubKey,
-      providerName,
-      salesContract,
-      [chain],
-      'sales'
-    );
-    
-    // Process sales deployment
-    console.log('Step 2: Processing sales deployment...');
-    const salesResults = await signAndProcessDeployTransactions(
-      networkApi,
-      network,
-      null, // not used in this context
-      namespace,
-      moduleName,
-      salesTransactions,
-      providerName,
-      client,
-      session
-    );
 
     const processedTransactions = [...treasuryResults, ...salesResults];
 
