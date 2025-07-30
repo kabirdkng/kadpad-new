@@ -28,7 +28,7 @@ export const generateSalesContract = (moduleName, namespace, salesDetails) => {
   const formattedPhase1Start = formatDateTime(salesDetails.phase1StartDate || salesDetails.phase1start);
   const formattedEndSales = formatDateTime(salesDetails.salesEndDate || salesDetails.endsales);
 
-  return `(namespace '${namespace})
+ return `(namespace '${namespace})
 ${keys}
 
 (module ${moduleName}-sales GOVERNANCE ;; Variable
@@ -375,6 +375,15 @@ ${keys}
       "Pre-sales ended")
   )
 
+  (defun init:string (p0:decimal p1:decimal)
+    (with-capability (GOVERNANCE)
+      (insert global-counters "" {'sold:0, 'reserved:0})
+      (insert fees "phase-0" {'price:p0, 'count:0})
+      (insert fees "phase-1" {'price:p1, 'count:0})
+      )
+    "Sales counters initialized"
+  )
+
   ;-----------------------------------------------------------------------------
   ; Local callable functions
   ;-----------------------------------------------------------------------------
@@ -422,24 +431,12 @@ ${keys}
     (read fees p)
   )
 
-  ;-----------------------------------------------------------------------------
-  ; Module initialization
-  ;-----------------------------------------------------------------------------
-  (defun init:string (p0:decimal p1:decimal)
-    (with-capability (GOVERNANCE)
-      ; Initialize data
-      (insert global-counters "" {'sold:0, 'reserved:0})
-      (insert fees "phase-0" {'price:p0, 'count:0})
-      (insert fees "phase-1" {'price:p1, 'count:0})
-      )
-    "Sales counters initialized"
-  )
-
 )
 
 (create-table global-counters)
 (create-table accounts-table)
 (create-table fees)
 (create-table tail-table)
-(init ${formattedPhase0Price} ${formattedPhase1Price})`;
+(init ${formattedPhase0Price} ${formattedPhase1Price})
+`;
 };
