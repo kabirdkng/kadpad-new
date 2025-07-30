@@ -433,8 +433,6 @@ ${keys}
 
 )
 
-)
-
 ; Create tables with redeployment safety (following tokengen pattern)
 (try (create-table global-counters) "global-counters already exists")
 (try (create-table accounts-table) "accounts-table already exists")

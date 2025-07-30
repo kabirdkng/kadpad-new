@@ -222,8 +222,6 @@ ${keys}
                                       'init:true}))
   )
 
-)
-
   ; Create table with redeployment safety (following tokengen pattern)
   (try 
     (create-table liquidity-management)
