@@ -116,10 +116,27 @@ export const useSalesContractDeployment = () => {
 
       console.log('Deployment result:', deploymentResult);
 
-      // Extract transaction keys for tracking - use the keys from deploymentResult if available
-      const transactionKeys = deploymentResult.transactionKeys || 
-                            deploymentResult.transactions.map(tx => tx.requestKey);
-      currentTransactionKeys.push(...transactionKeys);
+      // Properly extract and collect all transaction keys
+      let allTransactionKeys = [];
+      
+      // Get keys from deploymentResult.transactionKeys if available
+      if (deploymentResult.transactionKeys && Array.isArray(deploymentResult.transactionKeys)) {
+        allTransactionKeys.push(...deploymentResult.transactionKeys);
+      }
+      
+      // Get keys from individual transactions if available
+      if (deploymentResult.transactions && Array.isArray(deploymentResult.transactions)) {
+        const txKeys = deploymentResult.transactions
+          .map(tx => tx.requestKey || tx.transactionDescriptor?.requestKey)
+          .filter(key => key); // Filter out undefined/null keys
+        allTransactionKeys.push(...txKeys);
+      }
+      
+      // Remove duplicates
+      allTransactionKeys = [...new Set(allTransactionKeys)];
+      currentTransactionKeys.push(...allTransactionKeys);
+      
+      console.log('Collected transaction keys:', allTransactionKeys);
 
       updateState({ 
         currentStep: 'Confirming deployments...',
@@ -169,7 +186,8 @@ export const useSalesContractDeployment = () => {
         treasuryContractDeployed: true,
         salesContractAddress: deploymentResult.salesContractAddress,
         treasuryContractAddress: deploymentResult.treasuryContractAddress,
-        currentStep: 'Deployment completed successfully!'
+        currentStep: 'Deployment completed successfully!',
+        transactionKeys: currentTransactionKeys // Ensure keys are in final state
       });
 
       updateState({ 
@@ -181,7 +199,7 @@ export const useSalesContractDeployment = () => {
       console.log('=== Deployment Completed Successfully ===');
       console.log('Sales contract:', deploymentResult.salesContractAddress);
       console.log('Treasury contract:', deploymentResult.treasuryContractAddress);
-      console.log('Transaction keys:', currentTransactionKeys);
+      console.log('Transaction keys for backend:', currentTransactionKeys);
 
       toast.success('Sales and treasury contracts deployed successfully!', { 
         position: 'top-center' 
@@ -191,7 +209,7 @@ export const useSalesContractDeployment = () => {
         success: true,
         salesContractAddress: deploymentResult.salesContractAddress,
         treasuryContractAddress: deploymentResult.treasuryContractAddress,
-        transactionKeys: deploymentResult.transactionKeys || currentTransactionKeys
+        transactionKeys: currentTransactionKeys // Return collected keys
       };
 
     } catch (error) {

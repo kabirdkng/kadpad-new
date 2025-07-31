@@ -194,7 +194,7 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy }) => {
                 ))}
               </div>
               
-              {/* Debug info in development */}
+              {/* Debug info in development
               {process.env.NODE_ENV === 'development' && (
                 <div className="mt-2 p-2 bg-gray-700/50 rounded text-xs text-gray-400">
                   <div>Raw Step: "{currentStep || 'None'}"</div>
@@ -203,7 +203,7 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy }) => {
                   <div>Treasury Deployed: {treasuryContractDeployed ? 'Yes' : 'No'}</div>
                   <div>Progress: {getProgressWidth(currentStep, salesContractDeployed, treasuryContractDeployed)}</div>
                 </div>
-              )}
+              )} */}
             </div>
 
             {/* Transaction Keys Display */}

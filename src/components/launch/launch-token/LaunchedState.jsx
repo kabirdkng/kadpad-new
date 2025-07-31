@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { CheckCircle, Settings, ExternalLink } from 'lucide-react';
 import PropTypes from 'prop-types';
+import config from '../../../wallet/config';
 
 const LaunchedState = ({ tokenDetails, project }) => {
   return (
@@ -69,10 +70,20 @@ const LaunchedState = ({ tokenDetails, project }) => {
                     <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                     Sales Contract
                   </label>
-                  <code className="text-green-300 font-mono text-sm break-all block p-2 bg-green-500/10 rounded border border-green-500/20">
-                    {project.salesContractAddress}
-                  </code>
-                  <p className="text-xs text-gray-400 mt-2">Handles token sales and presale logic</p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <code className="text-green-300 font-mono text-sm break-all flex-1 p-2 bg-green-500/10 rounded border border-green-500/20">
+                      {project.salesContractAddress}
+                    </code>
+                    <button
+                      onClick={() => window.open(`https://tools.kadena.io/modules/explorer?module=${project.salesContractAddress}&chain=${config.chainId}&network=${config.networkId}`, '_blank')}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-green-500/20 hover:bg-green-500/30 rounded text-green-300 hover:text-green-200 transition-colors flex-shrink-0"
+                      title="View Contract on Explorer"
+                    >
+                      <span>View</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400">Handles token sales and presale logic</p>
                 </div>
               )}
               
@@ -82,10 +93,20 @@ const LaunchedState = ({ tokenDetails, project }) => {
                     <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
                     Treasury Contract
                   </label>
-                  <code className="text-blue-300 font-mono text-sm break-all block p-2 bg-blue-500/10 rounded border border-blue-500/20">
-                    {project.treasuryContractAddress}
-                  </code>
-                  <p className="text-xs text-gray-400 mt-2">Manages token treasury and distribution</p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <code className="text-blue-300 font-mono text-sm break-all flex-1 p-2 bg-blue-500/10 rounded border border-blue-500/20">
+                      {project.treasuryContractAddress}
+                    </code>
+                    <button
+                      onClick={() => window.open(`https://tools.kadena.io/modules/explorer?module=${project.treasuryContractAddress}&chain=${config.chainId}&network=${config.networkId}`, '_blank')}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-500/20 hover:bg-blue-500/30 rounded text-blue-300 hover:text-blue-200 transition-colors flex-shrink-0"
+                      title="View Contract on Explorer"
+                    >
+                      <span>View</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-400">Manages token treasury and distribution</p>
                 </div>
               )}
             </div>
@@ -104,8 +125,8 @@ const LaunchedState = ({ tokenDetails, project }) => {
                         {key}
                       </code>
                       <button
-                        onClick={() => window.open(`https://explorer.chainweb.com/mainnet/tx/${key}`, '_blank')}
-                        className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-500/20 hover:bg-purple-500/30 rounded text-purple-300 hover:text-purple-200 transition-colors"
+                        onClick={() => window.open(`https://explorer.kadena.io/${config.networkId}/transaction/${key}`, '_blank')}
+                        className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-500/20 hover:bg-purple-500/30 rounded text-purple-300 hover:text-purple-200 transition-colors flex-shrink-0"
                         title="View on Explorer"
                       >
                         <span>View</span>

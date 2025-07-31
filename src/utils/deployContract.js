@@ -345,7 +345,10 @@ export const deploySalesAndTreasuryContracts = async (
         };
       }
 
-      allTransactionKeys.push(...treasuryResults.map(tx => tx.requestKey));
+      // Collect treasury transaction keys
+      const treasuryKeys = treasuryResults.map(tx => tx.requestKey || tx.transactionDescriptor?.requestKey).filter(key => key);
+      allTransactionKeys.push(...treasuryKeys);
+      console.log('Treasury transaction keys:', treasuryKeys);
       
       // Wait for treasury contract to be available
       if (progressCallback) progressCallback('Waiting for treasury confirmation...');
@@ -389,7 +392,10 @@ export const deploySalesAndTreasuryContracts = async (
       }
 
       if (salesResults.length > 0) {
-        allTransactionKeys.push(...salesResults.map(tx => tx.requestKey));
+        // Collect sales transaction keys
+        const salesKeys = salesResults.map(tx => tx.requestKey || tx.transactionDescriptor?.requestKey).filter(key => key);
+        allTransactionKeys.push(...salesKeys);
+        console.log('Sales transaction keys:', salesKeys);
       } else {
         return {
           success: false,
@@ -402,6 +408,10 @@ export const deploySalesAndTreasuryContracts = async (
       }
     }
 
+    // Remove duplicates from all transaction keys
+    allTransactionKeys = [...new Set(allTransactionKeys)];
+    console.log('All collected transaction keys:', allTransactionKeys);
+
     const processedTransactions = [...treasuryResults, ...salesResults];
 
     return {
@@ -409,7 +419,7 @@ export const deploySalesAndTreasuryContracts = async (
       transactions: processedTransactions,
       salesContractAddress: `${namespace}.${moduleName}-sales`,
       treasuryContractAddress: `${namespace}.${moduleName}-treasury`,
-      transactionKeys: allTransactionKeys
+      transactionKeys: allTransactionKeys // Ensure keys are returned
     };
 
   } catch (error) {

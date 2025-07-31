@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { checkProjectByContract, markProjectAsDeployed } from '../../api';
 import { toast } from 'react-toastify';
 import { useSalesContractDeployment } from '../../hooks/useSalesContractDeployment';
+import config from '../../wallet/config';
 
 // Import refactored components
 import LaunchLoadingState from './launch-token/LaunchLoadingState';
@@ -144,13 +145,17 @@ const LaunchTokenStep = ({ tokenDetails }) => {
       if (result && result.success) {
         console.log('✅ Contracts deployed successfully, updating backend...');
         
+        // Ensure we have transaction keys
+        const transactionKeys = result.transactionKeys || [];
+        console.log('Transaction keys to send to backend:', transactionKeys);
+        
         // Prepare deployment data for backend
         const deploymentData = {
           salesContractAddress: result.salesContractAddress,
           treasuryContractAddress: result.treasuryContractAddress,
-          deploymentTransactionKeys: result.transactionKeys || [],
+          transactionKeys: transactionKeys, // Use the collected keys
           deployedAt: new Date().toISOString(),
-          chainId: tokenDetails.contractAddress.split('.')[0], // Extract chain from namespace
+          chainId: config.chainId,
           status: 'launched'
         };
 
@@ -184,6 +189,8 @@ const LaunchTokenStep = ({ tokenDetails }) => {
           }, 100);
         } catch (apiError) {
           console.error('Failed to update backend with deployment data:', apiError);
+          console.error('Deployment data that failed:', deploymentData);
+          console.error('Transaction keys that failed to submit:', transactionKeys);
           // Still show success for blockchain deployment, but warn about backend update
           toast.warning('Contracts deployed successfully, but failed to update project status. Please refresh the page.');
         }
