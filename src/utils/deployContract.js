@@ -573,37 +573,76 @@ const transferTokensToContracts = async (
     const transferResults = [];
     const transferKeys = [];
 
-    // Process each signed transfer transaction
-    for (let i = 0; i < transactions.length; i++) {
-      const tx = transactions[i];
+    // Submit all transfer transactions in parallel
+    const transferPromises = transactions.map(async (tx, i) => {
       const signedTx = signedBatch.responses[i];
       
       try {
         const { cmd, sigs, outcomeHash } = extractSignedTransactionData(signedTx, provider);
         
-        // Submit and wait for transaction
-        const result = await submitAndWaitForTransaction(tx, cmd, sigs, outcomeHash);
+        // Submit transaction (don't wait for confirmation yet)
+        const bodyPayload = { cmd, sigs, hash: outcomeHash };
         
-        if (result) {
-          transferResults.push({
-            transfer: tx.transfer,
-            result: result,
-            requestKey: result.requestKey
-          });
-          transferKeys.push(result.requestKey);
-          
-          console.log(`Successfully transferred ${tx.transfer.amount} tokens to ${tx.transfer.contractAccount}`);
-          if (progressCallback) {
-            progressCallback(`Transferred ${tx.transfer.amount} tokens to ${tx.transfer.description}`);
-          }
-        } else {
-          throw new Error(`Transfer to ${tx.transfer.contractAccount} failed`);
+        // Preflight check
+        const preflightResult = await tx.pactClient.dirtyRead(bodyPayload);
+        
+        if (preflightResult.result.status === 'failure') {
+          throw new Error(`Transfer to ${tx.transfer.contractAccount} preflight failed: ${preflightResult.result.error.message}`);
         }
+
+        // Submit transaction
+        const transactionDescriptor = await tx.pactClient.submit(bodyPayload);
+        
+        return {
+          transfer: tx.transfer,
+          transactionDescriptor,
+          pactClient: tx.pactClient,
+          requestKey: transactionDescriptor.requestKey
+        };
       } catch (error) {
-        console.error(`Error processing transfer to ${tx.transfer.contractAccount}:`, error);
+        console.error(`Error submitting transfer to ${tx.transfer.contractAccount}:`, error);
         throw error;
       }
-    }
+    });
+
+    // Wait for all submissions to complete
+    const submittedTransfers = await Promise.all(transferPromises);
+    
+    // Collect all request keys
+    submittedTransfers.forEach(transfer => {
+      transferKeys.push(transfer.requestKey);
+    });
+
+    if (progressCallback) progressCallback('All token transfers submitted, waiting for confirmations...');
+
+    // Now wait for all transactions to be mined in parallel
+    const confirmationPromises = submittedTransfers.map(async (transfer) => {
+      try {
+        const result = await pollForTransactionResult(transfer.pactClient, transfer.transactionDescriptor);
+        
+        if (result.result.status === 'success') {
+          console.log(`Successfully transferred ${transfer.transfer.amount} tokens to ${transfer.transfer.contractAccount}`);
+          if (progressCallback) {
+            progressCallback(`Confirmed: ${transfer.transfer.amount} tokens to ${transfer.transfer.description}`);
+          }
+          
+          return {
+            transfer: transfer.transfer,
+            result: result,
+            requestKey: transfer.requestKey
+          };
+        } else {
+          throw new Error(`Transfer to ${transfer.transfer.contractAccount} failed: ${result.result.error.message}`);
+        }
+      } catch (error) {
+        console.error(`Error confirming transfer to ${transfer.transfer.contractAccount}:`, error);
+        throw error;
+      }
+    });
+
+    // Wait for all confirmations
+    const confirmedTransfers = await Promise.all(confirmationPromises);
+    transferResults.push(...confirmedTransfers);
 
     console.log('All token transfers completed successfully');
     console.log('Transfer transaction keys:', transferKeys);

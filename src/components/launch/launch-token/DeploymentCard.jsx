@@ -1,5 +1,60 @@
 import PropTypes from 'prop-types';
 import { Rocket, Settings, CheckCircle2, Clock, AlertCircle, ExternalLink } from 'lucide-react';
+import { useState, useEffect } from 'react';
+
+// Success Animation Component
+const SuccessAnimation = ({ onComplete }) => {
+  const [showAnimation, setShowAnimation] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowAnimation(false);
+      onComplete?.();
+    }, 3000); // Show animation for 3 seconds
+
+    return () => clearTimeout(timer);
+  }, [onComplete]);
+
+  if (!showAnimation) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+      <div className="text-center">
+        {/* Big Success Checkmark */}
+        <div className="relative mx-auto mb-6">
+          <div className="w-32 h-32 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center animate-pulse">
+            <CheckCircle2 className="w-16 h-16 text-white animate-bounce" />
+          </div>
+          
+          {/* Celebration particles */}
+          <div className="absolute -top-4 -left-4 w-4 h-4 bg-yellow-400 rounded-full animate-ping"></div>
+          <div className="absolute -top-2 -right-6 w-3 h-3 bg-blue-400 rounded-full animate-ping delay-300"></div>
+          <div className="absolute -bottom-3 -left-6 w-3 h-3 bg-purple-400 rounded-full animate-ping delay-500"></div>
+          <div className="absolute -bottom-4 -right-4 w-4 h-4 bg-pink-400 rounded-full animate-ping delay-700"></div>
+        </div>
+
+        <h2 className="text-3xl font-bold text-white mb-4 animate-fade-in-up">
+          🎉 Deployment Successful!
+        </h2>
+        <p className="text-green-400 text-lg animate-fade-in-up delay-300">
+          Your contracts are now live and tokens have been distributed
+        </p>
+        
+        {/* Progress indicator */}
+        <div className="mt-6 flex justify-center">
+          <div className="flex space-x-1">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className={`w-2 h-2 bg-green-400 rounded-full animate-pulse delay-${i * 200}`}
+              ></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // Helper function to calculate progress width based on current step
 const getProgressWidth = (currentStep, salesDeployed, treasuryDeployed) => {
@@ -12,25 +67,29 @@ const getProgressWidth = (currentStep, salesDeployed, treasuryDeployed) => {
   
   const step = currentStep.toLowerCase();
   
-  // Progressive steps based on new deployment flow
-  if (step.includes('checking existing')) return '10%';
-  if (step.includes('both contracts exist')) return '40%';
-  if (step.includes('treasury exists')) return '20%';
-  if (step.includes('deploying') || step.includes('signing')) return '30%';
-  if (step.includes('starting token distribution') || step.includes('distribution')) return '60%';
-  if (step.includes('transferred') || step.includes('transfer')) return '70%';
+  // Progressive steps based on detailed deployment flow
+  if (step.includes('checking existing')) return '5%';
+  if (step.includes('generating contract') || step.includes('contract code')) return '15%';
+  if (step.includes('signing') || step.includes('batch')) return '25%';
+  if (step.includes('deploying treasury')) return '40%';
+  if (step.includes('deploying sales')) return '55%';
+  if (step.includes('starting token distribution') || step.includes('preparing token transfers')) return '65%';
+  if (step.includes('all token transfers submitted') || step.includes('confirmed:')) return '80%';
   if (step.includes('updating project') || step.includes('marking')) return '90%';
   if (step.includes('completed') || step.includes('successful')) return '100%';
   
   // Default progress for unmatched steps
-  return '15%';
+  return '10%';
 };
 
 // Helper function to get deployment steps with status
 const getDeploymentSteps = (currentStep, salesDeployed, treasuryDeployed) => {
   const steps = [
     { label: 'Check existing contracts', key: 'check' },
-    { label: 'Deploy missing contracts', key: 'deploy' },
+    { label: 'Generate contracts', key: 'generate' },
+    { label: 'Sign transactions', key: 'sign' },
+    { label: 'Deploy treasury contract', key: 'treasury' },
+    { label: 'Deploy sales contract', key: 'sales' },
     { label: 'Distribute tokens', key: 'distribute' },
     { label: 'Update project status', key: 'update' },
     { label: 'Complete', key: 'complete' }
@@ -40,14 +99,23 @@ const getDeploymentSteps = (currentStep, salesDeployed, treasuryDeployed) => {
     if (!currentStep) return 'check';
     const step = currentStep.toLowerCase();
     
-    // Enhanced step detection for new flow
+    // Enhanced step detection for detailed flow
     if (step.includes('checking existing') || step.includes('preparing')) {
       return 'check';
     }
-    if (step.includes('deploying') || step.includes('signing') || step.includes('creating transaction') || step.includes('batch')) {
-      return 'deploy';
+    if (step.includes('generating contract') || step.includes('contract code')) {
+      return 'generate';
     }
-    if (step.includes('distribution') || step.includes('transfer') || step.includes('token')) {
+    if (step.includes('signing') || step.includes('batch')) {
+      return 'sign';
+    }
+    if (step.includes('deploying treasury') || step.includes('treasury needed') || step.includes('waiting for treasury')) {
+      return 'treasury';
+    }
+    if (step.includes('deploying sales') || step.includes('waiting for sales')) {
+      return 'sales';
+    }
+    if (step.includes('distribution') || step.includes('transfer') || step.includes('confirmed:')) {
       return 'distribute';
     }
     if (step.includes('updating project') || step.includes('marking')) {
@@ -61,7 +129,7 @@ const getDeploymentSteps = (currentStep, salesDeployed, treasuryDeployed) => {
   };
 
   const currentStepKey = getCurrentStepKey();
-  const stepOrder = ['check', 'deploy', 'distribute', 'update', 'complete'];
+  const stepOrder = ['check', 'generate', 'sign', 'treasury', 'sales', 'distribute', 'update', 'complete'];
   const currentIndex = stepOrder.indexOf(currentStepKey);
   
   return steps.map((step, index) => {
@@ -79,7 +147,7 @@ const getDeploymentSteps = (currentStep, salesDeployed, treasuryDeployed) => {
   });
 };
 
-const DeploymentCard = ({ deploymentState = {}, onDeploy }) => {
+const DeploymentCard = ({ deploymentState = {}, onDeploy, onDeploymentComplete }) => {
   const { 
     isLoading = false, 
     currentStep = null, 
@@ -91,22 +159,54 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy }) => {
     transactionKeys = [] 
   } = deploymentState;
 
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  const [deploymentJustCompleted, setDeploymentJustCompleted] = useState(false);
+
   // Debug logging
   console.log('DeploymentCard - Current step:', currentStep);
   console.log('DeploymentCard - Sales deployed:', salesContractDeployed);
   console.log('DeploymentCard - Treasury deployed:', treasuryContractDeployed);
 
+  // Check if deployment just completed
+  useEffect(() => {
+    if (salesContractDeployed && treasuryContractDeployed && 
+        currentStep && currentStep.toLowerCase().includes('completed') && 
+        !deploymentJustCompleted) {
+      setDeploymentJustCompleted(true);
+      setShowSuccessAnimation(true);
+    }
+  }, [salesContractDeployed, treasuryContractDeployed, currentStep, deploymentJustCompleted]);
+
+  // Handle case where contracts are already deployed (page refresh, direct navigation)
+  useEffect(() => {
+    if (salesContractDeployed && treasuryContractDeployed && !isLoading && !currentStep) {
+      // Both contracts deployed and not in loading state - transition to launched
+      onDeploymentComplete?.();
+    }
+  }, [salesContractDeployed, treasuryContractDeployed, isLoading, currentStep, onDeploymentComplete]);
+
+  const handleSuccessAnimationComplete = () => {
+    setShowSuccessAnimation(false);
+    // Transition to launched state after success animation
+    onDeploymentComplete?.();
+  };
+
   return (
-    <div className="transition-all duration-300 ease-in-out">
-      {/* Deploy Action Card */}
-      <div className="card bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mx-auto mb-6 shadow-lg">
-          {salesContractDeployed && treasuryContractDeployed ? (
-            <CheckCircle2 className="w-8 h-8 text-white" />
-          ) : (
-            <Rocket className="w-8 h-8 text-white" />
-          )}
-        </div>
+    <>
+      {showSuccessAnimation && (
+        <SuccessAnimation onComplete={handleSuccessAnimationComplete} />
+      )}
+      
+      <div className="transition-all duration-300 ease-in-out">
+        {/* Deploy Action Card */}
+        <div className="card bg-gradient-to-br from-green-500/5 to-emerald-500/5 border-green-500/20 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center mx-auto mb-6 shadow-lg">
+            {salesContractDeployed && treasuryContractDeployed ? (
+              <CheckCircle2 className="w-8 h-8 text-white" />
+            ) : (
+              <Rocket className="w-8 h-8 text-white" />
+            )}
+          </div>
         
         <h3 className="text-xl font-bold text-primary-text mb-4">
           {salesContractDeployed && treasuryContractDeployed ? 'Contracts Deployed!' : 'Deploy Sales Contract'}
@@ -240,23 +340,9 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy }) => {
                 )}
               </div>
             </div>
-
-            {/* Transaction Keys */}
-            {transactionKeys && transactionKeys.length > 0 && (
-              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                <h5 className="text-blue-400 font-medium mb-2 text-sm">Transaction Keys</h5>
-                <div className="space-y-1">
-                  {transactionKeys.map((key, index) => (
-                    <div key={index} className="flex items-center gap-2 text-xs">
-                      <code className="text-blue-300 truncate">{key}</code>
-                      <ExternalLink className="w-3 h-3 text-blue-400 cursor-pointer" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Info Card */}
@@ -275,7 +361,7 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy }) => {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
@@ -290,7 +376,8 @@ DeploymentCard.propTypes = {
     treasuryContractAddress: PropTypes.string,
     transactionKeys: PropTypes.array
   }),
-  onDeploy: PropTypes.func.isRequired
+  onDeploy: PropTypes.func.isRequired,
+  onDeploymentComplete: PropTypes.func
 };
 
 export default DeploymentCard;
