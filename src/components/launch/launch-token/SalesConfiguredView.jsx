@@ -10,8 +10,15 @@ const SalesConfiguredView = ({
   salesDetails, 
   project, 
   deploymentState = {}, 
-  onDeploy 
+  onDeploy,
+  onDeploymentComplete
 }) => {
+  const handleDeploymentComplete = () => {
+    console.log('Deployment completed, transitioning to launched state');
+    // Call the parent's completion handler
+    onDeploymentComplete?.();
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -40,6 +47,7 @@ const SalesConfiguredView = ({
       <DeploymentCard 
         deploymentState={deploymentState}
         onDeploy={onDeploy}
+        onDeploymentComplete={handleDeploymentComplete}
       />
     </div>
   );
@@ -50,7 +58,8 @@ SalesConfiguredView.propTypes = {
   salesDetails: PropTypes.object,
   project: PropTypes.object,
   deploymentState: PropTypes.object,
-  onDeploy: PropTypes.func.isRequired
+  onDeploy: PropTypes.func.isRequired,
+  onDeploymentComplete: PropTypes.func
 };
 
 export default SalesConfiguredView;

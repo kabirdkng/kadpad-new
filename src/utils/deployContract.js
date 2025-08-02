@@ -664,7 +664,7 @@ const transferTokensToContracts = async (
   }
 };
 
-// Combined function to deploy contracts and transfer tokens with intelligent deployment detection
+// Combined function to deploy contracts and transfer tokens with single batch signing
 export const deploySalesAndTreasuryWithTokenDistribution = async (
   salesContract,
   treasuryContract,
@@ -713,105 +713,248 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
       console.log('Sales contract not found');
     }
 
-    let deploymentResult = null;
+    // Step 2: Prepare all transactions (deployment + distribution) for single batch signing
+    let allTransactions = [];
+    let deploymentTransactions = [];
+    let transferTransactions = [];
     let allTransactionKeys = [];
 
-    // Step 2: Deploy contracts based on what exists
-    if (treasuryExists && salesExists) {
-      // Both contracts exist - go directly to distribution
-      if (progressCallback) progressCallback('Both contracts exist, proceeding to token distribution...');
-      deploymentResult = {
-        success: true,
-        transactions: [],
-        salesContractAddress: `${namespace}.${moduleName}-sales`,
-        treasuryContractAddress: `${namespace}.${moduleName}-treasury`,
-        transactionKeys: []
-      };
-    } else if (treasuryExists && !salesExists) {
-      // Only treasury exists - deploy sales contract only
-      if (progressCallback) progressCallback('Treasury exists, deploying sales contract...');
-      
-      const salesTransactions = await initiateDeployContract(
+    // Prepare deployment transactions based on what exists
+    if (!treasuryExists) {
+      if (progressCallback) progressCallback('Preparing treasury deployment transaction...');
+      const treasuryTxs = await initiateDeployContract(
+        networkApi, network, account, pubKey, providerName, treasuryContract, [chain], 'treasury'
+      );
+      deploymentTransactions.push(...treasuryTxs);
+    }
+
+    if (!salesExists) {
+      if (progressCallback) progressCallback('Preparing sales deployment transaction...');
+      const salesTxs = await initiateDeployContract(
         networkApi, network, account, pubKey, providerName, salesContract, [chain], 'sales'
       );
+      deploymentTransactions.push(...salesTxs);
+    }
 
-      const salesResults = await signAndProcessDeployTransactions(
-        networkApi, network, salesContract, namespace, moduleName, 
-        salesTransactions, providerName, client, session
-      );
+    // Step 3: Prepare token transfer transactions
+    if (progressCallback) progressCallback('Preparing token transfer transactions...');
+    
+    const transfers = [];
+    
+    // Define the transfers based on token distribution
+    if (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0) {
+      transfers.push({
+        contractAccount: `${namespace}.${moduleName}-sales.RESERVE-ACCOUNT`,
+        amount: tokenDistribution.presalesAmount,
+        description: "Presale allocation"
+      });
+    }
 
-      const salesKeys = salesResults.map(tx => tx.requestKey || tx.transactionDescriptor?.requestKey).filter(key => key);
-      allTransactionKeys.push(...salesKeys);
+    if (tokenDistribution.liquidityAmount && tokenDistribution.liquidityAmount > 0) {
+      transfers.push({
+        contractAccount: `${namespace}.${moduleName}-treasury.LIQUIDITY-ACCOUNT`,
+        amount: tokenDistribution.liquidityAmount,
+        description: "DEX liquidity allocation"
+      });
+    }
 
-      // Wait for sales contract to be available
-      if (salesResults.length > 0) {
-        await waitForContractToBeAvailable(networkApi, network, chain, namespace, moduleName, 'sales');
-      }
+    if (tokenDistribution.treasuryAmount && tokenDistribution.treasuryAmount > 0) {
+      transfers.push({
+        contractAccount: `${namespace}.${moduleName}-treasury.TREASURY-ACCOUNT`,
+        amount: tokenDistribution.treasuryAmount,
+        description: "Treasury allocation"
+      });
+    }
 
-      deploymentResult = {
-        success: true,
-        transactions: salesResults,
-        salesContractAddress: `${namespace}.${moduleName}-sales`,
-        treasuryContractAddress: `${namespace}.${moduleName}-treasury`,
-        transactionKeys: salesKeys
-      };
-    } else {
-      // Neither exists - deploy both contracts
-      if (progressCallback) progressCallback('Deploying both treasury and sales contracts...');
+    // Create transfer transactions
+    for (const transfer of transfers) {
+      console.log(`Preparing transfer transaction: ${transfer.amount} tokens to ${transfer.contractAccount}`);
       
-      deploymentResult = await deploySalesAndTreasuryContracts(
-        salesContract,
-        treasuryContract,
-        namespace,
-        moduleName,
+      const tx = await createTokenTransferTransaction(
+        networkApi,
+        network,
         account,
         pubKey,
         providerName,
-        client,
-        session,
-        chain,
-        progressCallback
+        namespace,
+        moduleName,
+        transfer.contractAccount,
+        transfer.amount,
+        chain
       );
 
-      if (!deploymentResult.success) {
-        throw new Error(deploymentResult.error || 'Contract deployment failed');
-      }
-
-      allTransactionKeys.push(...deploymentResult.transactionKeys);
+      transferTransactions.push({
+        ...tx,
+        transfer: transfer,
+        pactClient: createClient(`${networkApi}/chainweb/0.0/${network}/chain/${chain}/pact`)
+      });
     }
 
-    // Step 3: Transfer tokens to contract accounts
-    if (progressCallback) progressCallback('Starting token distribution...');
+    // Step 4: Combine all transactions for single batch signing
+    allTransactions = [...deploymentTransactions, ...transferTransactions];
     
-    const transferResult = await transferTokensToContracts(
-      namespace,
-      moduleName,
-      account,
-      pubKey,
-      providerName,
-      client,
-      session,
-      tokenDistribution,
-      chain,
-      progressCallback
-    );
+    if (allTransactions.length === 0) {
+      // Both contracts exist and no transfers needed
+      if (progressCallback) progressCallback('All contracts exist and no transfers needed...');
+      
+      return {
+        success: true,
+        salesContractAddress: `${namespace}.${moduleName}-sales`,
+        treasuryContractAddress: `${namespace}.${moduleName}-treasury`,
+        transactionKeys: [],
+        transfers: []
+      };
+    }
 
-    if (!transferResult.success) {
-      throw new Error('Token transfer failed');
+    // Step 5: Sign all transactions in a single batch
+    if (progressCallback) progressCallback(`Signing all ${allTransactions.length} transactions in single batch...`);
+    
+    const allCommands = allTransactions.map(tx => tx.command);
+    console.log(`Preparing to sign ${allCommands.length} transactions in single batch`);
+    console.log(`- Deployment transactions: ${deploymentTransactions.length}`);
+    console.log(`- Transfer transactions: ${transferTransactions.length}`);
+
+    let signedBatch;
+    try {
+      if (providerName === "WC") {
+        signedBatch = await provider.quickSignAll(allCommands, client, session);
+      } else {
+        signedBatch = await provider.quickSignAll(allCommands);
+      }
+    } catch (error) {
+      if (isWalletRejectionError(error)) {
+        throw new Error('Transaction signing was rejected by user');
+      }
+      throw new Error(`Batch signing failed: ${error.message}`);
+    }
+
+    // Check if signing was successful
+    if (!signedBatch || !signedBatch.responses || signedBatch.responses.length === 0) {
+      throw new Error('Transaction signing was rejected or failed');
+    }
+
+    if (signedBatch.status === 'fail' || signedBatch.error) {
+      throw new Error(signedBatch.error || signedBatch.message || 'Transaction signing failed');
+    }
+
+    console.log(`Successfully signed ${signedBatch.responses.length} transactions`);
+
+    // Step 6: Process deployment transactions first
+    let deploymentResults = [];
+    if (deploymentTransactions.length > 0) {
+      if (progressCallback) progressCallback('Processing deployment transactions...');
+      
+      for (let i = 0; i < deploymentTransactions.length; i++) {
+        const tx = deploymentTransactions[i];
+        const signedTx = signedBatch.responses[i];
+        
+        try {
+          const { cmd, sigs, outcomeHash } = extractSignedTransactionData(signedTx, provider);
+          const processedTx = await submitAndWaitForTransaction(tx, cmd, sigs, outcomeHash);
+          
+          if (processedTx) {
+            deploymentResults.push(processedTx);
+            const key = processedTx.requestKey || processedTx.transactionDescriptor?.requestKey;
+            if (key) allTransactionKeys.push(key);
+          }
+        } catch (error) {
+          console.error(`Error processing deployment transaction:`, error);
+          throw error;
+        }
+      }
+
+      // Wait for contracts to be available before processing transfers
+      if (deploymentResults.length > 0) {
+        if (!treasuryExists && deploymentResults.some(tx => tx.suffix === 'treasury')) {
+          if (progressCallback) progressCallback('Waiting for treasury contract confirmation...');
+          await waitForContractToBeAvailable(networkApi, network, chain, namespace, moduleName, 'treasury');
+        }
+        
+        if (!salesExists && deploymentResults.some(tx => tx.suffix === 'sales')) {
+          if (progressCallback) progressCallback('Waiting for sales contract confirmation...');
+          await waitForContractToBeAvailable(networkApi, network, chain, namespace, moduleName, 'sales');
+        }
+      }
+    }
+
+    // Step 7: Process transfer transactions
+    let transferResults = [];
+    if (transferTransactions.length > 0) {
+      if (progressCallback) progressCallback('Processing token transfer transactions...');
+      
+      const transferSubmissions = [];
+      
+      // Submit all transfer transactions
+      for (let i = 0; i < transferTransactions.length; i++) {
+        const tx = transferTransactions[i];
+        const signedTx = signedBatch.responses[deploymentTransactions.length + i];
+        
+        try {
+          const { cmd, sigs, outcomeHash } = extractSignedTransactionData(signedTx, provider);
+          
+          // Submit transaction (don't wait for confirmation yet)
+          const bodyPayload = { cmd, sigs, hash: outcomeHash };
+          
+          // Preflight check
+          const preflightResult = await tx.pactClient.dirtyRead(bodyPayload);
+          
+          if (preflightResult.result.status === 'failure') {
+            throw new Error(`Transfer to ${tx.transfer.contractAccount} preflight failed: ${preflightResult.result.error.message}`);
+          }
+
+          // Submit transaction
+          const transactionDescriptor = await tx.pactClient.submit(bodyPayload);
+          
+          transferSubmissions.push({
+            transfer: tx.transfer,
+            transactionDescriptor,
+            pactClient: tx.pactClient,
+            requestKey: transactionDescriptor.requestKey
+          });
+
+          allTransactionKeys.push(transactionDescriptor.requestKey);
+        } catch (error) {
+          console.error(`Error submitting transfer to ${tx.transfer.contractAccount}:`, error);
+          throw error;
+        }
+      }
+
+      if (progressCallback) progressCallback('Waiting for transfer confirmations...');
+
+      // Wait for all transfer confirmations
+      for (const submission of transferSubmissions) {
+        try {
+          const result = await pollForTransactionResult(submission.pactClient, submission.transactionDescriptor);
+          
+          if (result.result.status === 'success') {
+            console.log(`Successfully transferred ${submission.transfer.amount} tokens to ${submission.transfer.contractAccount}`);
+            transferResults.push({
+              transfer: submission.transfer,
+              result: result,
+              requestKey: submission.requestKey
+            });
+          } else {
+            throw new Error(`Transfer to ${submission.transfer.contractAccount} failed: ${result.result.error.message}`);
+          }
+        } catch (error) {
+          console.error(`Error confirming transfer to ${submission.transfer.contractAccount}:`, error);
+          throw error;
+        }
+      }
     }
 
     // Combine all transaction keys
-    allTransactionKeys.push(...transferResult.transactionKeys);
+    allTransactionKeys = [...new Set(allTransactionKeys)];
 
-    // Step 4: Mark project as deployed after successful distribution
+    // Step 8: Mark project as deployed after successful distribution
     if (progressCallback) progressCallback('Updating project status...');
     
     try {
       const { markProjectAsDeployed } = await import('../api.js');
       
       const deploymentData = {
-        salesContractAddress: deploymentResult.salesContractAddress,
-        treasuryContractAddress: deploymentResult.treasuryContractAddress,
+        salesContractAddress: `${namespace}.${moduleName}-sales`,
+        treasuryContractAddress: `${namespace}.${moduleName}-treasury`,
         deploymentTransactionKeys: allTransactionKeys,
         deployedAt: new Date().toISOString(),
         tokenDistribution: {
@@ -832,15 +975,26 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
 
     console.log('=== Complete Deployment and Distribution Successful ===');
     console.log('All transaction keys:', allTransactionKeys);
+    console.log(`Batch signed ${allTransactions.length} transactions total`);
 
     return {
       success: true,
-      deployment: deploymentResult,
-      tokenDistribution: transferResult,
-      salesContractAddress: deploymentResult.salesContractAddress,
-      treasuryContractAddress: deploymentResult.treasuryContractAddress,
+      deployment: {
+        success: true,
+        transactions: deploymentResults,
+        salesContractAddress: `${namespace}.${moduleName}-sales`,
+        treasuryContractAddress: `${namespace}.${moduleName}-treasury`,
+        transactionKeys: allTransactionKeys
+      },
+      tokenDistribution: {
+        success: true,
+        transfers: transferResults,
+        transactionKeys: allTransactionKeys
+      },
+      salesContractAddress: `${namespace}.${moduleName}-sales`,
+      treasuryContractAddress: `${namespace}.${moduleName}-treasury`,
       transactionKeys: allTransactionKeys,
-      transfers: transferResult.transfers
+      transfers: transferResults
     };
 
   } catch (error) {

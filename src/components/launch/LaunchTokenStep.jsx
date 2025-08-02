@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { checkProjectByContract, markProjectAsDeployed } from '../../api';
+import { checkProjectByContract } from '../../api';
 import { toast } from 'react-toastify';
 import { useSalesContractDeployment } from '../../hooks/useSalesContractDeployment';
 import config from '../../wallet/config';
@@ -121,12 +121,14 @@ const LaunchTokenStep = ({ tokenDetails }) => {
 
       // Show confirmation dialog
       const confirmed = window.confirm(
-        `Are you sure you want to deploy the sales contracts?\n\n` +
+        `Are you sure you want to deploy and launch the token?\n\n` +
         `This will:\n` +
         `- Deploy sales contract: ${tokenData.namespace}.${tokenData.moduleName}-sales\n` +
         `- Deploy treasury contract: ${tokenData.namespace}.${tokenData.moduleName}-treasury\n` +
-        `- Initialize both contracts\n` +
-        `- Transfer tokens if needed\n\n` +
+        `- Batch sign all deployment transactions\n` +
+        `- Distribute tokens to contracts\n` +
+        `- Batch sign all distribution transactions\n` +
+        `- Update project status to "launched"\n\n` +
         `This action cannot be undone.`
       );
 
@@ -137,80 +139,38 @@ const LaunchTokenStep = ({ tokenDetails }) => {
 
       console.log('=== Calling deploySalesAndTreasury ===');
       
-      // Deploy contracts using the hook
+      // Deploy contracts using the hook - this includes batch signing and backend updates
       const result = await deploySalesAndTreasury(tokenData, salesConfigForDeployment);
       
       console.log('=== Deployment result ===', result);
 
       if (result && result.success) {
-        console.log('✅ Contracts deployed successfully, updating backend...');
+        console.log('✅ Complete deployment and distribution successful!');
+        console.log('Transaction keys:', result.transactionKeys);
+        console.log('Sales contract:', result.salesContractAddress);
+        console.log('Treasury contract:', result.treasuryContractAddress);
         
-        // Ensure we have transaction keys
-        const transactionKeys = result.transactionKeys || [];
-        console.log('Transaction keys to send to backend:', transactionKeys);
+        toast.success('🎉 Project successfully deployed and launched!');
         
-        // Calculate token distribution amounts (same logic as in the hook)
-        const calculatedTokenDistribution = {
-          presalesAmount: salesConfigForDeployment.presalesAmount || 
-                         salesConfigForDeployment.tokensForSale ||
-                         ((salesConfigForDeployment.totalBatches || 0) * (salesConfigForDeployment.amountPerBatch || salesConfigForDeployment.tokensPerBatch || 0)),
-          liquidityAmount: salesConfigForDeployment.liquidityLockupAmount || 0,
-          treasuryAmount: salesConfigForDeployment.treasuryAmount || 0
-        };
-
-        // Prepare deployment data for backend (match controller expectations)
-        const deploymentData = {
-          salesContractAddress: result.salesContractAddress,
-          treasuryContractAddress: result.treasuryContractAddress,
-          deploymentTransactionKeys: transactionKeys, // Updated field name to match controller
-          tokenDistribution: calculatedTokenDistribution,
-          deployedAt: new Date().toISOString()
-        };
-
-        console.log('Deployment data for backend:', deploymentData);
-        console.log('Token distribution calculated:', calculatedTokenDistribution);
-        console.log('Sales config used:', salesConfigForDeployment);
-
-        // Mark project as deployed in the backend ONLY after successful blockchain deployment
-        const [namespace, moduleName] = tokenDetails.contractAddress.split('.');
-        console.log('Calling markProjectAsDeployed API...');
+        // Refresh project details to show updated status
+        await fetchProjectDetails();
         
-        try {
-          const apiResponse = await markProjectAsDeployed(namespace, moduleName, deploymentData);
-          console.log('API response:', apiResponse);
+        // Reset deployment state for next use
+        resetDeploymentState();
 
-          toast.success('🎉 Project successfully deployed and launched!');
-          
-          // Refresh project details to show updated status
-          await fetchProjectDetails();
-          
-          // Reset deployment state for next use
-          resetDeploymentState();
-
-          // Maintain scroll position after state changes
-          setTimeout(() => {
-            if (containerRef.current) {
-              containerRef.current.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start',
-                inline: 'nearest'
-              });
-            }
-          }, 100);
-        } catch (apiError) {
-          console.error('Failed to update backend with deployment data:', apiError);
-          console.error('Deployment data that failed:', deploymentData);
-          console.error('Transaction keys that failed to submit:', transactionKeys);
-          // Still show success for blockchain deployment, but warn about backend update
-          toast.warning('Contracts deployed successfully, but failed to update project status. Please refresh the page.');
-        }
-        
+        // Maintain scroll position after state changes
+        setTimeout(() => {
+          if (containerRef.current) {
+            containerRef.current.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'start',
+              inline: 'nearest'
+            });
+          }
+        }, 100);
       } else {
-        console.error('❌ Deployment failed:', result?.error || 'Unknown error');
-        toast.error(`Deployment failed: ${result?.error || 'Unknown error'}`);
-        
-        // Restore scroll position on error
-        window.scrollTo({ top: currentScrollY, behavior: 'smooth' });
+        console.error('❌ Deployment failed or incomplete:', result);
+        toast.error('Deployment failed. Please check console for details.');
       }
     } catch (error) {
       console.error('=== Error in handleDeploy ===', error);
@@ -220,6 +180,13 @@ const LaunchTokenStep = ({ tokenDetails }) => {
       window.scrollTo({ top: currentScrollY, behavior: 'smooth' });
     }
   };
+
+  // Handle deployment completion callback
+  const handleDeploymentComplete = useCallback(() => {
+    console.log('Deployment completed, refreshing project status...');
+    // Refresh project details to get the updated status
+    fetchProjectDetails();
+  }, [fetchProjectDetails]);
 
   // Show different content based on project status
   if (loading) {
@@ -241,6 +208,7 @@ const LaunchTokenStep = ({ tokenDetails }) => {
           project={project}
           deploymentState={deploymentState}
           onDeploy={handleDeploy}
+          onDeploymentComplete={handleDeploymentComplete}
         />
       </div>
     );

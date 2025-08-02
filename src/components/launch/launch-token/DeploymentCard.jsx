@@ -10,7 +10,7 @@ const SuccessAnimation = ({ onComplete }) => {
     const timer = setTimeout(() => {
       setShowAnimation(false);
       onComplete?.();
-    }, 3000); // Show animation for 3 seconds
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -169,9 +169,15 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy, onDeploymentComplete }
 
   // Check if deployment just completed
   useEffect(() => {
-    if (salesContractDeployed && treasuryContractDeployed && 
-        currentStep && currentStep.toLowerCase().includes('completed') && 
-        !deploymentJustCompleted) {
+    const isCompleted = salesContractDeployed && treasuryContractDeployed && currentStep && (
+      currentStep.toLowerCase().includes('completed') ||
+      currentStep.toLowerCase().includes('successful') ||
+      currentStep.toLowerCase().includes('project status updated') ||
+      currentStep.toLowerCase().includes('deployment and distribution completed')
+    );
+
+    if (isCompleted && !deploymentJustCompleted) {
+      console.log('Deployment completed, showing success animation');
       setDeploymentJustCompleted(true);
       setShowSuccessAnimation(true);
     }
@@ -186,9 +192,13 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy, onDeploymentComplete }
   }, [salesContractDeployed, treasuryContractDeployed, isLoading, currentStep, onDeploymentComplete]);
 
   const handleSuccessAnimationComplete = () => {
+    console.log('Success animation completed, transitioning to launched state');
     setShowSuccessAnimation(false);
     // Transition to launched state after success animation
-    onDeploymentComplete?.();
+    setTimeout(() => {
+      console.log('Transitioning to launched state');
+      onDeploymentComplete?.();
+    }, 500); // Small delay for smooth transition
   };
 
   return (
