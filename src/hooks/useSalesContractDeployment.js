@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { generateSalesContract, generateTreasuryContract } from '../utils/contractGeneration';
-import { deploySalesAndTreasuryContracts } from '../utils/deployContract';
+import { deploySalesAndTreasuryWithTokenDistribution } from '../utils/deployContract';
 import { pollForTransactionResult } from '../pactcalls/kadena';
 import { useWalletConnectClient } from '../wallet/providers/ClientContextProvider';
 import useWalletStore from '../wallet/walletStore';
@@ -75,32 +75,28 @@ export const useSalesContractDeployment = () => {
       console.log('Generated treasury contract (first 500 chars):', treasuryContract.substring(0, 500));
       console.log('Treasury contract starts with namespace?', treasuryContract.startsWith(`(namespace '${namespace})`));
 
+      // Prepare token distribution data
+      const tokenDistribution = {
+        presalesAmount: salesConfig.presalesAmount || ((salesConfig.totalBatches || 0) * (salesConfig.amountPerBatch || salesConfig.tokensPerBatch || 0)),
+        liquidityAmount: salesConfig.liquidityLockupAmount || 0,
+        treasuryAmount: salesConfig.treasuryAmount || 0
+      };
+
+      console.log('Token distribution:', tokenDistribution);
+
       updateState({ currentStep: 'Signing transactions...' });
 
       // Deploy both sales and treasury contracts following tokengen pattern
-      console.log('Calling deploySalesAndTreasuryContracts...');
+      console.log('Calling deploySalesAndTreasuryWithTokenDistribution...');
       updateState({ currentStep: 'Deploying contracts...' });
       
       // Create a progress callback to update state during deployment
       const progressCallback = (step) => {
         console.log('Progress callback:', step);
-        
-        // Update deployment flags based on progress steps
-        const updates = { currentStep: step };
-        
-        if (step.includes('Waiting for treasury confirmation') || step.includes('treasury deployed')) {
-          updates.treasuryContractDeployed = true;
-        }
-        
-        if (step.includes('Deploying sales contract') && step.includes('treasury')) {
-          // This means we've moved to sales deployment after treasury
-          updates.treasuryContractDeployed = true;
-        }
-        
-        updateState(updates);
+        updateState({ currentStep: step });
       };
       
-      const deploymentResult = await deploySalesAndTreasuryContracts(
+      const deploymentResult = await deploySalesAndTreasuryWithTokenDistribution(
         salesContract,
         treasuryContract,
         namespace,
@@ -110,11 +106,12 @@ export const useSalesContractDeployment = () => {
         provider,
         client,
         session,
+        tokenDistribution,
         undefined, // chain (default)
         progressCallback // Add progress callback
       );
 
-      console.log('Deployment result:', deploymentResult);
+      console.log('Complete deployment result:', deploymentResult);
 
       // Properly extract and collect all transaction keys
       let allTransactionKeys = [];
@@ -124,14 +121,6 @@ export const useSalesContractDeployment = () => {
         allTransactionKeys.push(...deploymentResult.transactionKeys);
       }
       
-      // Get keys from individual transactions if available
-      if (deploymentResult.transactions && Array.isArray(deploymentResult.transactions)) {
-        const txKeys = deploymentResult.transactions
-          .map(tx => tx.requestKey || tx.transactionDescriptor?.requestKey)
-          .filter(key => key); // Filter out undefined/null keys
-        allTransactionKeys.push(...txKeys);
-      }
-      
       // Remove duplicates
       allTransactionKeys = [...new Set(allTransactionKeys)];
       currentTransactionKeys.push(...allTransactionKeys);
@@ -139,96 +128,40 @@ export const useSalesContractDeployment = () => {
       console.log('Collected transaction keys:', allTransactionKeys);
 
       updateState({ 
-        currentStep: 'Confirming deployments...',
-        transactionKeys: currentTransactionKeys
-      });
-
-      // Wait for all transactions to complete
-      console.log('Polling for deployment confirmations...');
-      const confirmations = [];
-      
-      for (const tx of deploymentResult.transactions) {
-        const stepMsg = tx.suffix === 'treasury' ? 
-          'Confirming treasury deployment...' : 
-          'Confirming sales deployment...';
-        
-        updateState({ currentStep: stepMsg });
-        
-        console.log(`Polling for transaction ${tx.requestKey}...`);
-        const confirmation = await pollForTransactionResult(
-          tx.pactClient, 
-          tx.transactionDescriptor
-        );
-        console.log(`Transaction ${tx.requestKey} confirmation:`, confirmation);
-        
-        if (confirmation.result.status === 'failure') {
-          throw new Error(`${tx.suffix} contract deployment failed: ${confirmation.result.error.message}`);
-        }
-        
-        confirmations.push(confirmation);
-        
-        // Update individual contract deployment status
-        if (tx.suffix === 'treasury') {
-          updateState({ 
-            treasuryContractDeployed: true,
-            currentStep: 'Treasury deployed! Confirming sales...'
-          });
-        } else if (tx.suffix === 'sales') {
-          updateState({ 
-            salesContractDeployed: true,
-            currentStep: 'Sales contract deployed!'
-          });
-        }
-      }
-
-      updateState({ 
+        currentStep: 'Deployment completed successfully!',
+        transactionKeys: currentTransactionKeys,
         salesContractDeployed: true,
         treasuryContractDeployed: true,
         salesContractAddress: deploymentResult.salesContractAddress,
-        treasuryContractAddress: deploymentResult.treasuryContractAddress,
-        currentStep: 'Deployment completed successfully!',
-        transactionKeys: currentTransactionKeys // Ensure keys are in final state
+        treasuryContractAddress: deploymentResult.treasuryContractAddress
       });
 
-      updateState({ 
-        isLoading: false,
-        currentStep: 'All contracts deployed successfully!',
-        error: null
-      });
-
-      console.log('=== Deployment Completed Successfully ===');
-      console.log('Sales contract:', deploymentResult.salesContractAddress);
-      console.log('Treasury contract:', deploymentResult.treasuryContractAddress);
-      console.log('Transaction keys for backend:', currentTransactionKeys);
-
-      toast.success('Sales and treasury contracts deployed successfully!', { 
-        position: 'top-center' 
-      });
+      console.log('=== Deployment Successful ===');
       
       return {
         success: true,
-        salesContractAddress: deploymentResult.salesContractAddress,
-        treasuryContractAddress: deploymentResult.treasuryContractAddress,
-        transactionKeys: currentTransactionKeys // Return collected keys
+        ...deploymentResult
       };
 
     } catch (error) {
-      console.error('=== Contract deployment error ===', error);
+      console.error('Error during deployment:', error);
       
       updateState({ 
-        isLoading: false,
+        currentStep: null,
         error: error.message,
-        currentStep: `Error: ${error.message}`
+        isLoading: false,
+        transactionKeys: currentTransactionKeys
       });
-
-      toast.error(`Deployment failed: ${error.message}`, { 
-        position: 'top-center' 
-      });
-
-      return {
-        success: false,
-        error: error.message
-      };
+      
+      if (error.message.includes('rejected') || error.message.includes('cancelled')) {
+        toast.error('Transaction was cancelled or rejected by user');
+      } else {
+        toast.error(`Deployment failed: ${error.message}`);
+      }
+      
+      throw error;
+    } finally {
+      updateState({ isLoading: false });
     }
   }, [client, session, updateState, isConnected, account, pubKey, provider]);
 

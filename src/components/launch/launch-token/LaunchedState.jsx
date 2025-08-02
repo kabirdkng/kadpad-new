@@ -141,27 +141,76 @@ const LaunchedState = ({ tokenDetails, project }) => {
               </div>
             )}
 
+            {/* Token Distribution Summary */}
+            {project.tokenDistribution && (
+              <div className="bg-gray-800/50 p-4 rounded-lg border border-gray-700/50">
+                <label className="block text-sm font-medium text-orange-400 mb-3 flex items-center gap-2">
+                  <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                  Token Distribution Summary
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {project.tokenDistribution.presalesAmount > 0 && (
+                    <div className="text-center p-3 bg-orange-500/10 rounded border border-orange-500/20">
+                      <div className="text-lg font-bold text-orange-400">
+                        {Number(project.tokenDistribution.presalesAmount).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-400">Presale Tokens</div>
+                      <div className="text-xs text-orange-300 mt-1">→ Sales Contract</div>
+                    </div>
+                  )}
+                  {project.tokenDistribution.liquidityAmount > 0 && (
+                    <div className="text-center p-3 bg-blue-500/10 rounded border border-blue-500/20">
+                      <div className="text-lg font-bold text-blue-400">
+                        {Number(project.tokenDistribution.liquidityAmount).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-400">Liquidity Tokens</div>
+                      <div className="text-xs text-blue-300 mt-1">→ Treasury Liquidity</div>
+                    </div>
+                  )}
+                  {project.tokenDistribution.treasuryAmount > 0 && (
+                    <div className="text-center p-3 bg-green-500/10 rounded border border-green-500/20">
+                      <div className="text-lg font-bold text-green-400">
+                        {Number(project.tokenDistribution.treasuryAmount).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-400">Treasury Tokens</div>
+                      <div className="text-xs text-green-300 mt-1">→ Treasury Account</div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mt-3 text-center">
+                  Tokens have been automatically distributed to their respective contract accounts
+                </p>
+              </div>
+            )}
+
             {/* Deployment Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
                 <div className="text-lg font-bold text-green-400">
-                  {project.deploymentTransactionKeys ? project.deploymentTransactionKeys.length : '2'}
+                  {project.deploymentTransactionKeys ? project.deploymentTransactionKeys.length : 'N/A'}
                 </div>
-                <div className="text-xs text-gray-400">Transactions</div>
+                <div className="text-xs text-gray-400">Total Transactions</div>
               </div>
               <div className="text-center p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                <div className="text-lg font-bold text-blue-400">2</div>
-                <div className="text-xs text-gray-400">Contracts</div>
+                <div className="text-lg font-bold text-blue-400">
+                  {(project.salesContractAddress ? 1 : 0) + (project.treasuryContractAddress ? 1 : 0)}
+                </div>
+                <div className="text-xs text-gray-400">Deployed Contracts</div>
               </div>
               <div className="text-center p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
                 <div className="text-lg font-bold text-purple-400">
-                  {project.deployedAt ? Math.ceil((Date.now() - new Date(project.deployedAt).getTime()) / (1000 * 60 * 60 * 24)) : 'N/A'}
+                  {project.tokenDistribution ? 
+                    Object.values(project.tokenDistribution).filter(amount => amount > 0).length : 
+                    'N/A'
+                  }
                 </div>
-                <div className="text-xs text-gray-400">Days Live</div>
+                <div className="text-xs text-gray-400">Token Transfers</div>
               </div>
               <div className="text-center p-3 bg-gray-800/30 rounded-lg border border-gray-700/50">
-                <div className="text-lg font-bold text-yellow-400">Active</div>
-                <div className="text-xs text-gray-400">Status</div>
+                <div className="text-lg font-bold text-yellow-400">
+                  {project.deployedAt ? Math.max(1, Math.ceil((Date.now() - new Date(project.deployedAt).getTime()) / (1000 * 60 * 60 * 24))) : 'N/A'}
+                </div>
+                <div className="text-xs text-gray-400">Days Live</div>
               </div>
             </div>
           </div>

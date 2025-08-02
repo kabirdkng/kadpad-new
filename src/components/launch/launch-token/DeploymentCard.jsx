@@ -3,85 +3,71 @@ import { Rocket, Settings, CheckCircle2, Clock, AlertCircle, ExternalLink } from
 
 // Helper function to calculate progress width based on current step
 const getProgressWidth = (currentStep, salesDeployed, treasuryDeployed) => {
-  // If both are deployed, we're at 100%
-  if (salesDeployed && treasuryDeployed) return '100%';
+  // If both are deployed and process is complete, we're at 100%
+  if (salesDeployed && treasuryDeployed && currentStep && currentStep.toLowerCase().includes('completed')) {
+    return '100%';
+  }
   
   if (!currentStep) return '5%';
   
   const step = currentStep.toLowerCase();
   
-  // Progressive steps based on actual deployment flow
+  // Progressive steps based on new deployment flow
   if (step.includes('checking existing')) return '10%';
-  if (step.includes('treasury needed') || step.includes('preparing batch')) return '15%';
-  if (step.includes('creating transaction')) return '20%';
-  if (step.includes('signing') || step.includes('batch')) return '30%';
-  if (step.includes('deploying treasury')) return '45%';
-  
-  // Treasury completion milestone
-  if (step.includes('waiting for treasury') || step.includes('treasury confirmation')) {
-    return treasuryDeployed ? '65%' : '55%';
-  }
-  
-  // Sales deployment phase
-  if (step.includes('deploying sales')) {
-    return treasuryDeployed ? '80%' : '60%';
-  }
-  
-  // Final confirmation phases
-  if (step.includes('confirming treasury')) return '70%';
-  if (step.includes('confirming sales')) return '90%';
-  if (step.includes('all contracts deployed') || step.includes('deployment completed')) return '100%';
+  if (step.includes('both contracts exist')) return '40%';
+  if (step.includes('treasury exists')) return '20%';
+  if (step.includes('deploying') || step.includes('signing')) return '30%';
+  if (step.includes('starting token distribution') || step.includes('distribution')) return '60%';
+  if (step.includes('transferred') || step.includes('transfer')) return '70%';
+  if (step.includes('updating project') || step.includes('marking')) return '90%';
+  if (step.includes('completed') || step.includes('successful')) return '100%';
   
   // Default progress for unmatched steps
-  return '25%';
+  return '15%';
 };
 
 // Helper function to get deployment steps with status
 const getDeploymentSteps = (currentStep, salesDeployed, treasuryDeployed) => {
   const steps = [
-    { label: 'Prepare deployment', key: 'prepare' },
-    { label: 'Generate contracts', key: 'generate' },
-    { label: 'Sign transactions', key: 'sign' },
-    { label: 'Deploy contracts', key: 'deploy' },
-    { label: 'Confirm treasury', key: 'treasury' },
-    { label: 'Confirm sales', key: 'sales' }
+    { label: 'Check existing contracts', key: 'check' },
+    { label: 'Deploy missing contracts', key: 'deploy' },
+    { label: 'Distribute tokens', key: 'distribute' },
+    { label: 'Update project status', key: 'update' },
+    { label: 'Complete', key: 'complete' }
   ];
 
   const getCurrentStepKey = () => {
-    if (!currentStep) return 'prepare';
+    if (!currentStep) return 'check';
     const step = currentStep.toLowerCase();
     
-    // Enhanced step detection with better matching
+    // Enhanced step detection for new flow
     if (step.includes('checking existing') || step.includes('preparing')) {
-      return 'prepare';
+      return 'check';
     }
-    if (step.includes('creating transaction') || step.includes('generating')) {
-      return 'generate';
-    }
-    if (step.includes('signing') || step.includes('batch')) {
-      return 'sign';
-    }
-    if (step.includes('deploying treasury') || step.includes('treasury needed')) {
+    if (step.includes('deploying') || step.includes('signing') || step.includes('creating transaction') || step.includes('batch')) {
       return 'deploy';
     }
-    if (step.includes('waiting for treasury') || step.includes('treasury confirmation')) {
-      return 'treasury';
+    if (step.includes('distribution') || step.includes('transfer') || step.includes('token')) {
+      return 'distribute';
     }
-    if (step.includes('deploying sales') || step.includes('confirming sales') || step.includes('confirming') || step.includes('all contracts deployed')) {
-      return 'sales';
+    if (step.includes('updating project') || step.includes('marking')) {
+      return 'update';
+    }
+    if (step.includes('completed') || step.includes('successful')) {
+      return 'complete';
     }
     
-    return 'prepare';
+    return 'check';
   };
 
   const currentStepKey = getCurrentStepKey();
-  const stepOrder = ['prepare', 'generate', 'sign', 'deploy', 'treasury', 'sales'];
+  const stepOrder = ['check', 'deploy', 'distribute', 'update', 'complete'];
   const currentIndex = stepOrder.indexOf(currentStepKey);
   
   return steps.map((step, index) => {
     let status = 'pending';
     
-    if (salesDeployed && treasuryDeployed) {
+    if (salesDeployed && treasuryDeployed && currentStepKey === 'complete') {
       status = 'completed';
     } else if (step.key === currentStepKey) {
       status = 'current';
