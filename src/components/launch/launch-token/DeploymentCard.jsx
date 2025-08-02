@@ -10,7 +10,7 @@ const SuccessAnimation = ({ onComplete }) => {
     const timer = setTimeout(() => {
       setShowAnimation(false);
       onComplete?.();
-    }, 3000);
+    }, 2000); // Show animation for 2 seconds for quicker transition
 
     return () => clearTimeout(timer);
   }, [onComplete]);
@@ -46,7 +46,8 @@ const SuccessAnimation = ({ onComplete }) => {
             {[0, 1, 2].map((i) => (
               <div
                 key={i}
-                className={`w-2 h-2 bg-green-400 rounded-full animate-pulse delay-${i * 200}`}
+                className="w-2 h-2 bg-green-400 rounded-full animate-pulse"
+                style={{ animationDelay: `${i * 200}ms` }}
               ></div>
             ))}
           </div>
@@ -290,8 +291,8 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy, onDeploymentComplete }
                 ))}
               </div>
               
-              {/* Debug info in development
-              {process.env.NODE_ENV === 'development' && (
+              {/* Debug info in development */}
+              {/* {process.env.NODE_ENV === 'development' && (
                 <div className="mt-2 p-2 bg-gray-700/50 rounded text-xs text-gray-400">
                   <div>Raw Step: "{currentStep || 'None'}"</div>
                   <div>Detected Step: "{getDeploymentSteps(currentStep, salesContractDeployed, treasuryContractDeployed).find(s => s.status === 'current')?.label || 'None'}"</div>
@@ -299,8 +300,8 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy, onDeploymentComplete }
                   <div>Treasury Deployed: {treasuryContractDeployed ? 'Yes' : 'No'}</div>
                   <div>Progress: {getProgressWidth(currentStep, salesContractDeployed, treasuryContractDeployed)}</div>
                 </div>
-              )} */}
-            </div>
+              )}
+            </div> */}
 
             {/* Transaction Keys Display */}
             {transactionKeys && transactionKeys.length > 0 && (
