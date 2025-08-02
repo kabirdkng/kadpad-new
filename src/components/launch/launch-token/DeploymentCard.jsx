@@ -300,8 +300,8 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy, onDeploymentComplete }
                   <div>Treasury Deployed: {treasuryContractDeployed ? 'Yes' : 'No'}</div>
                   <div>Progress: {getProgressWidth(currentStep, salesContractDeployed, treasuryContractDeployed)}</div>
                 </div>
-              )}
-            </div> */}
+              )} */}
+            </div>
 
             {/* Transaction Keys Display */}
             {transactionKeys && transactionKeys.length > 0 && (
