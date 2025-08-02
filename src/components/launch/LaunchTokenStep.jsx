@@ -149,17 +149,27 @@ const LaunchTokenStep = ({ tokenDetails }) => {
         const transactionKeys = result.transactionKeys || [];
         console.log('Transaction keys to send to backend:', transactionKeys);
         
-        // Prepare deployment data for backend
+        // Calculate token distribution amounts (same logic as in the hook)
+        const calculatedTokenDistribution = {
+          presalesAmount: salesConfigForDeployment.presalesAmount || 
+                         salesConfigForDeployment.tokensForSale ||
+                         ((salesConfigForDeployment.totalBatches || 0) * (salesConfigForDeployment.amountPerBatch || salesConfigForDeployment.tokensPerBatch || 0)),
+          liquidityAmount: salesConfigForDeployment.liquidityLockupAmount || 0,
+          treasuryAmount: salesConfigForDeployment.treasuryAmount || 0
+        };
+
+        // Prepare deployment data for backend (match controller expectations)
         const deploymentData = {
           salesContractAddress: result.salesContractAddress,
           treasuryContractAddress: result.treasuryContractAddress,
-          transactionKeys: transactionKeys, // Use the collected keys
-          deployedAt: new Date().toISOString(),
-          chainId: config.chainId,
-          status: 'launched'
+          deploymentTransactionKeys: transactionKeys, // Updated field name to match controller
+          tokenDistribution: calculatedTokenDistribution,
+          deployedAt: new Date().toISOString()
         };
 
         console.log('Deployment data for backend:', deploymentData);
+        console.log('Token distribution calculated:', calculatedTokenDistribution);
+        console.log('Sales config used:', salesConfigForDeployment);
 
         // Mark project as deployed in the backend ONLY after successful blockchain deployment
         const [namespace, moduleName] = tokenDetails.contractAddress.split('.');
