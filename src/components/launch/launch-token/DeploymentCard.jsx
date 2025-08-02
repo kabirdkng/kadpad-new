@@ -57,6 +57,10 @@ const SuccessAnimation = ({ onComplete }) => {
   );
 };
 
+SuccessAnimation.propTypes = {
+  onComplete: PropTypes.func
+};
+
 // Helper function to calculate progress width based on current step
 const getProgressWidth = (currentStep, salesDeployed, treasuryDeployed) => {
   // If both are deployed and process is complete, we're at 100%
@@ -69,17 +73,44 @@ const getProgressWidth = (currentStep, salesDeployed, treasuryDeployed) => {
   const step = currentStep.toLowerCase();
   
   // Progressive steps based on detailed deployment flow
-  if (step.includes('checking existing')) return '5%';
+  if (step.includes('checking existing') || step.includes('preparing')) return '5%';
   if (step.includes('generating contract') || step.includes('contract code')) return '15%';
   if (step.includes('signing') || step.includes('batch')) return '25%';
-  if (step.includes('deploying treasury')) return '40%';
-  if (step.includes('deploying sales')) return '55%';
-  if (step.includes('starting token distribution') || step.includes('preparing token transfers')) return '65%';
-  if (step.includes('all token transfers submitted') || step.includes('confirmed:')) return '80%';
-  if (step.includes('updating project') || step.includes('marking')) return '90%';
-  if (step.includes('completed') || step.includes('successful')) return '100%';
   
-  // Default progress for unmatched steps
+  // Treasury deployment phase (expanded coverage)
+  if (step.includes('deploying treasury') || 
+      step.includes('treasury needed') || 
+      step.includes('waiting for treasury') ||
+      step.includes('treasury confirmation') ||
+      step.includes('treasury contract')) return '40%';
+  
+  // Sales deployment phase (expanded coverage) 
+  if (step.includes('deploying sales') || 
+      step.includes('waiting for sales') ||
+      step.includes('sales confirmation') ||
+      step.includes('sales contract')) return '55%';
+  
+  // Token distribution phase
+  if (step.includes('starting token distribution') || 
+      step.includes('preparing token transfers') ||
+      step.includes('both contracts confirmed') ||
+      step.includes('processing token transfers')) return '65%';
+  
+  if (step.includes('all token transfers submitted') || 
+      step.includes('confirmed:') ||
+      step.includes('waiting for confirmations')) return '80%';
+  
+  if (step.includes('updating project') || 
+      step.includes('marking')) return '90%';
+  
+  if (step.includes('completed') || 
+      step.includes('successful')) return '100%';
+  
+  // Default progress for unmatched steps - but provide more coverage
+  if (step.includes('treasury')) return '40%';
+  if (step.includes('sales')) return '55%';
+  if (step.includes('transfer') || step.includes('distribution')) return '65%';
+  
   return '10%';
 };
 
@@ -163,11 +194,6 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy, onDeploymentComplete }
   const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
   const [deploymentJustCompleted, setDeploymentJustCompleted] = useState(false);
 
-  // Debug logging
-  console.log('DeploymentCard - Current step:', currentStep);
-  console.log('DeploymentCard - Sales deployed:', salesContractDeployed);
-  console.log('DeploymentCard - Treasury deployed:', treasuryContractDeployed);
-
   // Check if deployment just completed
   useEffect(() => {
     const isCompleted = salesContractDeployed && treasuryContractDeployed && currentStep && (
@@ -178,7 +204,6 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy, onDeploymentComplete }
     );
 
     if (isCompleted && !deploymentJustCompleted) {
-      console.log('Deployment completed, showing success animation');
       setDeploymentJustCompleted(true);
       setShowSuccessAnimation(true);
     }
@@ -193,11 +218,9 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy, onDeploymentComplete }
   }, [salesContractDeployed, treasuryContractDeployed, isLoading, currentStep, onDeploymentComplete]);
 
   const handleSuccessAnimationComplete = () => {
-    console.log('Success animation completed, transitioning to launched state');
     setShowSuccessAnimation(false);
     // Transition to launched state after success animation
     setTimeout(() => {
-      console.log('Transitioning to launched state');
       onDeploymentComplete?.();
     }, 500); // Small delay for smooth transition
   };
@@ -290,17 +313,6 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy, onDeploymentComplete }
                   </div>
                 ))}
               </div>
-              
-              {/* Debug info in development */}
-              {/* {process.env.NODE_ENV === 'development' && (
-                <div className="mt-2 p-2 bg-gray-700/50 rounded text-xs text-gray-400">
-                  <div>Raw Step: "{currentStep || 'None'}"</div>
-                  <div>Detected Step: "{getDeploymentSteps(currentStep, salesContractDeployed, treasuryContractDeployed).find(s => s.status === 'current')?.label || 'None'}"</div>
-                  <div>Sales Deployed: {salesContractDeployed ? 'Yes' : 'No'}</div>
-                  <div>Treasury Deployed: {treasuryContractDeployed ? 'Yes' : 'No'}</div>
-                  <div>Progress: {getProgressWidth(currentStep, salesContractDeployed, treasuryContractDeployed)}</div>
-                </div>
-              )} */}
             </div>
 
             {/* Transaction Keys Display */}
