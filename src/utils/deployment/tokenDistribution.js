@@ -12,20 +12,34 @@ import { pollForTransactionResult, pactCalls } from "../../pactcalls/kadena";
  */
 export const fetchContractAccounts = async (namespace, moduleName, chain) => {
   try {
+    console.log(`=== Fetching Contract Accounts for ${namespace}.${moduleName} on chain ${chain} ===`);
+    
     // Fetch RESERVE-ACCOUNT from sales contract
     const reserveAccountCode = `(use '${namespace}.${moduleName}-sales) RESERVE-ACCOUNT`;
+    console.log('Fetching RESERVE-ACCOUNT with code:', reserveAccountCode);
     const reserveResult = await pactCalls(reserveAccountCode, chain, "");
     const reserveAccount = reserveResult.result.data;
+    console.log('✅ RESERVE-ACCOUNT fetched:', reserveAccount);
 
     // Fetch LIQUIDITY-ACCOUNT from treasury contract
     const liquidityAccountCode = `(use '${namespace}.${moduleName}-treasury) LIQUIDITY-ACCOUNT`;
+    console.log('Fetching LIQUIDITY-ACCOUNT with code:', liquidityAccountCode);
     const liquidityResult = await pactCalls(liquidityAccountCode, chain, "");
     const liquidityAccount = liquidityResult.result.data;
+    console.log('✅ LIQUIDITY-ACCOUNT fetched:', liquidityAccount);
 
     // Fetch TREASURY-ACCOUNT from treasury contract
     const treasuryAccountCode = `(use '${namespace}.${moduleName}-treasury) TREASURY-ACCOUNT`;
+    console.log('Fetching TREASURY-ACCOUNT with code:', treasuryAccountCode);
     const treasuryResult = await pactCalls(treasuryAccountCode, chain, "");
     const treasuryAccount = treasuryResult.result.data;
+    console.log('✅ TREASURY-ACCOUNT fetched:', treasuryAccount);
+
+    console.log('=== All Contract Accounts Successfully Fetched ===');
+    console.log('Summary:');
+    console.log('- Reserve Account (Sales):', reserveAccount);
+    console.log('- Liquidity Account (Treasury):', liquidityAccount);
+    console.log('- Treasury Account (Treasury):', treasuryAccount);
 
     return {
       reserveAccount,
