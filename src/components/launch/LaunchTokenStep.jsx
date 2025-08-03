@@ -121,13 +121,16 @@ const LaunchTokenStep = ({ tokenDetails }) => {
       // Show confirmation dialog
       const confirmed = window.confirm(
         `Are you sure you want to deploy and launch the token?\n\n` +
+        `🔐 TWO-PHASE SIGNING PROCESS:\n` +
+        `Phase 1: Sign contract deployment transactions\n` +
+        `Phase 2: Sign token distribution transactions (after contracts deploy)\n\n` +
         `This will:\n` +
         `- Deploy sales contract: ${tokenData.namespace}.${tokenData.moduleName}-sales\n` +
         `- Deploy treasury contract: ${tokenData.namespace}.${tokenData.moduleName}-treasury\n` +
-        `- Batch sign all deployment transactions\n` +
-        `- Distribute tokens to contracts\n` +
-        `- Batch sign all distribution transactions\n` +
+        `- Fetch actual contract account addresses\n` +
+        `- Distribute tokens to contract accounts\n` +
         `- Update project status to "launched"\n\n` +
+        `⚠️ You will need to approve transactions TWICE during this process.\n` +
         `This action cannot be undone.`
       );
 

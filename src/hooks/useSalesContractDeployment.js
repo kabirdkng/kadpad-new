@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import { generateSalesContract, generateTreasuryContract } from '../utils/contractGeneration';
 import { deploySalesAndTreasuryWithTokenDistribution } from '../utils/deployContract';
-import { pollForTransactionResult } from '../pactcalls/kadena';
 import { useWalletConnectClient } from '../wallet/providers/ClientContextProvider';
 import useWalletStore from '../wallet/walletStore';
 import { toast } from 'react-toastify';
@@ -128,7 +127,7 @@ export const useSalesContractDeployment = () => {
       console.log('Collected transaction keys:', allTransactionKeys);
 
       updateState({ 
-        currentStep: 'Deployment completed successfully!',
+        currentStep: '✅ Complete deployment and distribution successful!',
         transactionKeys: currentTransactionKeys,
         salesContractDeployed: true,
         treasuryContractDeployed: true,
@@ -137,6 +136,13 @@ export const useSalesContractDeployment = () => {
       });
 
       console.log('=== Deployment Successful ===');
+      
+      // Add a small delay to ensure UI updates, then mark as ready for project status transition
+      setTimeout(() => {
+        updateState({ 
+          currentStep: 'Project successfully launched and ready!'
+        });
+      }, 1000);
       
       return {
         success: true,

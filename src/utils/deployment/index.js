@@ -15,7 +15,8 @@ export {
 
 export { 
   createTokenTransferTransaction, 
-  transferTokensToContracts 
+  transferTokensToContracts,
+  fetchContractAccounts 
 } from './tokenDistribution.js';
 
 export { 

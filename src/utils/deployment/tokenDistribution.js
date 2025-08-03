@@ -1,4 +1,5 @@
 import { createClient } from "@kadena/client";
+import { Pact } from "@kadena/client";
 import providers from "../../wallet/providers/providers";
 import { 
   createTx, 
@@ -6,6 +7,75 @@ import {
   extractSignedTransactionData
 } from "./transactionHelpers.js";
 import { pollForTransactionResult } from "../../pactcalls/kadena";
+
+/**
+ * Fetches contract account addresses after deployment
+ */
+export const fetchContractAccounts = async (networkApi, network, chain, namespace, moduleName) => {
+  const pactClient = createClient(`${networkApi}/chainweb/0.0/${network}/chain/${chain}/pact`);
+  
+  try {
+    // Fetch RESERVE-ACCOUNT from sales contract
+    const reserveCommand = Pact.builder
+      .execution(`(use ${namespace}.${moduleName}-sales) RESERVE-ACCOUNT`)
+      .setMeta({
+        chainId: String(chain),
+        gasLimit: 1000,
+        gasPrice: 0.00000001,
+        sender: "",
+        ttl: 600,
+      })
+      .setNetworkId(network)
+      .createTransaction();
+
+    const reserveResult = await pactClient.dirtyRead(reserveCommand);
+    
+    // Fetch LIQUIDITY-ACCOUNT from treasury contract
+    const liquidityCommand = Pact.builder
+      .execution(`(use ${namespace}.${moduleName}-treasury) LIQUIDITY-ACCOUNT`)
+      .setMeta({
+        chainId: String(chain),
+        gasLimit: 1000,
+        gasPrice: 0.00000001,
+        sender: "",
+        ttl: 600,
+      })
+      .setNetworkId(network)
+      .createTransaction();
+
+    const liquidityResult = await pactClient.dirtyRead(liquidityCommand);
+
+    // Fetch TREASURY-ACCOUNT from treasury contract
+    const treasuryCommand = Pact.builder
+      .execution(`(use ${namespace}.${moduleName}-treasury) TREASURY-ACCOUNT`)
+      .setMeta({
+        chainId: String(chain),
+        gasLimit: 1000,
+        gasPrice: 0.00000001,
+        sender: "",
+        ttl: 600,
+      })
+      .setNetworkId(network)
+      .createTransaction();
+
+    const treasuryResult = await pactClient.dirtyRead(treasuryCommand);
+
+    if (reserveResult.result.status !== 'success' || 
+        liquidityResult.result.status !== 'success' || 
+        treasuryResult.result.status !== 'success') {
+      throw new Error('Failed to fetch contract account addresses');
+    }
+
+    return {
+      reserveAccount: reserveResult.result.data,
+      liquidityAccount: liquidityResult.result.data,
+      treasuryAccount: treasuryResult.result.data
+    };
+  } catch (error) {
+    console.error('Error fetching contract accounts:', error);
+    throw new Error(`Failed to fetch contract accounts: ${error.message}`);
+  }
+};
 
 /**
  * Creates a token transfer transaction for contract accounts
@@ -20,45 +90,46 @@ export const createTokenTransferTransaction = async (
   moduleName, 
   transferType, 
   amount, 
-  chain
+  chain,
+  contractAccounts
 ) => {
   let transferCode;
   let toAccount;
   
-  // Use the correct pattern for each contract account type
+  // Use the actual contract account addresses fetched from the blockchain
   if (transferType === 'reserve') {
     transferCode = `(namespace '${namespace}) 
                      (use ${moduleName}-sales)
                      (${namespace}.${moduleName}.transfer-create 
                         "${account}" 
-                        RESERVE-ACCOUNT
+                        "${contractAccounts.reserveAccount}"
                         RESERVE-GUARD
                         ${amount}.0)`;
-    toAccount = 'RESERVE-ACCOUNT';
+    toAccount = contractAccounts.reserveAccount;
   } else if (transferType === 'liquidity') {
     transferCode = `(namespace '${namespace}) 
                      (use ${moduleName}-treasury)
                      (${namespace}.${moduleName}.transfer-create 
                      "${account}"
-                     LIQUIDITY-ACCOUNT
+                     "${contractAccounts.liquidityAccount}"
                      LIQUIDITY-GUARD
                      ${amount}.0)`;
-    toAccount = 'LIQUIDITY-ACCOUNT';
+    toAccount = contractAccounts.liquidityAccount;
   } else if (transferType === 'treasury') {
     transferCode = `(namespace '${namespace}) 
                      (use ${moduleName}-treasury)
                      (${namespace}.${moduleName}.transfer-create 
                      "${account}"
-                     TREASURY-ACCOUNT
+                     "${contractAccounts.treasuryAccount}"
                      TREASURY-GUARD
                      ${amount}.0)`;
-    toAccount = 'TREASURY-ACCOUNT';
+    toAccount = contractAccounts.treasuryAccount;
   } else {
     throw new Error(`Invalid transfer type: ${transferType}`);
   }
   
   const capabilities = [
-    { name: `${namespace}.${moduleName}.TRANSFER`, values: [account, toAccount, amount] },
+    { name: `${namespace}.${moduleName}.TRANSFER`, values: [account, toAccount, { decimal: String(amount) }] },
     { name: 'coin.GAS', values: [] }
   ];
 
@@ -89,12 +160,18 @@ export const transferTokensToContracts = async (
       throw new Error(`Provider not found: ${providerName}. Available providers: ${Object.keys(providers).join(', ')}`);
     }
 
+    if (progressCallback) progressCallback('Fetching contract account addresses...');
+
+    // First, fetch the actual contract account addresses
+    const contractAccounts = await fetchContractAccounts(networkApi, network, chain, namespace, moduleName);
+    console.log('Fetched contract accounts:', contractAccounts);
+
     if (progressCallback) progressCallback('Preparing token transfers...');
 
     const transfers = [];
     const transactions = [];
     
-    // Define the transfers based on token distribution using contract constants
+    // Define the transfers based on token distribution
     if (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0) {
       transfers.push({
         transferType: 'reserve',
@@ -128,7 +205,7 @@ export const transferTokensToContracts = async (
       };
     }
 
-    // Create transfer transactions
+    // Create transfer transactions with actual contract account addresses
     for (const transfer of transfers) {
       console.log(`Creating transfer transaction: ${transfer.amount} tokens to ${transfer.transferType} account`);
       
@@ -142,7 +219,8 @@ export const transferTokensToContracts = async (
         moduleName,
         transfer.transferType,
         transfer.amount,
-        chain
+        chain,
+        contractAccounts
       );
 
       transactions.push({
