@@ -5,58 +5,10 @@ import {
   isWalletRejectionError, 
   extractSignedTransactionData
 } from "./transactionHelpers.js";
-import { pollForTransactionResult, pactCalls } from "../../pactcalls/kadena";
+import { pollForTransactionResult } from "../../pactcalls/kadena";
 
 /**
- * Fetch contract account addresses using pact calls
- */
-export const fetchContractAccounts = async (namespace, moduleName, chain) => {
-  try {
-    console.log(`=== Fetching Contract Accounts for ${namespace}.${moduleName} on chain ${chain} ===`);
-    
-    // Fetch RESERVE-ACCOUNT from sales contract
-    const reserveAccountCode = `(use ${namespace}.${moduleName}-sales) RESERVE-ACCOUNT`;
-    console.log('Fetching RESERVE-ACCOUNT with code:', reserveAccountCode);
-    const reserveResult = await pactCalls(reserveAccountCode, chain);
-    console.log('✅ RESERVE-ACCOUNT fetched:', reserveResult);
-    const reserveAccount = reserveResult.result.data;
-    console.log('✅ RESERVE-ACCOUNT fetched:', reserveAccount);
-
-    // Fetch LIQUIDITY-ACCOUNT from treasury contract
-    const liquidityAccountCode = `(use ${namespace}.${moduleName}-treasury) LIQUIDITY-ACCOUNT`;
-    console.log('Fetching LIQUIDITY-ACCOUNT with code:', liquidityAccountCode);
-    const liquidityResult = await pactCalls(liquidityAccountCode, chain);
-    console.log('✅ LIQUIDITY-ACCOUNT fetched:', liquidityResult);
-    const liquidityAccount = liquidityResult.result.data;
-    console.log('✅ LIQUIDITY-ACCOUNT fetched:', liquidityAccount);
-
-    // Fetch TREASURY-ACCOUNT from treasury contract
-    const treasuryAccountCode = `(use ${namespace}.${moduleName}-treasury) TREASURY-ACCOUNT`;
-    console.log('Fetching TREASURY-ACCOUNT with code:', treasuryAccountCode);
-    const treasuryResult = await pactCalls(treasuryAccountCode, chain);
-    console.log('✅ TREASURY-ACCOUNT fetched:', treasuryResult);
-    const treasuryAccount = treasuryResult.result.data;
-    console.log('✅ TREASURY-ACCOUNT fetched:', treasuryAccount);
-
-    console.log('=== All Contract Accounts Successfully Fetched ===');
-    console.log('Summary:');
-    console.log('- Reserve Account (Sales):', reserveAccount);
-    console.log('- Liquidity Account (Treasury):', liquidityAccount);
-    console.log('- Treasury Account (Treasury):', treasuryAccount);
-
-    return {
-      reserveAccount,
-      liquidityAccount,
-      treasuryAccount
-    };
-  } catch (error) {
-    console.error('Error fetching contract accounts:', error);
-    throw new Error(`Failed to fetch contract account addresses: ${error.message}`);
-  }
-};
-
-/**
- * Creates a token transfer transaction
+ * Creates a token transfer transaction for contract accounts
  */
 export const createTokenTransferTransaction = async (
   networkApi, 
@@ -66,11 +18,26 @@ export const createTokenTransferTransaction = async (
   providerName, 
   namespace, 
   moduleName, 
-  toAccount, 
+  transferType, 
   amount, 
   chain
 ) => {
-  const transferCode = `(${namespace}.${moduleName}.transfer-create "${account}" "${toAccount}" (read-keyset "ks") ${amount}.0)`;
+  let transferCode;
+  let toAccount;
+  
+  // Use the correct pattern for each contract account type
+  if (transferType === 'reserve') {
+    transferCode = `(namespace '${namespace}) (use ${namespace}.${moduleName}-sales) (${namespace}.${moduleName}.transfer-create "${account}" RESERVE-ACCOUNT RESERVE-GUARD ${amount}.0)`;
+    toAccount = 'RESERVE-ACCOUNT';
+  } else if (transferType === 'liquidity') {
+    transferCode = `(namespace '${namespace}) (use ${namespace}.${moduleName}-treasury) (${namespace}.${moduleName}.transfer-create "${account}" LIQUIDITY-ACCOUNT LIQUIDITY-GUARD ${amount}.0)`;
+    toAccount = 'LIQUIDITY-ACCOUNT';
+  } else if (transferType === 'treasury') {
+    transferCode = `(namespace '${namespace}) (use ${namespace}.${moduleName}-treasury) (${namespace}.${moduleName}.transfer-create "${account}" TREASURY-ACCOUNT TREASURY-GUARD ${amount}.0)`;
+    toAccount = 'TREASURY-ACCOUNT';
+  } else {
+    throw new Error(`Invalid transfer type: ${transferType}`);
+  }
   
   const capabilities = [
     { name: `${namespace}.${moduleName}.TRANSFER`, values: [account, toAccount, amount] },
@@ -104,25 +71,15 @@ export const transferTokensToContracts = async (
       throw new Error(`Provider not found: ${providerName}. Available providers: ${Object.keys(providers).join(', ')}`);
     }
 
-    if (progressCallback) progressCallback('Fetching contract account addresses...');
-
-    // Fetch actual contract account addresses using pact calls
-    const { reserveAccount, liquidityAccount, treasuryAccount } = await fetchContractAccounts(namespace, moduleName, chain);
-    
-    console.log('=== Using Fetched Contract Accounts for Token Distribution ===');
-    console.log('Reserve Account for presales:', reserveAccount);
-    console.log('Liquidity Account for DEX:', liquidityAccount);
-    console.log('Treasury Account for treasury:', treasuryAccount);
-
     if (progressCallback) progressCallback('Preparing token transfers...');
 
     const transfers = [];
     const transactions = [];
     
-    // Define the transfers based on token distribution using fetched addresses
+    // Define the transfers based on token distribution using contract constants
     if (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0) {
       transfers.push({
-        contractAccount: reserveAccount,
+        transferType: 'reserve',
         amount: tokenDistribution.presalesAmount,
         description: "Presale allocation"
       });
@@ -130,7 +87,7 @@ export const transferTokensToContracts = async (
 
     if (tokenDistribution.liquidityAmount && tokenDistribution.liquidityAmount > 0) {
       transfers.push({
-        contractAccount: liquidityAccount,
+        transferType: 'liquidity',
         amount: tokenDistribution.liquidityAmount,
         description: "DEX liquidity allocation"
       });
@@ -138,7 +95,7 @@ export const transferTokensToContracts = async (
 
     if (tokenDistribution.treasuryAmount && tokenDistribution.treasuryAmount > 0) {
       transfers.push({
-        contractAccount: treasuryAccount,
+        transferType: 'treasury',
         amount: tokenDistribution.treasuryAmount,
         description: "Treasury allocation"
       });
@@ -155,7 +112,7 @@ export const transferTokensToContracts = async (
 
     // Create transfer transactions
     for (const transfer of transfers) {
-      console.log(`Creating transfer transaction: ${transfer.amount} tokens to ${transfer.contractAccount}`);
+      console.log(`Creating transfer transaction: ${transfer.amount} tokens to ${transfer.transferType} account`);
       
       const tx = await createTokenTransferTransaction(
         networkApi,
@@ -165,7 +122,7 @@ export const transferTokensToContracts = async (
         providerName,
         namespace,
         moduleName,
-        transfer.contractAccount,
+        transfer.transferType,
         transfer.amount,
         chain
       );
@@ -217,7 +174,7 @@ export const transferTokensToContracts = async (
         const preflightResult = await tx.pactClient.dirtyRead(bodyPayload);
         
         if (preflightResult.result.status === 'failure') {
-          console.error(`Transfer to ${tx.transfer.contractAccount} preflight failed:`, preflightResult.result.error);
+          console.error(`Transfer to ${tx.transfer.transferType} account preflight failed:`, preflightResult.result.error);
           // Following tokengen pattern: return null for preflight failures
           return null;
         }
@@ -232,7 +189,7 @@ export const transferTokensToContracts = async (
           requestKey: transactionDescriptor.requestKey
         };
       } catch (error) {
-        console.error(`Error submitting transfer to ${tx.transfer.contractAccount}:`, error);
+        console.error(`Error submitting transfer to ${tx.transfer.transferType} account:`, error);
         throw error;
       }
     });
@@ -253,7 +210,7 @@ export const transferTokensToContracts = async (
         const result = await pollForTransactionResult(transfer.pactClient, transfer.transactionDescriptor);
         
         if (result.result.status === 'success') {
-          console.log(`Successfully transferred ${transfer.transfer.amount} tokens to ${transfer.transfer.contractAccount}`);
+          console.log(`Successfully transferred ${transfer.transfer.amount} tokens to ${transfer.transfer.transferType} account`);
           if (progressCallback) {
             progressCallback(`Confirmed: ${transfer.transfer.amount} tokens to ${transfer.transfer.description}`);
           }
@@ -264,10 +221,10 @@ export const transferTokensToContracts = async (
             requestKey: transfer.requestKey
           };
         } else {
-          throw new Error(`Transfer to ${transfer.transfer.contractAccount} failed: ${result.result.error.message}`);
+          throw new Error(`Transfer to ${transfer.transfer.transferType} account failed: ${result.result.error.message}`);
         }
       } catch (error) {
-        console.error(`Error confirming transfer to ${transfer.transfer.contractAccount}:`, error);
+        console.error(`Error confirming transfer to ${transfer.transfer.transferType} account:`, error);
         throw error;
       }
     });

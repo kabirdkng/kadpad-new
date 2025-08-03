@@ -7,7 +7,7 @@ import {
   submitAndWaitForTransaction 
 } from "./transactionHelpers.js";
 import { initiateDeployContract } from "./contractDeployment.js";
-import { createTokenTransferTransaction, fetchContractAccounts } from "./tokenDistribution.js";
+import { createTokenTransferTransaction } from "./tokenDistribution.js";
 import { createClient } from "@kadena/client";
 import { pollForTransactionResult } from "../../pactcalls/kadena";
 
@@ -86,47 +86,30 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
     }
 
     // Step 3: Prepare token transfer transactions
-    if (progressCallback) progressCallback('Fetching contract account addresses...');
-    
-    // Only fetch contract accounts if we need to do transfers
-    let contractAccounts = null;
-    const needsTransfers = (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0) ||
-                          (tokenDistribution.liquidityAmount && tokenDistribution.liquidityAmount > 0) ||
-                          (tokenDistribution.treasuryAmount && tokenDistribution.treasuryAmount > 0);
-    
-    if (needsTransfers) {
-      // Fetch actual contract account addresses using pact calls
-      contractAccounts = await fetchContractAccounts(namespace, moduleName, chain);
-      console.log('=== Using Fetched Contract Accounts for Token Distribution ===');
-      console.log('Reserve Account for presales:', contractAccounts.reserveAccount);
-      console.log('Liquidity Account for DEX:', contractAccounts.liquidityAccount);
-      console.log('Treasury Account for treasury:', contractAccounts.treasuryAccount);
-    }
-    
     if (progressCallback) progressCallback('Preparing token transfer transactions...');
     
     const transfers = [];
     
-    // Define the transfers based on token distribution using fetched addresses
-    if (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0 && contractAccounts) {
+    // Define the transfers based on token distribution using contract constants
+    if (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0) {
       transfers.push({
-        contractAccount: contractAccounts.reserveAccount,
+        transferType: 'reserve',
         amount: tokenDistribution.presalesAmount,
         description: "Presale allocation"
       });
     }
 
-    if (tokenDistribution.liquidityAmount && tokenDistribution.liquidityAmount > 0 && contractAccounts) {
+    if (tokenDistribution.liquidityAmount && tokenDistribution.liquidityAmount > 0) {
       transfers.push({
-        contractAccount: contractAccounts.liquidityAccount,
+        transferType: 'liquidity',
         amount: tokenDistribution.liquidityAmount,
         description: "DEX liquidity allocation"
       });
     }
 
-    if (tokenDistribution.treasuryAmount && tokenDistribution.treasuryAmount > 0 && contractAccounts) {
+    if (tokenDistribution.treasuryAmount && tokenDistribution.treasuryAmount > 0) {
       transfers.push({
-        contractAccount: contractAccounts.treasuryAccount,
+        transferType: 'treasury',
         amount: tokenDistribution.treasuryAmount,
         description: "Treasury allocation"
       });
@@ -134,7 +117,7 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
 
     // Create transfer transactions
     for (const transfer of transfers) {
-      console.log(`Preparing transfer transaction: ${transfer.amount} tokens to ${transfer.contractAccount}`);
+      console.log(`Preparing transfer transaction: ${transfer.amount} tokens to ${transfer.transferType} account`);
       
       const tx = await createTokenTransferTransaction(
         networkApi,
@@ -144,7 +127,7 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
         providerName,
         namespace,
         moduleName,
-        transfer.contractAccount,
+        transfer.transferType,
         transfer.amount,
         chain
       );
@@ -294,12 +277,12 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
           const preflightResult = await tx.pactClient.dirtyRead(bodyPayload);
           
           if (preflightResult.result.status === 'failure') {
-            throw new Error(`Transfer to ${tx.transfer.contractAccount} preflight failed: ${preflightResult.result.error.message}`);
+            throw new Error(`Transfer to ${tx.transfer.transferType} account preflight failed: ${preflightResult.result.error.message}`);
           }
 
           // Submit transaction
           const transactionDescriptor = await tx.pactClient.submit(bodyPayload);
-          console.log(`Submitted transfer of ${tx.transfer.amount} tokens to ${tx.transfer.contractAccount}`);
+          console.log(`Submitted transfer of ${tx.transfer.amount} tokens to ${tx.transfer.transferType} account`);
           
           transferSubmissions.push({
             transfer: tx.transfer,
@@ -310,7 +293,7 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
 
           allTransactionKeys.push(transactionDescriptor.requestKey);
         } catch (error) {
-          console.error(`Error submitting transfer to ${tx.transfer.contractAccount}:`, error);
+          console.error(`Error submitting transfer to ${tx.transfer.transferType} account:`, error);
           throw error;
         }
       }
@@ -323,7 +306,7 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
           const result = await pollForTransactionResult(submission.pactClient, submission.transactionDescriptor);
           
           if (result.result.status === 'success') {
-            console.log(`Successfully transferred ${submission.transfer.amount} tokens to ${submission.transfer.contractAccount}`);
+            console.log(`Successfully transferred ${submission.transfer.amount} tokens to ${submission.transfer.transferType} account`);
             if (progressCallback) {
               progressCallback(`Confirmed: ${submission.transfer.amount} tokens to ${submission.transfer.description}`);
             }
@@ -333,10 +316,10 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
               requestKey: submission.requestKey
             });
           } else {
-            throw new Error(`Transfer to ${submission.transfer.contractAccount} failed: ${result.result.error.message}`);
+            throw new Error(`Transfer to ${submission.transfer.transferType} account failed: ${result.result.error.message}`);
           }
         } catch (error) {
-          console.error(`Error confirming transfer to ${submission.transfer.contractAccount}:`, error);
+          console.error(`Error confirming transfer to ${submission.transfer.transferType} account:`, error);
           throw error;
         }
       }
