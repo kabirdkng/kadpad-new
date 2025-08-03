@@ -9,6 +9,7 @@ import {
 import { initiateDeployContract } from "./contractDeployment.js";
 import { createTokenTransferTransaction } from "./tokenDistribution.js";
 import { createClient } from "@kadena/client";
+import { pollForTransactionResult } from "../../pactcalls/kadena";
 
 /**
  * Combined function to deploy contracts and transfer tokens with single batch signing
@@ -89,7 +90,7 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
     
     const transfers = [];
     
-    // Define the transfers based on token distribution using contract constants
+    // Define the transfers based on token distribution
     if (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0) {
       transfers.push({
         transferType: 'reserve',
@@ -116,7 +117,7 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
 
     // Create transfer transactions
     for (const transfer of transfers) {
-      console.log(`Preparing transfer transaction: ${transfer.amount} tokens to ${transfer.transferType} account`);
+      console.log(`Preparing transfer transaction: ${transfer.amount} tokens to ${transfer.contractAccount}`);
       
       const tx = await createTokenTransferTransaction(
         networkApi,
@@ -126,14 +127,17 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
         providerName,
         namespace,
         moduleName,
-        transfer.transferType,
+        transfer.transferType, // Use transferType instead of contractAccount
         transfer.amount,
         chain
       );
 
       transferTransactions.push({
         ...tx,
-        transfer: transfer,
+        transfer: {
+          ...transfer,
+          transferType: transfer.transferType
+        },
         pactClient: createClient(`${networkApi}/chainweb/0.0/${network}/chain/${chain}/pact`)
       });
     }
@@ -259,6 +263,8 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
     if (transferTransactions.length > 0 && treasuryDeployed && salesDeployed) {
       if (progressCallback) progressCallback('Both contracts confirmed, processing token transfers...');
       
+      const transferSubmissions = [];
+      
       // Submit all transfer transactions (they were already signed in the batch)
       for (let i = 0; i < transferTransactions.length; i++) {
         const tx = transferTransactions[i];
@@ -267,26 +273,56 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
         try {
           const { cmd, sigs, outcomeHash } = extractSignedTransactionData(signedTx, provider);
           
-          // Use the same submitAndWaitForTransaction helper that properly handles capabilities
-          const processedTx = await submitAndWaitForTransaction(tx, cmd, sigs, outcomeHash);
+          // Submit transaction (don't wait for confirmation yet)
+          const bodyPayload = { cmd, sigs, hash: outcomeHash };
           
-          if (processedTx) {
-            console.log(`Successfully transferred ${tx.transfer.amount} tokens to ${tx.transfer.transferType} account`);
+          // Preflight check
+          const preflightResult = await tx.pactClient.dirtyRead(bodyPayload);
+          
+          if (preflightResult.result.status === 'failure') {
+            throw new Error(`Transfer to ${tx.transfer.contractAccount} preflight failed: ${preflightResult.result.error.message}`);
+          }
+
+          // Submit transaction
+          const transactionDescriptor = await tx.pactClient.submit(bodyPayload);
+          console.log(`Submitted transfer of ${tx.transfer.amount} tokens to ${tx.transfer.contractAccount}`);
+          
+          transferSubmissions.push({
+            transfer: tx.transfer,
+            transactionDescriptor,
+            pactClient: tx.pactClient,
+            requestKey: transactionDescriptor.requestKey
+          });
+
+          allTransactionKeys.push(transactionDescriptor.requestKey);
+        } catch (error) {
+          console.error(`Error submitting transfer to ${tx.transfer.contractAccount}:`, error);
+          throw error;
+        }
+      }
+
+      if (progressCallback) progressCallback('All token transfers submitted, waiting for confirmations...');
+
+      // Wait for all transfer confirmations
+      for (const submission of transferSubmissions) {
+        try {
+          const result = await pollForTransactionResult(submission.pactClient, submission.transactionDescriptor);
+          
+          if (result.result.status === 'success') {
+            console.log(`Successfully transferred ${submission.transfer.amount} tokens to ${submission.transfer.contractAccount}`);
             if (progressCallback) {
-              progressCallback(`Confirmed: ${tx.transfer.amount} tokens to ${tx.transfer.description}`);
+              progressCallback(`Confirmed: ${submission.transfer.amount} tokens to ${submission.transfer.description}`);
             }
-            
             transferResults.push({
-              transfer: tx.transfer,
-              result: processedTx,
-              requestKey: processedTx.requestKey || processedTx.transactionDescriptor?.requestKey
+              transfer: submission.transfer,
+              result: result,
+              requestKey: submission.requestKey
             });
-            
-            const key = processedTx.requestKey || processedTx.transactionDescriptor?.requestKey;
-            if (key) allTransactionKeys.push(key);
+          } else {
+            throw new Error(`Transfer to ${submission.transfer.contractAccount} failed: ${result.result.error.message}`);
           }
         } catch (error) {
-          console.error(`Error processing transfer to ${tx.transfer.transferType} account:`, error);
+          console.error(`Error confirming transfer to ${submission.transfer.contractAccount}:`, error);
           throw error;
         }
       }
