@@ -5,7 +5,38 @@ import {
   isWalletRejectionError, 
   extractSignedTransactionData
 } from "./transactionHelpers.js";
-import { pollForTransactionResult } from "../../pactcalls/kadena";
+import { pollForTransactionResult, pactCalls } from "../../pactcalls/kadena";
+
+/**
+ * Fetch contract account addresses using pact calls
+ */
+export const fetchContractAccounts = async (namespace, moduleName, chain) => {
+  try {
+    // Fetch RESERVE-ACCOUNT from sales contract
+    const reserveAccountCode = `(use '${namespace}.${moduleName}-sales) RESERVE-ACCOUNT`;
+    const reserveResult = await pactCalls(reserveAccountCode, chain, "");
+    const reserveAccount = reserveResult.result.data;
+
+    // Fetch LIQUIDITY-ACCOUNT from treasury contract
+    const liquidityAccountCode = `(use '${namespace}.${moduleName}-treasury) LIQUIDITY-ACCOUNT`;
+    const liquidityResult = await pactCalls(liquidityAccountCode, chain, "");
+    const liquidityAccount = liquidityResult.result.data;
+
+    // Fetch TREASURY-ACCOUNT from treasury contract
+    const treasuryAccountCode = `(use '${namespace}.${moduleName}-treasury) TREASURY-ACCOUNT`;
+    const treasuryResult = await pactCalls(treasuryAccountCode, chain, "");
+    const treasuryAccount = treasuryResult.result.data;
+
+    return {
+      reserveAccount,
+      liquidityAccount,
+      treasuryAccount
+    };
+  } catch (error) {
+    console.error('Error fetching contract accounts:', error);
+    throw new Error(`Failed to fetch contract account addresses: ${error.message}`);
+  }
+};
 
 /**
  * Creates a token transfer transaction
@@ -56,15 +87,20 @@ export const transferTokensToContracts = async (
       throw new Error(`Provider not found: ${providerName}. Available providers: ${Object.keys(providers).join(', ')}`);
     }
 
+    if (progressCallback) progressCallback('Fetching contract account addresses...');
+
+    // Fetch actual contract account addresses using pact calls
+    const { reserveAccount, liquidityAccount, treasuryAccount } = await fetchContractAccounts(namespace, moduleName, chain);
+
     if (progressCallback) progressCallback('Preparing token transfers...');
 
     const transfers = [];
     const transactions = [];
     
-    // Define the transfers based on token distribution
+    // Define the transfers based on token distribution using fetched addresses
     if (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0) {
       transfers.push({
-        contractAccount: `${namespace}.${moduleName}-sales.RESERVE-ACCOUNT`,
+        contractAccount: reserveAccount,
         amount: tokenDistribution.presalesAmount,
         description: "Presale allocation"
       });
@@ -72,7 +108,7 @@ export const transferTokensToContracts = async (
 
     if (tokenDistribution.liquidityAmount && tokenDistribution.liquidityAmount > 0) {
       transfers.push({
-        contractAccount: `${namespace}.${moduleName}-treasury.LIQUIDITY-ACCOUNT`,
+        contractAccount: liquidityAccount,
         amount: tokenDistribution.liquidityAmount,
         description: "DEX liquidity allocation"
       });
@@ -80,7 +116,7 @@ export const transferTokensToContracts = async (
 
     if (tokenDistribution.treasuryAmount && tokenDistribution.treasuryAmount > 0) {
       transfers.push({
-        contractAccount: `${namespace}.${moduleName}-treasury.TREASURY-ACCOUNT`,
+        contractAccount: treasuryAccount,
         amount: tokenDistribution.treasuryAmount,
         description: "Treasury allocation"
       });
@@ -159,7 +195,9 @@ export const transferTokensToContracts = async (
         const preflightResult = await tx.pactClient.dirtyRead(bodyPayload);
         
         if (preflightResult.result.status === 'failure') {
-          throw new Error(`Transfer to ${tx.transfer.contractAccount} preflight failed: ${preflightResult.result.error.message}`);
+          console.error(`Transfer to ${tx.transfer.contractAccount} preflight failed:`, preflightResult.result.error);
+          // Following tokengen pattern: return null for preflight failures
+          return null;
         }
 
         // Submit transaction
@@ -178,7 +216,7 @@ export const transferTokensToContracts = async (
     });
 
     // Wait for all submissions to complete
-    const submittedTransfers = await Promise.all(transferPromises);
+    const submittedTransfers = (await Promise.all(transferPromises)).filter(Boolean);
     
     // Collect all request keys
     submittedTransfers.forEach(transfer => {

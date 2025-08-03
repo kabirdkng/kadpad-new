@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { checkProjectByContract } from '../../api';
 import { toast } from 'react-toastify';
 import { useSalesContractDeployment } from '../../hooks/useSalesContractDeployment';
-import config from '../../wallet/config';
 
 // Import refactored components
 import LaunchLoadingState from './launch-token/LaunchLoadingState';
