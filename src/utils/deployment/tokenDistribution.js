@@ -15,7 +15,7 @@ export const fetchContractAccounts = async (namespace, moduleName, chain) => {
     console.log(`=== Fetching Contract Accounts for ${namespace}.${moduleName} on chain ${chain} ===`);
     
     // Fetch RESERVE-ACCOUNT from sales contract
-    const reserveAccountCode = `(use '${namespace}.${moduleName}-sales) RESERVE-ACCOUNT`;
+    const reserveAccountCode = `(use ${namespace}.${moduleName}-sales) RESERVE-ACCOUNT`;
     console.log('Fetching RESERVE-ACCOUNT with code:', reserveAccountCode);
     const reserveResult = await pactCalls(reserveAccountCode, chain);
     console.log('✅ RESERVE-ACCOUNT fetched:', reserveResult);
@@ -23,7 +23,7 @@ export const fetchContractAccounts = async (namespace, moduleName, chain) => {
     console.log('✅ RESERVE-ACCOUNT fetched:', reserveAccount);
 
     // Fetch LIQUIDITY-ACCOUNT from treasury contract
-    const liquidityAccountCode = `(use '${namespace}.${moduleName}-treasury) LIQUIDITY-ACCOUNT`;
+    const liquidityAccountCode = `(use ${namespace}.${moduleName}-treasury) LIQUIDITY-ACCOUNT`;
     console.log('Fetching LIQUIDITY-ACCOUNT with code:', liquidityAccountCode);
     const liquidityResult = await pactCalls(liquidityAccountCode, chain);
     console.log('✅ LIQUIDITY-ACCOUNT fetched:', liquidityResult);
@@ -31,7 +31,7 @@ export const fetchContractAccounts = async (namespace, moduleName, chain) => {
     console.log('✅ LIQUIDITY-ACCOUNT fetched:', liquidityAccount);
 
     // Fetch TREASURY-ACCOUNT from treasury contract
-    const treasuryAccountCode = `(use '${namespace}.${moduleName}-treasury) TREASURY-ACCOUNT`;
+    const treasuryAccountCode = `(use ${namespace}.${moduleName}-treasury) TREASURY-ACCOUNT`;
     console.log('Fetching TREASURY-ACCOUNT with code:', treasuryAccountCode);
     const treasuryResult = await pactCalls(treasuryAccountCode, chain);
     console.log('✅ TREASURY-ACCOUNT fetched:', treasuryResult);
