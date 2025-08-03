@@ -27,13 +27,22 @@ export const createTokenTransferTransaction = async (
   
   // Use the correct pattern for each contract account type
   if (transferType === 'reserve') {
-    transferCode = `(namespace '${namespace}) (use ${namespace}.${moduleName}-sales) (${namespace}.${moduleName}.transfer-create "${account}" RESERVE-ACCOUNT RESERVE-GUARD ${amount}.0)`;
+    transferCode = `(namespace '${namespace}) 
+                     (use ${namespace}.${moduleName}-sales) 
+                     (install-capability (${namespace}.${moduleName}.TRANSFER) "${account}" RESERVE-ACCOUNT ${amount.toDecimal()})
+                     (${namespace}.${moduleName}.transfer-create "${account}" RESERVE-ACCOUNT RESERVE-GUARD ${amount.toDecimal()})`;
     toAccount = 'RESERVE-ACCOUNT';
   } else if (transferType === 'liquidity') {
-    transferCode = `(namespace '${namespace}) (use ${namespace}.${moduleName}-treasury) (${namespace}.${moduleName}.transfer-create "${account}" LIQUIDITY-ACCOUNT LIQUIDITY-GUARD ${amount}.0)`;
+    transferCode = `(namespace '${namespace}) 
+                     (use ${namespace}.${moduleName}-treasury) 
+                     (install-capability (${namespace}.${moduleName}.TRANSFER) "${account}" LIQUIDITY-ACCOUNT ${amount.toDecimal()})
+                     (${namespace}.${moduleName}.transfer-create "${account}" LIQUIDITY-ACCOUNT LIQUIDITY-GUARD ${amount.toDecimal()})`;
     toAccount = 'LIQUIDITY-ACCOUNT';
   } else if (transferType === 'treasury') {
-    transferCode = `(namespace '${namespace}) (use ${namespace}.${moduleName}-treasury) (${namespace}.${moduleName}.transfer-create "${account}" TREASURY-ACCOUNT TREASURY-GUARD ${amount}.0)`;
+    transferCode = `(namespace '${namespace}) 
+                     (use ${namespace}.${moduleName}-treasury) 
+                     (install-capability (${namespace}.${moduleName}.TRANSFER) "${account}" TREASURY-ACCOUNT ${amount.toDecimal()})
+                     (${namespace}.${moduleName}.transfer-create "${account}" TREASURY-ACCOUNT TREASURY-GUARD ${amount.toDecimal()})`;
     toAccount = 'TREASURY-ACCOUNT';
   } else {
     throw new Error(`Invalid transfer type: ${transferType}`);
