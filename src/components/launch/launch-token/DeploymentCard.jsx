@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { Rocket, Settings, CheckCircle2, Clock, AlertCircle, ExternalLink, Info } from 'lucide-react';
+import { Rocket, Settings, CheckCircle2, AlertCircle, ExternalLink, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 // Success Animation Component
@@ -65,9 +65,9 @@ SuccessAnimation.propTypes = {
 const getProgressWidth = (currentStep, salesDeployed, treasuryDeployed) => {
   // If both are deployed and process is complete, we're at 100%
   if (salesDeployed && treasuryDeployed && currentStep && (
-    currentStep.toLowerCase().includes('completed') ||
-    currentStep.toLowerCase().includes('successful') ||
-    currentStep.toLowerCase().includes('ready!')
+    currentStep.toLowerCase().includes('complete deployment') ||
+    currentStep.toLowerCase().includes('project successfully launched') ||
+    currentStep.toLowerCase().includes('successful')
   )) {
     return '100%';
   }
@@ -76,170 +76,95 @@ const getProgressWidth = (currentStep, salesDeployed, treasuryDeployed) => {
   
   const step = currentStep.toLowerCase();
   
-  // Phase 1: Contract Deployment (0-50%)
-  if (step.includes('checking existing') || step.includes('preparing deployment')) return '8%';
-  if (step.includes('generating') || step.includes('contract code')) return '12%';
-  
-  // Phase 1 Signing
-  if (step.includes('phase 1') || step.includes('signing contract') || step.includes('deployment transactions')) return '18%';
-  
-  // Contract Deployment Processing
-  if (step.includes('deploying contracts') || step.includes('batch deployment')) return '25%';
-  
-  // Treasury-specific deployment
-  if (step.includes('deploying treasury') || 
-      step.includes('treasury needed') || 
-      step.includes('treasury contract')) return '32%';
-  
-  // Waiting for treasury confirmation
-  if (step.includes('waiting for treasury') ||
-      step.includes('treasury confirmation') ||
-      step.includes('treasury deployed')) return '38%';
-  
-  // Sales-specific deployment
-  if (step.includes('deploying sales') || 
-      step.includes('sales contract')) return '44%';
-      
-  // Waiting for sales confirmation  
-  if (step.includes('waiting for sales') ||
-      step.includes('sales confirmation') ||
-      step.includes('sales deployed')) return '50%';
-  
-  // Phase 2: Token Distribution (50-100%)
-  
-  // Fetching contract accounts
-  if (step.includes('fetching contract account') || 
-      step.includes('preparing token transfers') ||
-      step.includes('actual account addresses')) return '58%';
-      
-  // Phase 2 Signing
-  if (step.includes('phase 2') || 
-      step.includes('signing token transfer') ||
-      step.includes('token transfer transactions')) return '65%';
-  
-  // Processing token transfers
-  if (step.includes('processing token transfers') ||
-      step.includes('submitting') ||
-      step.includes('all token transfers submitted')) return '72%';
-  
-  // Individual transfer confirmations
-  if (step.includes('confirmed:') && (
-      step.includes('presale') || 
-      step.includes('liquidity') || 
-      step.includes('treasury'))) {
-    // Calculate based on how many confirmations we've seen
-    if (step.includes('presale')) return '78%';
-    if (step.includes('liquidity')) return '84%';
-    if (step.includes('treasury')) return '90%';
-  }
-  
-  // Waiting for all confirmations
-  if (step.includes('waiting for confirmations') ||
-      step.includes('all token transfers') ||
-      step.includes('token transfers completed')) return '92%';
-  
-  // Final steps
-  if (step.includes('updating project') || 
-      step.includes('marking') ||
-      step.includes('project status')) return '96%';
-  
-  // Success states
-  if (step.includes('deployment and distribution') ||
-      step.includes('complete deployment') ||
-      step.includes('successfully deployed') ||
+  // Match the exact steps from completeDeployment.js
+  if (step.includes('checking existing contracts')) return '10%';
+  if (step.includes('preparing treasury deployment') || step.includes('preparing sales deployment')) return '20%';
+  if (step.includes('phase 1') || step.includes('signing contract deployment')) return '30%';
+  if (step.includes('deploying contracts')) return '40%';
+  if (step.includes('waiting for treasury contract confirmation') || 
+      step.includes('waiting for sales contract confirmation') ||
+      step.includes('treasury contract deployed') ||
+      step.includes('sales contract deployed')) return '50%';
+  if (step.includes('fetching contract account addresses')) return '60%';
+  if (step.includes('preparing token transfer transactions') ||
+      step.includes('phase 2') || 
+      step.includes('signing token transfer')) return '70%';
+  if (step.includes('processing token transfers') || 
+      step.includes('all token transfers submitted') ||
+      step.includes('waiting for confirmations') ||
+      step.includes('confirmed:')) return '85%';
+  if (step.includes('updating project status')) return '95%';
+  if (step.includes('complete deployment and distribution successful') ||
       step.includes('project successfully launched')) return '100%';
   
-  // Fallback logic with better defaults
-  
-  // If we see treasury/sales but no specific phase indicators
-  if (step.includes('treasury') || step.includes('sales')) {
-    // If we also see distribution terms, we're in phase 2
-    if (step.includes('transfer') || step.includes('distribution') || step.includes('tokens')) {
-      return '75%'; // Mid distribution phase
-    }
-    return '40%'; // Mid deployment phase
-  }
-  
-  // If we see distribution terms
-  if (step.includes('transfer') || 
-      step.includes('distribution') || 
-      step.includes('tokens') ||
-      step.includes('confirmed')) {
-    return '80%'; // Distribution phase
-  }
-  
-  // If we see signing terms
-  if (step.includes('signing') || step.includes('sign')) {
-    // Determine if it's phase 1 or 2 based on context
-    if (step.includes('contract') || step.includes('deployment')) {
-      return '20%'; // Phase 1 signing
-    }
-    return '65%'; // Phase 2 signing
-  }
-  
-  // Default fallback
+  // Fallback
   return '15%';
 };
 
 // Helper function to get deployment steps with status
 const getDeploymentSteps = (currentStep, salesDeployed, treasuryDeployed) => {
   const steps = [
-    { label: 'Check existing contracts', key: 'check' },
-    { label: 'Generate contracts', key: 'generate' },
-    { label: 'Phase 1: Sign deployments', key: 'sign1' },
-    { label: 'Deploy contracts', key: 'deploy' },
-    { label: 'Fetch contract accounts', key: 'fetch' },
-    { label: 'Phase 2: Sign transfers', key: 'sign2' },
-    { label: 'Distribute tokens', key: 'distribute' },
+    { label: 'Checking existing contracts', key: 'check' },
+    { label: 'Preparing deployment transactions', key: 'prepare' },
+    { label: 'Phase 1: Signing deployments', key: 'sign1' },
+    { label: 'Deploying contracts', key: 'deploy' },
+    { label: 'Waiting for confirmations', key: 'confirm' },
+    { label: 'Fetching contract accounts', key: 'fetch' },
+    { label: 'Phase 2: Signing transfers', key: 'sign2' },
+    { label: 'Processing token transfers', key: 'transfers' },
+    { label: 'Updating project status', key: 'update' },
     { label: 'Complete', key: 'complete' }
   ];
 
   const getCurrentStepKey = () => {
-    if (!currentStep) return 'check';
+    if (!currentStep) return null;
     
     const step = currentStep.toLowerCase();
     
-    if (step.includes('checking existing') || step.includes('preparing')) return 'check';
-    if (step.includes('generating contract') || step.includes('contract code')) return 'generate';
-    if (step.includes('phase 1') || step.includes('signing contract') || step.includes('deployment transactions')) return 'sign1';
-    if (step.includes('deploying') || step.includes('waiting for') || step.includes('confirmation')) return 'deploy';
-    if (step.includes('fetching contract account') || step.includes('actual account addresses')) return 'fetch';
-    if (step.includes('phase 2') || step.includes('signing token transfer')) return 'sign2';
+    // Match exact progress messages from completeDeployment.js
+    if (step.includes('checking existing contracts')) return 'check';
+    if (step.includes('preparing treasury deployment') || step.includes('preparing sales deployment')) return 'prepare';
+    if (step.includes('phase 1') || step.includes('signing contract deployment')) return 'sign1';
+    if (step.includes('deploying contracts')) return 'deploy';
+    if (step.includes('waiting for treasury contract confirmation') || 
+        step.includes('waiting for sales contract confirmation') ||
+        step.includes('treasury contract deployed') ||
+        step.includes('sales contract deployed')) return 'confirm';
+    if (step.includes('fetching contract account addresses')) return 'fetch';
+    if (step.includes('preparing token transfer transactions') ||
+        step.includes('phase 2') || 
+        step.includes('signing token transfer')) return 'sign2';
     if (step.includes('processing token transfers') || 
-        step.includes('confirmed:') || 
-        step.includes('updating project') ||
-        step.includes('marking')) return 'distribute';
-    if (step.includes('completed') || step.includes('successful')) return 'complete';
+        step.includes('all token transfers submitted') ||
+        step.includes('waiting for confirmations') ||
+        step.includes('confirmed:')) return 'transfers';
+    if (step.includes('updating project status')) return 'update';
+    if (step.includes('complete deployment and distribution successful') ||
+        step.includes('project successfully launched')) return 'complete';
     
-    // Fallback logic - better coverage for distribution phase
-    if (step.includes('treasury') || step.includes('sales')) {
-      // If we see contracts mentioned but also distribution terms, prioritize distribution
-      if (step.includes('transfer') || step.includes('distribution') || step.includes('tokens')) {
-        return 'distribute';
-      }
-      return 'deploy';
-    }
-    if (step.includes('transfer') || step.includes('distribution') || step.includes('tokens')) return 'distribute';
-    
-    return 'check';
+    return null;
   };
 
   const currentStepKey = getCurrentStepKey();
-  const stepOrder = ['check', 'generate', 'sign1', 'deploy', 'fetch', 'sign2', 'distribute', 'complete'];
-  const currentIndex = stepOrder.indexOf(currentStepKey);
+  const stepOrder = ['check', 'prepare', 'sign1', 'deploy', 'confirm', 'fetch', 'sign2', 'transfers', 'update', 'complete'];
+  const currentIndex = currentStepKey ? stepOrder.indexOf(currentStepKey) : -1;
   
   return steps.map((step, index) => {
     let status = 'pending';
     
-    if (index < currentIndex) {
+    if (currentIndex === -1) {
+      // No current step detected, all pending
+      status = 'pending';
+    } else if (index < currentIndex) {
       status = 'completed';
     } else if (index === currentIndex) {
       status = 'active';
     }
     
-    // Special handling for completion status
+    // Special handling for completion
     if (step.key === 'complete' && salesDeployed && treasuryDeployed && 
-        currentStep && currentStep.toLowerCase().includes('completed')) {
+        currentStep && (currentStep.toLowerCase().includes('complete deployment') ||
+                       currentStep.toLowerCase().includes('project successfully launched'))) {
       status = 'completed';
     }
     
@@ -396,15 +321,18 @@ const DeploymentCard = ({ deploymentState = {}, onDeploy, onDeploymentComplete }
                 {getDeploymentSteps(currentStep, salesContractDeployed, treasuryContractDeployed).map((step, index) => (
                   <div key={index} className={`flex items-center gap-2 text-xs transition-colors duration-200 ${
                     step.status === 'completed' ? 'text-green-400' : 
-                    step.status === 'current' ? 'text-blue-400 font-medium' : 'text-gray-500'
+                    step.status === 'active' ? 'text-yellow-400 font-medium' : 'text-gray-500'
                   }`}>
-                    <div className={`w-2 h-2 rounded-full transition-colors duration-200 ${
-                      step.status === 'completed' ? 'bg-green-400' : 
-                      step.status === 'current' ? 'bg-blue-400 animate-pulse' : 'bg-gray-500'
-                    }`}></div>
+                    {step.status === 'completed' && (
+                      <CheckCircle2 className="w-3 h-3 text-green-400" />
+                    )}
+                    {step.status === 'active' && (
+                      <div className="w-3 h-3 border border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                    )}
+                    {step.status === 'pending' && (
+                      <div className="w-3 h-3 rounded-full bg-gray-500"></div>
+                    )}
                     <span>{step.label}</span>
-                    {step.status === 'completed' && <CheckCircle2 className="w-3 h-3" />}
-                    {step.status === 'current' && <Clock className="w-3 h-3 animate-spin" />}
                   </div>
                 ))}
               </div>
