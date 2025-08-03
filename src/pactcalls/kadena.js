@@ -148,7 +148,7 @@ export const pactCallsSales = async(code, chain, client, session, namespace, mod
   }
 }
 
-export const pactCalls = async(code, chain, pubKey) => {
+export const pactCalls = async(code, chain) => {
   const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`)
   
   const tx = Pact.builder
@@ -159,7 +159,6 @@ export const pactCalls = async(code, chain, pubKey) => {
       gasPrice: 0.0000001,
     })
     .setNetworkId(network)
-    .addKeyset('ks', 'keys-all', pubKey)
     .createTransaction()     
 
   try{
