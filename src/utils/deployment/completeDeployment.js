@@ -7,7 +7,7 @@ import {
   submitAndWaitForTransaction 
 } from "./transactionHelpers.js";
 import { initiateDeployContract } from "./contractDeployment.js";
-import { createTokenTransferTransaction } from "./tokenDistribution.js";
+import { createTokenTransferTransaction, fetchContractAccounts } from "./tokenDistribution.js";
 import { createClient } from "@kadena/client";
 import { pollForTransactionResult } from "../../pactcalls/kadena";
 
@@ -86,30 +86,47 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
     }
 
     // Step 3: Prepare token transfer transactions
+    if (progressCallback) progressCallback('Fetching contract account addresses...');
+    
+    // Only fetch contract accounts if we need to do transfers
+    let contractAccounts = null;
+    const needsTransfers = (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0) ||
+                          (tokenDistribution.liquidityAmount && tokenDistribution.liquidityAmount > 0) ||
+                          (tokenDistribution.treasuryAmount && tokenDistribution.treasuryAmount > 0);
+    
+    if (needsTransfers) {
+      // Fetch actual contract account addresses using pact calls
+      contractAccounts = await fetchContractAccounts(namespace, moduleName, chain);
+      console.log('=== Using Fetched Contract Accounts for Token Distribution ===');
+      console.log('Reserve Account for presales:', contractAccounts.reserveAccount);
+      console.log('Liquidity Account for DEX:', contractAccounts.liquidityAccount);
+      console.log('Treasury Account for treasury:', contractAccounts.treasuryAccount);
+    }
+    
     if (progressCallback) progressCallback('Preparing token transfer transactions...');
     
     const transfers = [];
     
-    // Define the transfers based on token distribution
-    if (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0) {
+    // Define the transfers based on token distribution using fetched addresses
+    if (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0 && contractAccounts) {
       transfers.push({
-        contractAccount: `${namespace}.${moduleName}-sales.RESERVE-ACCOUNT`,
+        contractAccount: contractAccounts.reserveAccount,
         amount: tokenDistribution.presalesAmount,
         description: "Presale allocation"
       });
     }
 
-    if (tokenDistribution.liquidityAmount && tokenDistribution.liquidityAmount > 0) {
+    if (tokenDistribution.liquidityAmount && tokenDistribution.liquidityAmount > 0 && contractAccounts) {
       transfers.push({
-        contractAccount: `${namespace}.${moduleName}-treasury.LIQUIDITY-ACCOUNT`,
+        contractAccount: contractAccounts.liquidityAccount,
         amount: tokenDistribution.liquidityAmount,
         description: "DEX liquidity allocation"
       });
     }
 
-    if (tokenDistribution.treasuryAmount && tokenDistribution.treasuryAmount > 0) {
+    if (tokenDistribution.treasuryAmount && tokenDistribution.treasuryAmount > 0 && contractAccounts) {
       transfers.push({
-        contractAccount: `${namespace}.${moduleName}-treasury.TREASURY-ACCOUNT`,
+        contractAccount: contractAccounts.treasuryAccount,
         amount: tokenDistribution.treasuryAmount,
         description: "Treasury allocation"
       });
