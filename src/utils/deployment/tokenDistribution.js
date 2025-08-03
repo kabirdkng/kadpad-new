@@ -105,6 +105,11 @@ export const transferTokensToContracts = async (
 
     // Fetch actual contract account addresses using pact calls
     const { reserveAccount, liquidityAccount, treasuryAccount } = await fetchContractAccounts(namespace, moduleName, chain);
+    
+    console.log('=== Using Fetched Contract Accounts for Token Distribution ===');
+    console.log('Reserve Account for presales:', reserveAccount);
+    console.log('Liquidity Account for DEX:', liquidityAccount);
+    console.log('Treasury Account for treasury:', treasuryAccount);
 
     if (progressCallback) progressCallback('Preparing token transfers...');
 
