@@ -9,7 +9,6 @@ import {
 import { initiateDeployContract } from "./contractDeployment.js";
 import { createTokenTransferTransaction } from "./tokenDistribution.js";
 import { createClient } from "@kadena/client";
-import { pollForTransactionResult } from "../../pactcalls/kadena";
 
 /**
  * Combined function to deploy contracts and transfer tokens with single batch signing
@@ -260,8 +259,6 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
     if (transferTransactions.length > 0 && treasuryDeployed && salesDeployed) {
       if (progressCallback) progressCallback('Both contracts confirmed, processing token transfers...');
       
-      const transferSubmissions = [];
-      
       // Submit all transfer transactions (they were already signed in the batch)
       for (let i = 0; i < transferTransactions.length; i++) {
         const tx = transferTransactions[i];
@@ -270,56 +267,26 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
         try {
           const { cmd, sigs, outcomeHash } = extractSignedTransactionData(signedTx, provider);
           
-          // Submit transaction (don't wait for confirmation yet)
-          const bodyPayload = { cmd, sigs, hash: outcomeHash };
+          // Use the same submitAndWaitForTransaction helper that properly handles capabilities
+          const processedTx = await submitAndWaitForTransaction(tx, cmd, sigs, outcomeHash);
           
-          // Preflight check
-          const preflightResult = await tx.pactClient.dirtyRead(bodyPayload);
-          
-          if (preflightResult.result.status === 'failure') {
-            throw new Error(`Transfer to ${tx.transfer.transferType} account preflight failed: ${preflightResult.result.error.message}`);
-          }
-
-          // Submit transaction
-          const transactionDescriptor = await tx.pactClient.submit(bodyPayload);
-          console.log(`Submitted transfer of ${tx.transfer.amount} tokens to ${tx.transfer.transferType} account`);
-          
-          transferSubmissions.push({
-            transfer: tx.transfer,
-            transactionDescriptor,
-            pactClient: tx.pactClient,
-            requestKey: transactionDescriptor.requestKey
-          });
-
-          allTransactionKeys.push(transactionDescriptor.requestKey);
-        } catch (error) {
-          console.error(`Error submitting transfer to ${tx.transfer.transferType} account:`, error);
-          throw error;
-        }
-      }
-
-      if (progressCallback) progressCallback('All token transfers submitted, waiting for confirmations...');
-
-      // Wait for all transfer confirmations
-      for (const submission of transferSubmissions) {
-        try {
-          const result = await pollForTransactionResult(submission.pactClient, submission.transactionDescriptor);
-          
-          if (result.result.status === 'success') {
-            console.log(`Successfully transferred ${submission.transfer.amount} tokens to ${submission.transfer.transferType} account`);
+          if (processedTx) {
+            console.log(`Successfully transferred ${tx.transfer.amount} tokens to ${tx.transfer.transferType} account`);
             if (progressCallback) {
-              progressCallback(`Confirmed: ${submission.transfer.amount} tokens to ${submission.transfer.description}`);
+              progressCallback(`Confirmed: ${tx.transfer.amount} tokens to ${tx.transfer.description}`);
             }
+            
             transferResults.push({
-              transfer: submission.transfer,
-              result: result,
-              requestKey: submission.requestKey
+              transfer: tx.transfer,
+              result: processedTx,
+              requestKey: processedTx.requestKey || processedTx.transactionDescriptor?.requestKey
             });
-          } else {
-            throw new Error(`Transfer to ${submission.transfer.transferType} account failed: ${result.result.error.message}`);
+            
+            const key = processedTx.requestKey || processedTx.transactionDescriptor?.requestKey;
+            if (key) allTransactionKeys.push(key);
           }
         } catch (error) {
-          console.error(`Error confirming transfer to ${submission.transfer.transferType} account:`, error);
+          console.error(`Error processing transfer to ${tx.transfer.transferType} account:`, error);
           throw error;
         }
       }
