@@ -171,34 +171,40 @@ const usePresaleStore = create((set) => ({
       console.error(err);
     }
   },
-  fetchTotalSales: async (NS, SALES_MODULE_NAME, chain, pubKey) => {
-    try{
+  fetchTotalSales: async (NS, SALES_MODULE_NAME, chain) => {
+    try {
       const code = `(${NS}.${SALES_MODULE_NAME}.get-sales)`;
       const res = await pactCalls(code, chain);
-      console.log(res.result.data); // Added log
-      set({totalSales: res.result.data})
+      console.log('fetchTotalSales response:', res.result.data);
+      // Extract the actual value from Pact response object
+      const value = res.result.data?.int || res.result.data?.decimal || res.result.data;
+      set({ totalSales: typeof value === 'string' ? parseFloat(value) : value });
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching total sales:', err);
     }
   },
-  fetchP0Price: async (NS, SALES_MODULE_NAME, chain, pubKey) => {
+  fetchP0Price: async (NS, SALES_MODULE_NAME, chain) => {
     try{
       const code = `(${NS}.${SALES_MODULE_NAME}.get-p0-price)`;
       const res = await pactCalls(code, chain);
-      console.log(res.result.data); // Added log
-      set({p0Price: res.result.data})
+      console.log('fetchP0Price response:', res.result.data);
+      // Extract the actual value from Pact response object
+      const value = res.result.data?.int || res.result.data?.decimal || res.result.data;
+      set({ p0Price: typeof value === 'string' ? parseFloat(value) : value });
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching P0 price:', err);
     }
   },
-  fetchP1Price: async (NS, SALES_MODULE_NAME, chain, pubKey) => {
+  fetchP1Price: async (NS, SALES_MODULE_NAME, chain) => {
     try{
       const code = `(${NS}.${SALES_MODULE_NAME}.get-p1-price)`;
       const res = await pactCalls(code, chain);
-      console.log(res.result.data); // Added log
-      set({p1Price: res.result.data})
+      console.log('fetchP1Price response:', res.result.data);
+      // Extract the actual value from Pact response object
+      const value = res.result.data?.int || res.result.data?.decimal || res.result.data;
+      set({ p1Price: typeof value === 'string' ? parseFloat(value) : value });
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching P1 price:', err);
     }
   },
   resetState: () => {
