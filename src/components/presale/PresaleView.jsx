@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Rocket, Shield, Clock, TrendingUp, Users, DollarSign, Info } from 'lucide-react';
+import { Rocket, Shield, Clock, TrendingUp, Users, DollarSign, Info, Database, Link, Layers } from 'lucide-react';
 import usePresaleStore from '../../store/usePresaleStore';
 import useWalletStore from '../../wallet/walletStore';
 import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
@@ -14,13 +14,13 @@ const PresaleView = ({ namespace, moduleName }) => {
   const { client, session } = useWalletConnectClient();
   const { account, pubKey } = useWalletStore();
 
-  console.log('PresaleView rendering with:', { namespace, moduleName, SALES_MODULE_NAME, account, pubKey });
+  // console.log('PresaleView rendering with:', { namespace, moduleName, SALES_MODULE_NAME, account, pubKey });
 
   // Helper function to safely render values that might be objects
   const safeRender = (value, fallback = 0) => {
     if (value === null || value === undefined) return fallback;
     if (typeof value === 'object' && value !== null) {
-      console.warn('Attempted to render object:', value);
+      // console.warn('Attempted to render object:', value);
       // Try to extract value from Pact object
       return value.int || value.decimal || value.bool || fallback;
     }
@@ -44,6 +44,10 @@ const PresaleView = ({ namespace, moduleName }) => {
     supplyChain,
     p0Price,
     p1Price,
+    imageUrl,
+    totalSupply,
+    tokenName,
+    contractNamespace,
     fetchBalance,
     fetchPhase0StartTime,
     fetchPhase1StartTime,
@@ -139,15 +143,9 @@ const PresaleView = ({ namespace, moduleName }) => {
 
   // Calculate kdaInput based on batchCount and currentPrice
   useEffect(() => {
-    setKdaInput((batchCount || 1) * (currentPrice || 0));
+    setKdaInput((batchCount || 0) * (currentPrice || 0));
   }, [batchCount, currentPrice, setKdaInput]);
 
-  // Initialize batchCount to 1 if it's 0
-  useEffect(() => {
-    if (batchCount === 0) {
-      setBatchCount(1);
-    }
-  }, [batchCount, setBatchCount]);
 
   // Update current price based on phase
   useEffect(() => {
@@ -269,6 +267,36 @@ const PresaleView = ({ namespace, moduleName }) => {
           </p>
         </div>
 
+        {/* Token Details Card */}
+        <div className="card mb-8">
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            {/* Token Logo */}
+            <div className="flex-shrink-0">
+              {imageUrl ? (
+                <img 
+                  src={imageUrl} 
+                  alt={`${tokenSymbol} Logo`}
+                  className="w-20 h-20 md:w-24 md:h-24 rounded-full border-2 border-accent-primary/20"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div className="w-20 h-20 md:w-24 md:h-24 rounded-full border-2 border-accent-primary/20 bg-accent-primary/10 flex items-center justify-center">
+                  <span className="text-accent-primary font-bold text-xl">{tokenSymbol?.charAt(0)}</span>
+                </div>
+              )}
+            </div>
+            
+            {/* Token Info */}
+            <div className="flex-1 text-center md:text-left">
+              <h2 className="text-2xl md:text-3xl font-bold text-primary-text mb-2">
+                {tokenName || moduleName} ({tokenSymbol})
+              </h2>
+            </div>
+          </div>
+        </div>
+
         {/* Phase Status Card */}
         <div className="card mb-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -332,9 +360,9 @@ const PresaleView = ({ namespace, moduleName }) => {
                 </div>
                 <div className="text-center">
                   <DollarSign className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                  <p className="text-sm text-secondary">Total Raised</p>
+                  <p className="text-sm text-secondary">Total Batches Sold</p>
                   <p className="text-lg font-semibold text-primary-text">
-                    {totalSales ? `${addComma(safeRender(totalSales))} KDA` : 'Loading...'}
+                    {totalSales ? `${addComma(safeRender(totalSales))}` : 'Loading...'}
                   </p>
                 </div>
                 <div className="text-center">
@@ -350,6 +378,33 @@ const PresaleView = ({ namespace, moduleName }) => {
                   <p className="text-lg font-semibold text-primary-text">
                     {availableBatches !== null ? safeRender(availableBatches) : 'Loading...'}
                   </p>
+                </div>
+              </div>
+              
+              {/* Additional Token Information */}
+              <div className="mt-8 pt-6 border-t border-border-color">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <Database className="w-8 h-8 text-cyan-400 mx-auto mb-2" />
+                    <p className="text-sm text-secondary">Total Supply</p>
+                    <p className="text-lg font-semibold text-primary-text">
+                      {totalSupply ? `${addComma(safeRender(totalSupply))} ${tokenSymbol}` : 'Loading...'}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <Link className="w-8 h-8 text-orange-400 mx-auto mb-2" />
+                    <p className="text-sm text-secondary">Contract Address</p>
+                    <p className="text-sm font-mono text-primary-text break-all">
+                      {contractNamespace || namespace}.{moduleName}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <Layers className="w-8 h-8 text-pink-400 mx-auto mb-2" />
+                    <p className="text-sm text-secondary">Supply Chain</p>
+                    <p className="text-lg font-semibold text-primary-text">
+                      Chain {supplyChain}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

@@ -23,6 +23,9 @@ const usePresaleStore = create((set) => ({
   totalSales: 0,
   counters: {},
   imageUrl: '', // Add imageUrl to the state
+  totalSupply: null,
+  tokenName: '',
+  contractNamespace: '',
   
   setKdaInput: (input) => set({kdaInput: input}) ,
   setBatchCount: (input) => set({batchCount: input}),
@@ -106,7 +109,13 @@ const usePresaleStore = create((set) => ({
       const code = `(use ${NS}.${MODULE_NAME}) DETAILS`;
       const res = await pactCalls(code, chain, pubKey);
       console.log(res.result.data); // Added log
-      set({ tokenSymbol: res.result.data.symbol.toUpperCase() });
+      set({ 
+        tokenSymbol: res.result.data.symbol.toUpperCase(),
+        imageUrl: res.result.data.imageUrl,
+        totalSupply: res.result.data.supply?.int || res.result.data.supply?.decimal || res.result.data.supply,
+        tokenName: MODULE_NAME,
+        contractNamespace: NS
+      });
     } catch (err) {
       console.error(err);
     }
@@ -223,6 +232,10 @@ const usePresaleStore = create((set) => ({
       salesAccount: '',
       availableBatches: 0,
       supplyChain: '1',
+      imageUrl: '',
+      totalSupply: null,
+      tokenName: '',
+      contractNamespace: '',
     });
   },
 }));
