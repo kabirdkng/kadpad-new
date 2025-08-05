@@ -26,6 +26,11 @@ const usePresaleStore = create((set) => ({
   totalSupply: null,
   tokenName: '',
   contractNamespace: '',
+  // New consolidated data properties
+  availableForFreeSales: 0,
+  currentPhase: 'pre-sale',
+  totalBatches: 0,
+  remainingBatches: 0,
   
   setKdaInput: (input) => set({kdaInput: input}) ,
   setBatchCount: (input) => set({batchCount: input}),
@@ -216,6 +221,81 @@ const usePresaleStore = create((set) => ({
       console.error('Error fetching P1 price:', err);
     }
   },
+  
+  // NEW: Consolidated fetch function that gets all sales data in one call
+  fetchAllSalesData: async (NS, MODULE_NAME, SALES_MODULE_NAME, chain) => {
+    try {
+      // Fetch both sales data and token details in parallel
+      const [salesDataResult, tokenDetailsResult] = await Promise.all([
+        // Get all sales data in one consolidated call
+        pactCalls(`(use ${NS}.${SALES_MODULE_NAME}) {
+          "free-sales": (available-for-free-sales), 
+          "current-phase": (current-phase), 
+          "price": (get-price), 
+          "phase0": PHASE-0-START, 
+          "phase1": PHASE-1-START, 
+          "end": END-OF-PRESALES, 
+          "escrow": SALES-ACCOUNT,
+          "batches": TOTAL-BATCHES,
+          "batch-size": AMOUNT-PER-BATCH,
+          "reserveable": P0-RESERVED,
+          "remaining": (- TOTAL-BATCHES (at 'sold (get-counters))),
+          "sold": (at 'sold (get-counters)),
+          "p0-price": (get-p0-price),
+          "p1-price": (get-p1-price),
+          "counters": (get-counters)
+        }`, chain).catch(() => ({ result: { data: {} } })),
+        
+        // Get token details
+        pactCalls(`(use ${NS}.${MODULE_NAME}) DETAILS`, chain).catch(() => ({ result: { data: {} } }))
+      ]);
+
+      const salesData = salesDataResult.result?.data || {};
+      const tokenDetails = tokenDetailsResult.result?.data || {};
+
+      console.log('Consolidated sales data response:', salesData);
+      console.log('Token details response:', tokenDetails);
+
+      // Extract and set all the data at once
+      const updates = {
+        // Sales data
+        currentPrice: salesData.price?.decimal || salesData.price?.int || salesData.price || null,
+        p0Price: salesData["p0-price"]?.decimal || salesData["p0-price"]?.int || salesData["p0-price"] || null,
+        p1Price: salesData["p1-price"]?.decimal || salesData["p1-price"]?.int || salesData["p1-price"] || null,
+        amountPerBatch: salesData["batch-size"]?.decimal || salesData["batch-size"]?.int || salesData["batch-size"] || null,
+        p0Reserved: salesData.reserveable?.int || salesData.reserveable?.decimal || salesData.reserveable || 0,
+        totalSales: salesData.sold?.int || salesData.sold?.decimal || salesData.sold || 0,
+        salesAccount: salesData.escrow || '',
+        counters: salesData.counters || {},
+        
+        // Phase timings
+        phase0startTime: salesData.phase0?.time ? new Date(salesData.phase0.time) : null,
+        phase1startTime: salesData.phase1?.time ? new Date(salesData.phase1.time) : null,
+        salesEndTime: salesData.end?.time ? new Date(salesData.end.time) : null,
+        
+        // Token details
+        tokenSymbol: tokenDetails.symbol ? tokenDetails.symbol.toUpperCase() : '',
+        imageUrl: tokenDetails.imageUrl || '',
+        totalSupply: tokenDetails.supply?.int || tokenDetails.supply?.decimal || tokenDetails.supply || null,
+        tokenName: MODULE_NAME,
+        contractNamespace: NS,
+        
+        // Additional useful data
+        availableForFreeSales: salesData["free-sales"]?.int || salesData["free-sales"]?.decimal || salesData["free-sales"] || 0,
+        currentPhase: salesData["current-phase"] || 'pre-sale',
+        totalBatches: salesData.batches?.int || salesData.batches?.decimal || salesData.batches || 0,
+        remainingBatches: salesData.remaining?.int || salesData.remaining?.decimal || salesData.remaining || 0,
+      };
+
+      set(updates);
+      
+      console.log('Updated presale store with consolidated data:', updates);
+      return updates;
+    } catch (err) {
+      console.error('Error fetching consolidated sales data:', err);
+      throw err;
+    }
+  },
   resetState: () => {
     set({
       balance: 0,
@@ -236,6 +316,11 @@ const usePresaleStore = create((set) => ({
       totalSupply: null,
       tokenName: '',
       contractNamespace: '',
+      // Reset new consolidated data properties
+      availableForFreeSales: 0,
+      currentPhase: 'pre-sale',
+      totalBatches: 0,
+      remainingBatches: 0,
     });
   },
 }));

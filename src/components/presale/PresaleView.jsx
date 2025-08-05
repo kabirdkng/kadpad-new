@@ -61,6 +61,7 @@ const PresaleView = ({ namespace, moduleName }) => {
     fetchTotalSales,
     fetchP0Price,
     fetchP1Price,
+    fetchAllSalesData,
     setBatchCount,
     setKdaInput,
     resetState
@@ -87,23 +88,31 @@ const PresaleView = ({ namespace, moduleName }) => {
       pubKey 
     });
 
-    // Fetch basic public data first (doesn't need pubKey or account)
+    // Fetch basic public data using consolidated approach
     const fetchBasicData = async () => {
       try {
-        await fetchTokenSymbol(namespace, moduleName, supplyChain);
-        await fetchPhase0StartTime(namespace, SALES_MODULE_NAME, supplyChain);
-        await fetchPhase1StartTime(namespace, SALES_MODULE_NAME, supplyChain);
-        await fetchSalesEndTime(namespace, SALES_MODULE_NAME, supplyChain);
-        await fetchAmountPerBatch(namespace, SALES_MODULE_NAME, supplyChain);
-        await fetchCurrentPrice(namespace, SALES_MODULE_NAME, supplyChain);
-        await fetchSalesAccount(namespace, SALES_MODULE_NAME, supplyChain);
-        await fetchP0Price(namespace, SALES_MODULE_NAME, supplyChain);
-        await fetchP1Price(namespace, SALES_MODULE_NAME, supplyChain);
-        await fetchTotalSales(namespace, SALES_MODULE_NAME, supplyChain);
-        
-        console.log('Basic data fetched successfully');
+        // Use the new consolidated function to get all data in one call
+        await fetchAllSalesData(namespace, moduleName, SALES_MODULE_NAME, supplyChain);
+        console.log('All sales data fetched successfully using consolidated approach');
       } catch (error) {
-        console.error('Error fetching basic data:', error);
+        console.error('Error fetching consolidated sales data:', error);
+        // Fallback to individual calls if consolidated approach fails
+        try {
+          console.log('Falling back to individual fetch calls...');
+          await fetchTokenSymbol(namespace, moduleName, supplyChain);
+          await fetchPhase0StartTime(namespace, SALES_MODULE_NAME, supplyChain);
+          await fetchPhase1StartTime(namespace, SALES_MODULE_NAME, supplyChain);
+          await fetchSalesEndTime(namespace, SALES_MODULE_NAME, supplyChain);
+          await fetchAmountPerBatch(namespace, SALES_MODULE_NAME, supplyChain);
+          await fetchCurrentPrice(namespace, SALES_MODULE_NAME, supplyChain);
+          await fetchSalesAccount(namespace, SALES_MODULE_NAME, supplyChain);
+          await fetchP0Price(namespace, SALES_MODULE_NAME, supplyChain);
+          await fetchP1Price(namespace, SALES_MODULE_NAME, supplyChain);
+          await fetchTotalSales(namespace, SALES_MODULE_NAME, supplyChain);
+          console.log('Fallback data fetched successfully');
+        } catch (fallbackError) {
+          console.error('Error fetching basic data with fallback:', fallbackError);
+        }
       }
     };
 
@@ -132,7 +141,7 @@ const PresaleView = ({ namespace, moduleName }) => {
       fetchAmountPerBatch, fetchAvailableBatches, fetchBalance, fetchCurrentPrice, 
       fetchP0Price, fetchP1Price, fetchPhase0StartTime, fetchPhase1StartTime, 
       fetchSalesAccount, fetchSalesEndTime, fetchTokenSymbol, fetchTotalSales, 
-      fetchWlStatus, resetState, setBatchCount]);
+      fetchWlStatus, fetchAllSalesData, resetState, setBatchCount]);
 
   // Calculate phase status (needs to be before useEffects that depend on it)
   const now = new Date();
@@ -263,7 +272,7 @@ const PresaleView = ({ namespace, moduleName }) => {
             </h1>
           </div>
           <p className="text-secondary text-lg max-w-2xl mx-auto">
-            Join the {tokenSymbol} token presale and be part of the next generation of DeFi innovation on Kadena.
+            Join the {tokenSymbol} token presale and be part of the next generation of token Sales on Kadena.
           </p>
         </div>
 
@@ -471,7 +480,7 @@ const PresaleView = ({ namespace, moduleName }) => {
                       Your KDA Balance
                     </label>
                     <p className="text-lg font-semibold text-primary-text">
-                      {balance ? `${addComma(safeRender(balance))} KDA` : 'Loading...'}
+                      {balance ? `${addComma(safeRender(balance))} KDA` : !account ? 'Connect Wallet' : 'Loading...'}
                     </p>
                   </div>
 

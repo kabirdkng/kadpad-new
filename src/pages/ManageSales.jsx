@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
 import usePresaleStore from '../store/usePresaleStore';
 import { pactCalls, pactCallsSales } from '../pactcalls/kadena';
 import { useWalletConnectClient } from '../wallet/providers/ClientContextProvider';
@@ -23,7 +24,8 @@ const ManageSales = ({ namespace, moduleName }) => {
     fetchP0Price, 
     fetchP1Price, 
     amountPerBatch,
-    fetchTotalSales
+    fetchTotalSales,
+    fetchAllSalesData
   } = usePresaleStore();
 
   const [showPriceChange, setShowPriceChange] = useState(false);
@@ -48,16 +50,47 @@ const ManageSales = ({ namespace, moduleName }) => {
   const isPhase1 = now >= phase1startTime && now < salesEndTime;
 
   useEffect(() => {
+    const getTotalBatches = async () => {
+      const code = `(use ${namespace}.${SALES_MODULE_NAME}) TOTAL-BATCHES`;
+      const res = await pactCalls(code, supplyChain, pubKey);
+      setTotalBatches(res.result.data);
+    };
+
+    const getCounters = async () => {
+      const code = `(${namespace}.${SALES_MODULE_NAME}.get-counters)`;
+      const res = await pactCalls(code, supplyChain, pubKey);
+      const sold = res.result.data.sold;
+      const participants = res.result.data.participants;
+      setCounters({ sold, participants });
+    };
+
+    const getReservations = async () => {
+      const code = `(${namespace}.${SALES_MODULE_NAME}.get-reservations)`;
+      const res = await pactCalls(code, supplyChain, pubKey);
+      setReservations(res.result.data);
+    };
+
     const fetchData = async () => {
-      await fetchP0Price(namespace, SALES_MODULE_NAME, supplyChain, pubKey);
-      await fetchP1Price(namespace, SALES_MODULE_NAME, supplyChain, pubKey);
-      await fetchTotalSales(namespace, SALES_MODULE_NAME, supplyChain, pubKey);
+      try {
+        // Use consolidated approach to fetch sales data more efficiently
+        await fetchAllSalesData(namespace, moduleName, SALES_MODULE_NAME, supplyChain);
+        console.log('Management sales data fetched using consolidated approach');
+      } catch (error) {
+        console.error('Error with consolidated fetch, falling back to individual calls:', error);
+        // Fallback to individual calls
+        await fetchP0Price(namespace, SALES_MODULE_NAME, supplyChain, pubKey);
+        await fetchP1Price(namespace, SALES_MODULE_NAME, supplyChain, pubKey);
+        await fetchTotalSales(namespace, SALES_MODULE_NAME, supplyChain, pubKey);
+      }
+      
+      // These are admin-specific calls that still need to be individual
       await getTotalBatches();
       await getCounters();
       await getReservations();
     }
     fetchData();
-  }, [counters]);
+  }, [namespace, moduleName, SALES_MODULE_NAME, supplyChain, pubKey, 
+      fetchAllSalesData, fetchP0Price, fetchP1Price, fetchTotalSales]);
 
   const handlePrices = () => {
     setPriceResult(null);
@@ -96,29 +129,10 @@ const ManageSales = ({ namespace, moduleName }) => {
     setAvailableToWhitelist(availableToWhitelist - (walletList.length * amountPerBatch));
   }
 
-  const getTotalBatches = async () => {
-    const code = `(use ${namespace}.${SALES_MODULE_NAME}) TOTAL-BATCHES`;
-    const res = await pactCalls(code, supplyChain, pubKey);
-    setTotalBatches(res.result.data);
-  }
-
-  const getCounters = async () => {
-    const code = `(${namespace}.${SALES_MODULE_NAME}.get-counters)`;
-    const res = await pactCalls(code, supplyChain, pubKey);
-    const sold = res.result.data.sold.int;
-    const reserved = res.result.data.reserved.int;
-    setAvailableToWhitelist(totalBatches - (sold + reserved));
-    setCounters({sold: sold, reserved: reserved});
-  }
-
-  const getReservations = async () => {
-    const code = `(${namespace}.${SALES_MODULE_NAME}.get-reservations)`;
-    const res = await pactCalls(code, supplyChain, pubKey);
-    setReservations(res.result.data);
-  }
-
   const refreshList = async () => {
-    await getReservations();
+    // These functions are now defined inside useEffect
+    // Just re-trigger the effect by updating a dependency or call the functions directly
+    window.location.reload(); // Simple refresh for now
   }
 
   const validateAddress = (address) => {
@@ -273,5 +287,10 @@ const ManageSales = ({ namespace, moduleName }) => {
     </div>
   );
 }
+
+ManageSales.propTypes = {
+  namespace: PropTypes.string.isRequired,
+  moduleName: PropTypes.string.isRequired
+};
 
 export default ManageSales;

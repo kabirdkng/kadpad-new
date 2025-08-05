@@ -73,10 +73,6 @@ const LaunchPage = () => {
   const [tokenDetails, setTokenDetails] = useState(null);
   const [submissionStatus, setSubmissionStatus] = useState(null);
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   // Scroll to main content when step changes
   useEffect(() => {
     const mainContent = document.querySelector('.main-content');
@@ -87,6 +83,10 @@ const LaunchPage = () => {
       });
     }
   }, [currentStep]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   // Check submission status whenever tokenDetails changes
   useEffect(() => {
