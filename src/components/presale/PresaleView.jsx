@@ -4,10 +4,10 @@ import { Rocket, Shield, Clock, TrendingUp, Users, DollarSign, Info, Database, L
 import usePresaleStore from '../../store/usePresaleStore';
 import useWalletStore from '../../wallet/walletStore';
 import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
-import { buyTokensSale } from '../../pactcalls/kadena';
+import { buyTokensSale, pollForTransactionResult } from '../../pactcalls/kadena';
 import { toast } from 'react-toastify';
 import { addComma } from '../../utils/numberUtils';
-import BuyModal from './BuyModal';
+import WalletConnectButton from '../WalletConnectButton';
 
 const PresaleView = ({ namespace, moduleName }) => {
   const SALES_MODULE_NAME = `${moduleName}-sales`;
@@ -68,9 +68,10 @@ const PresaleView = ({ namespace, moduleName }) => {
   } = usePresaleStore();
 
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-  const [showBuyModal, setShowBuyModal] = useState(false);
   const [reqKey, setReqKey] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [transactionStatus, setTransactionStatus] = useState(''); // 'pending', 'success', 'error'
+  const [transactionMessage, setTransactionMessage] = useState('');
 
   // Initialize data on component mount
   useEffect(() => {
@@ -152,7 +153,9 @@ const PresaleView = ({ namespace, moduleName }) => {
 
   // Calculate kdaInput based on batchCount and currentPrice
   useEffect(() => {
-    setKdaInput((batchCount || 0) * (currentPrice || 0));
+    const calculatedAmount = (batchCount || 0) * (currentPrice || 0);
+    // Round to 6 decimal places to avoid floating point precision issues
+    setKdaInput(Math.round(calculatedAmount * 1000000) / 1000000);
   }, [batchCount, currentPrice, setKdaInput]);
 
 
@@ -224,6 +227,10 @@ const PresaleView = ({ namespace, moduleName }) => {
   const handleBuy = async () => {
     try {
       setIsLoading(true);
+      setTransactionStatus('');
+      setTransactionMessage('');
+      setReqKey('');
+      
       const amount = parseFloat(kdaInput);
       
       if (!amount || amount <= 0) {
@@ -236,23 +243,73 @@ const PresaleView = ({ namespace, moduleName }) => {
         return;
       }
 
+      // Step 1: Submit transaction
+      toast.info('Submitting transaction...', { position: 'top-center', autoClose: 2000 });
       const code = `(${namespace}.${SALES_MODULE_NAME}.buy "${account}" (read-keyset 'ks) ${batchCount})`;
-      const result = await buyTokensSale(code, supplyChain, salesAccount, amount, client, session);
+      const result = await buyTokensSale(code, supplyChain, salesAccount, amount, client, session, namespace, moduleName);
       
       if (result?.preflightResult?.result?.status === 'success') {
-        setReqKey(result.txKey);
-        toast.success('Purchase successful!');
-        setShowBuyModal(false);
-        // Refresh data
-        await fetchBalance(account, supplyChain);
-        await fetchAvailableBatches(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey);
-        await fetchTotalSales(namespace, SALES_MODULE_NAME, supplyChain);
+        const txKey = result.transactionDescriptor?.requestKey;
+        setReqKey(txKey);
+        setTransactionStatus('pending');
+        setTransactionMessage('Transaction submitted, waiting for confirmation...');
+        
+        // Step 2: Poll for transaction result
+        toast.info('Transaction submitted! Waiting for confirmation...', { 
+          position: 'top-center', 
+          autoClose: 3000 
+        });
+
+        try {
+          // Poll for the transaction result
+          const finalResult = await pollForTransactionResult(
+            result.pactClient, 
+            result.transactionDescriptor,
+            30, // maxRetries
+            3000 // retryInterval (3 seconds)
+          );
+
+          if (finalResult?.result?.status === 'success') {
+            setTransactionStatus('success');
+            setTransactionMessage('Purchase completed successfully!');
+            toast.success('Purchase completed successfully!', { 
+              position: 'top-center',
+              autoClose: 5000 
+            });
+            
+            // Refresh data after successful transaction
+            await Promise.all([
+              fetchBalance(account, supplyChain),
+              fetchAvailableBatches(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey),
+              fetchTotalSales(namespace, SALES_MODULE_NAME, supplyChain)
+            ]);
+          } else {
+            setTransactionStatus('error');
+            setTransactionMessage(finalResult?.result?.error?.message || 'Transaction failed');
+            toast.error(`Transaction failed: ${finalResult?.result?.error?.message || 'Unknown error'}`, {
+              position: 'top-center',
+              autoClose: 5000
+            });
+          }
+        } catch (pollError) {
+          console.error('Polling error:', pollError);
+          setTransactionStatus('error');
+          setTransactionMessage('Transaction status unknown - please check explorer');
+          toast.warning('Transaction submitted but confirmation timed out. Please check the explorer for status.', {
+            position: 'top-center',
+            autoClose: 7000
+          });
+        }
       } else {
-        toast.error('Purchase failed');
+        setTransactionStatus('error');
+        setTransactionMessage('Transaction submission failed');
+        toast.error('Transaction submission failed', { position: 'top-center' });
       }
     } catch (error) {
       console.error('Purchase error:', error);
-      toast.error(`Purchase failed: ${error.message}`);
+      setTransactionStatus('error');
+      setTransactionMessage(`Purchase failed: ${error.message}`);
+      toast.error(`Purchase failed: ${error.message}`, { position: 'top-center' });
     } finally {
       setIsLoading(false);
     }
@@ -492,8 +549,24 @@ const PresaleView = ({ namespace, moduleName }) => {
                       type="number"
                       min="1"
                       max={safeRender(availableBatches)}
-                      value={batchCount}
-                      onChange={(e) => setBatchCount(parseInt(e.target.value) || 1)}
+                      value={batchCount || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        // Clear transaction status when user changes input
+                        if (transactionStatus) {
+                          setTransactionStatus('');
+                          setTransactionMessage('');
+                        }
+                        
+                        if (value === '') {
+                          setBatchCount(0);
+                        } else {
+                          const numValue = parseInt(value);
+                          if (!isNaN(numValue) && numValue >= 0) {
+                            setBatchCount(numValue);
+                          }
+                        }
+                      }}
                       className="w-full px-3 py-2 bg-secondary-bg border border-border-color rounded-lg text-primary-text focus:outline-none focus:border-accent-primary"
                     />
                   </div>
@@ -513,13 +586,21 @@ const PresaleView = ({ namespace, moduleName }) => {
                     </div>
                   </div>
 
-                  <button
-                    onClick={() => handleBuy()}
-                    disabled={isLoading || !account || availableBatches <= 0}
-                    className="w-full btn btn-primary"
-                  >
-                    {isLoading ? 'Processing...' : `Buy ${tokenSymbol} Tokens`}
-                  </button>
+                  {!account ? (
+                    <div className="w-full">
+                      <WalletConnectButton />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => handleBuy()}
+                      disabled={isLoading || availableBatches <= 0 || transactionStatus === 'pending'}
+                      className="w-full btn btn-primary"
+                    >
+                      {isLoading ? (
+                        transactionStatus === 'pending' ? 'Confirming Transaction...' : 'Processing...'
+                      ) : `Buy ${tokenSymbol} Tokens`}
+                    </button>
+                  )}
 
                   {(!isPhase0 || !isWhitelisted) && isPhase0 && (
                     <div className="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
@@ -536,37 +617,64 @@ const PresaleView = ({ namespace, moduleName }) => {
             {/* Deployer Dashboard Access */}
 
             {/* Transaction Status */}
-            {reqKey && (
+            {(reqKey || transactionStatus) && (
               <div className="card">
-                <h3 className="text-lg font-semibold text-primary-text mb-4">Recent Transaction</h3>
-                <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                  <p className="text-sm text-green-400 mb-2">Transaction submitted!</p>
-                  <a
-                    href={`https://explorer.chainweb.com/testnet/tx/${reqKey}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-400 hover:text-blue-300 break-all"
-                  >
-                    View on Explorer →
-                  </a>
+                <h3 className="text-lg font-semibold text-primary-text mb-4">Transaction Status</h3>
+                <div className={`p-4 rounded-lg border ${
+                  transactionStatus === 'success' ? 'bg-green-500/10 border-green-500/20' :
+                  transactionStatus === 'error' ? 'bg-red-500/10 border-red-500/20' :
+                  transactionStatus === 'pending' ? 'bg-yellow-500/10 border-yellow-500/20' :
+                  'bg-blue-500/10 border-blue-500/20'
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
+                      transactionStatus === 'success' ? 'bg-green-500/20' :
+                      transactionStatus === 'error' ? 'bg-red-500/20' :
+                      transactionStatus === 'pending' ? 'bg-yellow-500/20' :
+                      'bg-blue-500/20'
+                    }`}>
+                      {transactionStatus === 'success' ? (
+                        <span className="text-green-400 text-sm">✓</span>
+                      ) : transactionStatus === 'error' ? (
+                        <span className="text-red-400 text-sm">✗</span>
+                      ) : transactionStatus === 'pending' ? (
+                        <div className="w-3 h-3 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <span className="text-blue-400 text-sm">•</span>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium mb-1 ${
+                        transactionStatus === 'success' ? 'text-green-400' :
+                        transactionStatus === 'error' ? 'text-red-400' :
+                        transactionStatus === 'pending' ? 'text-yellow-400' :
+                        'text-blue-400'
+                      }`}>
+                        {transactionStatus === 'success' ? 'Transaction Successful!' :
+                         transactionStatus === 'error' ? 'Transaction Failed' :
+                         transactionStatus === 'pending' ? 'Transaction Pending' :
+                         'Transaction Submitted'}
+                      </p>
+                      {transactionMessage && (
+                        <p className="text-xs text-secondary mb-2">{transactionMessage}</p>
+                      )}
+                      {reqKey && (
+                        <a
+                          href={`https://explorer.chainweb.com/testnet/tx/${reqKey}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-blue-400 hover:text-blue-300 break-all underline"
+                        >
+                          View on Explorer →
+                        </a>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </div>
-
-        {/* Modals */}
-        {showBuyModal && (
-          <BuyModal
-            tokenSymbol={tokenSymbol}
-            batchCount={batchCount}
-            amountPerBatch={amountPerBatch}
-            kdaInput={kdaInput}
-            handleBuy={handleBuy}
-            setShowBuyModal={setShowBuyModal}
-            availableBatches={availableBatches}
-          />
-        )}
       </div>
     </div>
   );

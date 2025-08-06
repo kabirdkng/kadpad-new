@@ -106,8 +106,8 @@ const SaleCard = ({ sale, index }) => {
   const getStatusColor = (date) => {
     const now = new Date();
     const startDate = new Date(date);
-    if (startDate > now) return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
-    return 'text-lime-400 bg-lime-400/10 border-lime-400/20';
+    if (startDate > now) return 'text-gray-800 bg-blue-400/80 border-blue-400/20';
+    return 'text-gray-800 bg-lime-400/80 border-lime-400/20';
   };
 
   const getTimeStatus = () => {
@@ -146,26 +146,26 @@ const SaleCard = ({ sale, index }) => {
   return (
     <div 
       className={`card group cursor-pointer overflow-hidden ${
-        isExpanded ? '' : 'hover:scale-105'
+        isExpanded ? '' : 'hover:scale-[1.02]'
       } ${isHot ? 'glow border-orange-400/30' : ''}`}
       style={{ 
-        animationDelay: `${index * 100}ms`,
-        transition: 'all 0.7s cubic-bezier(0.4, 0, 0.2, 1)'
+        animationDelay: `${index * 50}ms`,
+        transition: 'transform 0.2s ease-out'
       }}
       onClick={handleCardClick}
     >
       
       {/* Compact View */}
       <div 
-        className={`transition-all duration-700 ease-in-out ${
-          isExpanded ? 'opacity-0 max-h-0 overflow-hidden transform -translate-y-4' : 'opacity-100 max-h-[500px] transform translate-y-0'
+        className={`transition-all duration-300 ease-out ${
+          isExpanded ? 'opacity-0 max-h-0 overflow-hidden' : 'opacity-100 max-h-[500px]'
         }`}
       >
         {/* Card Header - Compact */}
         <div className="relative mb-4">
           <div className="aspect-video w-full bg-secondary-bg rounded-xl overflow-hidden">
             <img 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out" 
               src={tokenImage || '/favicon.svg'}
               alt={`${projectName} banner`}
               onError={(e) => {
@@ -176,7 +176,7 @@ const SaleCard = ({ sale, index }) => {
           
           {/* Compact Status Badge */}
           <div className="absolute top-3 right-3">
-            <span className={`px-3 py-1 text-xs font-medium rounded-lg border transition-all duration-300 ${getStatusColor(startDate)}`}>
+            <span className={`px-3 py-1 text-xs font-medium rounded-lg border transition-colors duration-200 ${getStatusColor(startDate)}`}>
               {getTimeStatus()}
             </span>
           </div>
@@ -200,12 +200,11 @@ const SaleCard = ({ sale, index }) => {
               </div>
               <div className="progress-bar h-2">
                 <div 
-                  className={`progress-fill transition-all duration-1000 ease-out ${
+                  className={`progress-fill transition-all duration-500 ease-out ${
                     isHot ? 'bg-gradient-to-r from-orange-500 to-red-500' : ''
                   }`}
                   style={{ 
-                    width: `${progressBarPercent}%`,
-                    transition: 'width 1.5s cubic-bezier(0.4, 0, 0.2, 1)'
+                    width: `${progressBarPercent}%`
                   }}
                 ></div>
               </div>
@@ -218,17 +217,17 @@ const SaleCard = ({ sale, index }) => {
               <p className="text-xs text-secondary text-center">{getCountdownLabel()}</p>
               <div className="flex justify-center gap-2 text-sm font-mono">
                 {countdown.days > 0 && (
-                  <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-all duration-300">
+                  <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-colors duration-200">
                     {countdown.days}d
                   </span>
                 )}
-                <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-all duration-300">
+                <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-colors duration-200">
                   {countdown.hours}h
                 </span>
-                <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-all duration-300">
+                <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-colors duration-200">
                   {countdown.minutes}m
                 </span>
-                <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-all duration-300">
+                <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-colors duration-200">
                   {countdown.seconds}s
                 </span>
               </div>
@@ -240,11 +239,11 @@ const SaleCard = ({ sale, index }) => {
             <div className="mt-3">
               <Link 
                 to={`/presale/${sale.namespace}/${sale.moduleName}`}
-                className="btn btn-primary w-full text-sm py-2 group flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+                className="btn btn-primary w-full text-sm py-2 group flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-lg"
                 onClick={(e) => e.stopPropagation()}
               >
                 View Sale
-                <ChevronRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
+                <ChevronRight size={14} className="transition-transform duration-200 group-hover:translate-x-1" />
               </Link>
             </div>
           )}
@@ -253,15 +252,15 @@ const SaleCard = ({ sale, index }) => {
 
       {/* Expanded View */}
       <div 
-        className={`transition-all duration-700 ease-in-out ${
-          isExpanded ? 'opacity-100 max-h-[2000px] transform translate-y-0' : 'opacity-0 max-h-0 overflow-hidden transform translate-y-4'
+        className={`transition-all duration-300 ease-out ${
+          isExpanded ? 'opacity-100 max-h-[2000px]' : 'opacity-0 max-h-0 overflow-hidden'
         }`}
       >
         {/* Card Header - Expanded */}
         <div className="relative mb-4">
           <div className="aspect-video w-full bg-secondary-bg rounded-xl overflow-hidden">
             <img 
-              className="w-full h-full object-cover transition-transform duration-500" 
+              className="w-full h-full object-cover transition-transform duration-300 ease-out" 
               src={tokenImage || '/favicon.svg'}
               alt={`${projectName} banner`}
               onError={(e) => {
@@ -273,13 +272,13 @@ const SaleCard = ({ sale, index }) => {
           {/* Badges - only show if we have data */}
           <div className="absolute top-3 left-3 flex gap-2">
             {isNew && (
-              <span className="px-3 py-1 bg-[var(--accent-primary)] text-black text-xs font-bold rounded-lg flex items-center gap-1 transition-all duration-300 hover:scale-105">
+              <span className="px-3 py-1 bg-[var(--accent-primary)] text-black text-xs font-bold rounded-lg flex items-center gap-1 transition-transform duration-200 hover:scale-105">
                 <Sparkles size={12} />
                 New
               </span>
             )}
             {isHot && totalTokens && (
-              <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-lg flex items-center gap-1 transition-all duration-300 hover:scale-105">
+              <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-lg flex items-center gap-1 transition-transform duration-200 hover:scale-105">
                 <Flame size={12} />
                 Hot
               </span>
@@ -287,7 +286,7 @@ const SaleCard = ({ sale, index }) => {
           </div>
 
           <div className="absolute top-3 right-3">
-            <span className={`px-3 py-1 text-xs font-medium rounded-lg border transition-all duration-300 ${getStatusColor(startDate)}`}>
+            <span className={`px-3 py-1 text-xs font-medium rounded-lg border transition-colors duration-200 ${getStatusColor(startDate)}`}>
               {getTimeStatus()}
             </span>
           </div>
@@ -327,21 +326,21 @@ const SaleCard = ({ sale, index }) => {
 
         {/* Countdown Timer - Only show if not ended and we have valid dates */}
         {!isSaleEnded && getCountdownLabel() && (countdown.days > 0 || countdown.hours > 0 || countdown.minutes > 0 || countdown.seconds > 0) && (
-          <div className="mb-4 p-4 bg-gradient-to-r from-accent-primary/10 to-accent-primary/5 border border-accent-primary/20 rounded-lg transition-all duration-500 hover:shadow-lg">
+          <div className="mb-4 p-4 bg-gradient-to-r from-accent-primary/10 to-accent-primary/5 border border-accent-primary/20 rounded-lg transition-all duration-200 hover:shadow-lg">
             <p className="text-xs text-secondary mb-2 text-center">{getCountdownLabel()}</p>
             <div className="flex justify-center gap-2 text-sm font-mono">
               {countdown.days > 0 && (
-                <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-all duration-300 hover:bg-accent-primary/30">
+                <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-colors duration-200 hover:bg-accent-primary/30">
                   {countdown.days}d
                 </span>
               )}
-              <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-all duration-300 hover:bg-accent-primary/30">
+              <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-colors duration-200 hover:bg-accent-primary/30">
                 {countdown.hours}h
               </span>
-              <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-all duration-300 hover:bg-accent-primary/30">
+              <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-colors duration-200 hover:bg-accent-primary/30">
                 {countdown.minutes}m
               </span>
-              <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-all duration-300 hover:bg-accent-primary/30">
+              <span className="bg-accent-primary/20 px-2 py-1 rounded text-accent-primary transition-colors duration-200 hover:bg-accent-primary/30">
                 {countdown.seconds}s
               </span>
             </div>
@@ -352,17 +351,16 @@ const SaleCard = ({ sale, index }) => {
         {totalTokens && totalTokens > 0 && (
           <div className="mb-4">
             <div className="flex justify-between text-sm font-medium text-secondary mb-3">
-              <span className="transition-all duration-300">{formatNumber(soldTokens)} sold</span>
-              <span className="transition-all duration-300">{progressBarPercent.toFixed(1)}%</span>
+              <span className="transition-colors duration-200">{formatNumber(soldTokens)} sold</span>
+              <span className="transition-colors duration-200">{progressBarPercent.toFixed(1)}%</span>
             </div>
             <div className="progress-bar">
               <div 
-                className={`progress-fill ${
+                className={`progress-fill transition-all duration-500 ease-out ${
                   isHot ? 'bg-gradient-to-r from-orange-500 to-red-500' : ''
                 }`}
                 style={{ 
-                  width: `${progressBarPercent}%`,
-                  transition: 'width 1.5s cubic-bezier(0.4, 0, 0.2, 1)'
+                  width: `${progressBarPercent}%`
                 }}
               ></div>
             </div>
@@ -373,7 +371,7 @@ const SaleCard = ({ sale, index }) => {
         <div className="space-y-4 mb-6">
           <div className="flex items-center justify-between">
             {currentPrice && (
-              <div className="text-sm transition-all duration-300">
+              <div className="text-sm transition-colors duration-200">
                 <span className="text-secondary">Price: </span>
                 <span className="text-accent-primary font-bold">{currentPrice} KDA</span>
                 {salesDetails.currentPhase && salesDetails.currentPhase !== 'pre-sale' && (
@@ -387,7 +385,7 @@ const SaleCard = ({ sale, index }) => {
               </div>
             )}
             {salesDetails.counters?.participants && (
-              <div className="flex items-center gap-2 text-xs text-secondary transition-all duration-300">
+              <div className="flex items-center gap-2 text-xs text-secondary transition-colors duration-200">
                 <Users size={12} />
                 <span>{salesDetails.counters.participants}</span>
               </div>
@@ -396,7 +394,7 @@ const SaleCard = ({ sale, index }) => {
           
           {/* Additional Sales Info - Only show if available */}
           {salesDetails.totalBatches && (
-            <div className="text-xs text-secondary flex justify-between transition-all duration-300">
+            <div className="text-xs text-secondary flex justify-between transition-colors duration-200">
               <span>Batches: {salesDetails.totalBatches}</span>
               {salesDetails.whitelistLimit && isPhase0 && (
                 <span>WL Limit: {formatNumber(salesDetails.whitelistLimit)}</span>
@@ -409,11 +407,11 @@ const SaleCard = ({ sale, index }) => {
         <div>
           <Link 
             to={`/presale/${sale.namespace}/${sale.moduleName}`}
-            className="btn btn-primary w-full group flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+            className="btn btn-primary w-full group flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             View Sale
-            <ChevronRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+            <ChevronRight size={16} className="transition-transform duration-200 group-hover:translate-x-1" />
           </Link>
         </div>
       </div>
