@@ -136,7 +136,7 @@ const LaunchedState = ({ tokenDetails, project }) => {
                   ))}
                 </div>
                 <p className="text-xs text-gray-400 mt-3">
-                  Click "View" to see transaction details on the Kadena blockchain explorer
+                  Click &quot;View&quot; to see transaction details on the Kadena blockchain explorer
                 </p>
               </div>
             )}
@@ -229,11 +229,11 @@ const LaunchedState = ({ tokenDetails, project }) => {
       {/* Action Buttons */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Link 
-          to={`/dashboard/${tokenDetails.contractAddress.split('.')[0]}/${tokenDetails.contractAddress.split('.')[1]}`}
+          to={`/presale/${tokenDetails.contractAddress.split('.')[0]}/${tokenDetails.contractAddress.split('.')[1]}`}
           className="btn btn-primary flex items-center justify-center gap-2"
         >
-          <Settings className="w-5 h-5" />
-          Go to Dashboard
+          <ExternalLink className="w-5 h-5" />
+          Go to live Presale
         </Link>
         <button
           onClick={() => {
@@ -260,7 +260,12 @@ LaunchedState.propTypes = {
     deployedAt: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Date)]),
     salesContractAddress: PropTypes.string,
     treasuryContractAddress: PropTypes.string,
-    deploymentTransactionKeys: PropTypes.arrayOf(PropTypes.string)
+    deploymentTransactionKeys: PropTypes.arrayOf(PropTypes.string),
+    tokenDistribution: PropTypes.shape({
+      presalesAmount: PropTypes.number,
+      liquidityAmount: PropTypes.number,
+      treasuryAmount: PropTypes.number
+    })
   })
 };
 

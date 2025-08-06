@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Rocket, Shield, Clock, TrendingUp, Users, DollarSign, Info, Database, Link, Layers } from 'lucide-react';
+import { Rocket, Shield, Clock, TrendingUp, Users, DollarSign, Info, Database, Link, Layers, Settings } from 'lucide-react';
 import usePresaleStore from '../../store/usePresaleStore';
 import useWalletStore from '../../wallet/walletStore';
 import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
-import { buyTokensSale, pollForTransactionResult } from '../../pactcalls/kadena';
+import { buyTokensSale, pollForTransactionResult, pactCallsSig } from '../../pactcalls/kadena';
 import { toast } from 'react-toastify';
 import { addComma } from '../../utils/numberUtils';
 import WalletConnectButton from '../WalletConnectButton';
+import DeployerPanel from './DeployerPanel';
 
 const PresaleView = ({ namespace, moduleName }) => {
   const SALES_MODULE_NAME = `${moduleName}-sales`;
@@ -72,6 +73,11 @@ const PresaleView = ({ namespace, moduleName }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [transactionStatus, setTransactionStatus] = useState(''); // 'pending', 'success', 'error'
   const [transactionMessage, setTransactionMessage] = useState('');
+  
+  // Deployer panel states
+  const [deployerPubKey, setDeployerPubKey] = useState('');
+  const [isDeployerLoading, setIsDeployerLoading] = useState(false);
+  const [showDeployerPanel, setShowDeployerPanel] = useState(false);
 
   // Initialize data on component mount
   useEffect(() => {
@@ -312,6 +318,41 @@ const PresaleView = ({ namespace, moduleName }) => {
       toast.error(`Purchase failed: ${error.message}`, { position: 'top-center' });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Deployer functions
+  const handleDeployerAccess = async () => {
+    if (!pubKey) {
+      toast.error('Please connect your wallet first');
+      return;
+    }
+
+    let currentDeployerKey = deployerPubKey;
+    
+    if (!currentDeployerKey) {
+      toast.info('Verifying deployer access...', { position: 'top-center' });
+      try {
+        setIsDeployerLoading(true);
+        const code = `(describe-keyset "${namespace}.gov")`;
+        const result = await pactCallsSig(code, supplyChain, client, session);
+        currentDeployerKey = result.preflightResult?.result?.data?.keys?.[0];
+        setDeployerPubKey(currentDeployerKey || '');
+      } catch (error) {
+        console.error('Error fetching deployer:', error);
+        toast.error('Failed to fetch deployer information');
+        return;
+      } finally {
+        setIsDeployerLoading(false);
+      }
+    }
+    
+    if (currentDeployerKey && pubKey === currentDeployerKey) {
+      setShowDeployerPanel(true);
+    } else if (currentDeployerKey && pubKey !== currentDeployerKey) {
+      toast.error('You are not the deployer of this token. Please use the wallet that deployed this token.');
+    } else {
+      toast.error('Unable to verify deployer status. Please try again.');
     }
   };
 
@@ -615,6 +656,34 @@ const PresaleView = ({ namespace, moduleName }) => {
             )}
 
             {/* Deployer Dashboard Access */}
+            {account && (
+              <div className="card">
+                <div className="flex items-center gap-3 mb-4">
+                  <Settings className="w-6 h-6 text-purple-400" />
+                  <h3 className="text-xl font-semibold text-primary-text">Deployer Access</h3>
+                </div>
+                <p className="text-secondary text-sm mb-4">
+                  Access deployer panel to manage sales and treasury functions.
+                </p>
+                <button
+                  onClick={handleDeployerAccess}
+                  disabled={isDeployerLoading}
+                  className="w-full btn btn-secondary flex items-center justify-center gap-2"
+                >
+                  {isDeployerLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      <Settings className="w-4 h-4" />
+                      Access Deployer Panel
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
 
             {/* Transaction Status */}
             {(reqKey || transactionStatus) && (
@@ -676,6 +745,18 @@ const PresaleView = ({ namespace, moduleName }) => {
           </div>
         </div>
       </div>
+
+      {/* Deployer Panel Modal */}
+      {showDeployerPanel && (
+        <DeployerPanel
+          setDeployerPanel={setShowDeployerPanel}
+          tokenSymbol={tokenSymbol}
+          countdown={countdown}
+          namespace={namespace}
+          moduleName={moduleName}
+          supplyChain={supplyChain}
+        />
+      )}
     </div>
   );
 };

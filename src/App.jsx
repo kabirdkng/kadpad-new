@@ -9,7 +9,6 @@ import LaunchPage from './pages/LaunchPage';
 import Buy from './pages/Buy';
 import Stake from './pages/Stake';
 import Presale from './pages/Presale';
-import Dashboard from './pages/Dashboard';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import Loader from './components/Loader';
@@ -91,7 +90,6 @@ const App = () => {
                 <Route path='/sales' element={<Buy />} />
                 <Route path='/staking' element={<Stake />} />
                 <Route path='/presale/:namespace/:moduleName' element={<Presale />} />
-                <Route path='/dashboard/:namespace/:moduleName' element={<Dashboard />} />
               </Routes>
             </main>
             

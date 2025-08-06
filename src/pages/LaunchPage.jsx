@@ -184,7 +184,7 @@ const LaunchPage = () => {
               <p className="text-sm text-secondary">{stepDescriptions[currentStep]}</p>
               
               {/* Show submission status indicator if applicable */}
-              {submissionStatus && currentStep === 2 && (
+              {submissionStatus && (
                 <div className="mt-3">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColorClasses(submissionStatus)}`}>
                     Status: {getStatusDisplayName(submissionStatus)}
