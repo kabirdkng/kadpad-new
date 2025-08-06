@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
 import { Settings, Users, DollarSign, X } from 'lucide-react';
 import ManageSales from './ManageSales';
@@ -11,6 +12,17 @@ const DeployerPanel = ({ setDeployerPanel, tokenSymbol, countdown, namespace, mo
   const [reqKey, setReqKey] = useState('');
   const [transactionStatus, setTransactionStatus] = useState(''); // 'pending', 'success', 'error'
   const [transactionMessage, setTransactionMessage] = useState('');
+
+  // Prevent body scrolling and ensure modal stability
+  useEffect(() => {
+    document.body.classList.add('overflow-hidden');
+    // Ensure no layout shift by setting explicit viewport height
+    document.documentElement.style.setProperty('overflow', 'hidden');
+    return () => {
+      document.body.classList.remove('overflow-hidden');
+      document.documentElement.style.removeProperty('overflow');
+    };
+  }, []);
 
   const options = [
     {
@@ -76,10 +88,21 @@ const DeployerPanel = ({ setDeployerPanel, tokenSymbol, countdown, namespace, mo
     setDeployerPanel(false);
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-secondary-bg border border-border-color rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-border-color">
+  // Handle backdrop click to close modal
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      setDeployerPanel(false);
+    }
+  };
+
+  return createPortal(
+    <div 
+      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[1000] p-4 overscroll-none"
+      onClick={handleBackdropClick}
+    >
+      <div className="bg-secondary-bg border border-border-color rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-xl">
+        {/* Header */}
+        <div className="p-6 border-b border-border-color flex-shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Settings className="w-6 h-6 text-accent-primary" />
@@ -117,7 +140,8 @@ const DeployerPanel = ({ setDeployerPanel, tokenSymbol, countdown, namespace, mo
           </div>
         </div>
 
-        <div className="p-6">
+        {/* Content */}
+        <div className="p-6 overflow-y-auto flex-grow scrollbar-thin scrollbar-thumb-accent-primary scrollbar-track-secondary-bg">
           {!showOption && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {options.map((option, index) => {
@@ -214,7 +238,8 @@ const DeployerPanel = ({ setDeployerPanel, tokenSymbol, countdown, namespace, mo
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
