@@ -13,9 +13,6 @@ const PriceUpdateSection = ({
   moduleName,
   p0Price,
   p1Price,
-  setReqKey,
-  setTransactionStatus,
-  setTransactionMessage,
   fetchP0Price,
   fetchP1Price,
   pubKey
@@ -32,9 +29,6 @@ const PriceUpdateSection = ({
     client,
     session,
     moduleName,
-    setReqKey,
-    setTransactionStatus,
-    setTransactionMessage,
     fetchP0Price,
     fetchP1Price,
     pubKey
@@ -127,9 +121,6 @@ PriceUpdateSection.propTypes = {
   moduleName: PropTypes.string.isRequired,
   p0Price: PropTypes.oneOfType([PropTypes.number, PropTypes.object]),
   p1Price: PropTypes.oneOfType([PropTypes.number, PropTypes.object]),
-  setReqKey: PropTypes.func,
-  setTransactionStatus: PropTypes.func,
-  setTransactionMessage: PropTypes.func,
   fetchP0Price: PropTypes.func.isRequired,
   fetchP1Price: PropTypes.func.isRequired,
   pubKey: PropTypes.string

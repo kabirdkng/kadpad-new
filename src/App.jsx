@@ -13,6 +13,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import Loader from './components/Loader';
 import BackgroundEffect from './components/BackgroundEffect';
+import GlobalTransactionIndicator from './components/GlobalTransactionIndicator';
 
 // Wallet Components
 import ClientContextProvider from './wallet/providers/ClientContextProvider';
@@ -97,6 +98,9 @@ const App = () => {
           </div>
           
           {showModal && <ConnectWalletModal />}
+          
+          {/* Global Transaction Indicator */}
+          <GlobalTransactionIndicator />
         </BrowserRouter>
         
         <ToastContainer

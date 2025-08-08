@@ -4,14 +4,10 @@ import PropTypes from 'prop-types';
 import { Settings, Users, DollarSign, X } from 'lucide-react';
 import ManageSales from './ManageSales';
 import AccessTreasury from './AccessTreasury';
+import TransactionStatusIndicator from '../TransactionStatusIndicator';
 
 const DeployerPanel = ({ setDeployerPanel, tokenSymbol, countdown, namespace, moduleName, supplyChain }) => {
   const [showOption, setShowOption] = useState(null);
-  
-  // Transaction status states
-  const [reqKey, setReqKey] = useState('');
-  const [transactionStatus, setTransactionStatus] = useState(''); // 'pending', 'success', 'error'
-  const [transactionMessage, setTransactionMessage] = useState('');
 
   // Prevent body scrolling and ensure modal stability
   useEffect(() => {
@@ -40,10 +36,6 @@ const DeployerPanel = ({ setDeployerPanel, tokenSymbol, countdown, namespace, mo
   ];
 
   const handleOptionClick = (action) => {
-    // Clear transaction status when switching options
-    setReqKey('');
-    setTransactionStatus('');
-    setTransactionMessage('');
     setShowOption(action);
   };
 
@@ -56,12 +48,6 @@ const DeployerPanel = ({ setDeployerPanel, tokenSymbol, countdown, namespace, mo
             namespace={namespace} 
             moduleName={moduleName} 
             supplyChain={supplyChain}
-            reqKey={reqKey}
-            setReqKey={setReqKey}
-            transactionStatus={transactionStatus}
-            setTransactionStatus={setTransactionStatus}
-            transactionMessage={transactionMessage}
-            setTransactionMessage={setTransactionMessage}
           />
         );
       case 'accessTreasury':
@@ -71,12 +57,6 @@ const DeployerPanel = ({ setDeployerPanel, tokenSymbol, countdown, namespace, mo
             namespace={namespace} 
             moduleName={moduleName} 
             supplyChain={supplyChain}
-            reqKey={reqKey}
-            setReqKey={setReqKey}
-            transactionStatus={transactionStatus}
-            setTransactionStatus={setTransactionStatus}
-            transactionMessage={transactionMessage}
-            setTransactionMessage={setTransactionMessage}
           />
         );
       default:
@@ -108,12 +88,15 @@ const DeployerPanel = ({ setDeployerPanel, tokenSymbol, countdown, namespace, mo
               <Settings className="w-6 h-6 text-accent-primary" />
               <h3 className="text-2xl font-bold text-primary-text">Deployer Panel</h3>
             </div>
-            <button
-              onClick={handleClosePanel}
-              className="p-2 hover:bg-hover-bg rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-secondary" />
-            </button>
+            <div className="flex items-center gap-3">
+              <TransactionStatusIndicator />
+              <button
+                onClick={handleClosePanel}
+                className="p-2 hover:bg-hover-bg rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-secondary" />
+              </button>
+            </div>
           </div>
           
           <div className="mt-4 p-4 bg-accent-primary/10 border border-accent-primary/20 rounded-lg">
@@ -176,64 +159,6 @@ const DeployerPanel = ({ setDeployerPanel, tokenSymbol, countdown, namespace, mo
                 ← Back to options
               </button>
               {renderOption()}
-              
-              {/* Transaction Status */}
-              {(reqKey || transactionStatus) && (
-                <div className="mt-6 card">
-                  <h3 className="text-lg font-semibold text-primary-text mb-4">Transaction Status</h3>
-                  <div className={`p-4 rounded-lg border ${
-                    transactionStatus === 'success' ? 'bg-green-500/10 border-green-500/20' :
-                    transactionStatus === 'error' ? 'bg-red-500/10 border-red-500/20' :
-                    transactionStatus === 'pending' ? 'bg-yellow-500/10 border-yellow-500/20' :
-                    'bg-blue-500/10 border-blue-500/20'
-                  }`}>
-                    <div className="flex items-start gap-3">
-                      <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center ${
-                        transactionStatus === 'success' ? 'bg-green-500/20' :
-                        transactionStatus === 'error' ? 'bg-red-500/20' :
-                        transactionStatus === 'pending' ? 'bg-yellow-500/20' :
-                        'bg-blue-500/20'
-                      }`}>
-                        {transactionStatus === 'success' ? (
-                          <span className="text-green-400 text-sm">✓</span>
-                        ) : transactionStatus === 'error' ? (
-                          <span className="text-red-400 text-sm">✗</span>
-                        ) : transactionStatus === 'pending' ? (
-                          <div className="w-3 h-3 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-                        ) : (
-                          <span className="text-blue-400 text-sm">•</span>
-                        )}
-                      </div>
-                      <div className="flex-1">
-                        <p className={`text-sm font-medium mb-1 ${
-                          transactionStatus === 'success' ? 'text-green-400' :
-                          transactionStatus === 'error' ? 'text-red-400' :
-                          transactionStatus === 'pending' ? 'text-yellow-400' :
-                          'text-blue-400'
-                        }`}>
-                          {transactionStatus === 'success' ? 'Transaction Successful!' :
-                           transactionStatus === 'error' ? 'Transaction Failed' :
-                           transactionStatus === 'pending' ? 'Transaction Pending' :
-                           'Transaction Submitted'}
-                        </p>
-                        {transactionMessage && (
-                          <p className="text-xs text-secondary mb-2">{transactionMessage}</p>
-                        )}
-                        {reqKey && (
-                          <a
-                            href={`https://explorer.chainweb.com/testnet/tx/${reqKey}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-400 hover:text-blue-300 break-all underline"
-                          >
-                            View on Explorer →
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>

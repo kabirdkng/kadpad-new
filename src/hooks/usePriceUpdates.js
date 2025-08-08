@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
-import { pactCallsSales, pollForTransactionResult } from '../pactcalls/kadena';
+import { pactCallsSales } from '../pactcalls/kadena';
+import useTransactionManager from './useTransactionManager';
 
 export const usePriceUpdates = (
   namespace, 
@@ -9,23 +10,20 @@ export const usePriceUpdates = (
   client,
   session,
   moduleName,
-  setReqKey,
-  setTransactionStatus,
-  setTransactionMessage,
   fetchP0Price,
   fetchP1Price,
   pubKey
 ) => {
   const [isUpdatingPrices, setIsUpdatingPrices] = useState(false);
+  const { 
+    submitTransaction, 
+    createTransactionMetadata, 
+    transactionTypes 
+  } = useTransactionManager();
 
   const updatePrices = async (newP0Price, newP1Price, onSuccess) => {
     try {
       setIsUpdatingPrices(true);
-      if (setTransactionStatus) {
-        setTransactionStatus('');
-        setTransactionMessage('');
-        setReqKey && setReqKey('');
-      }
       
       const formatPriceForPact = (price) => {
         const numPrice = parseFloat(price);
@@ -41,63 +39,45 @@ export const usePriceUpdates = (
       
       if (res?.preflightResult?.result?.status === 'success') {
         const txKey = res.transactionDescriptor?.requestKey;
-        if (setReqKey && txKey) {
-          setReqKey(txKey);
-          setTransactionStatus && setTransactionStatus('pending');
-          setTransactionMessage && setTransactionMessage('Price update submitted, waiting for confirmation...');
-        }
         
-        toast.info('Transaction submitted! Waiting for confirmation...', { 
-          position: 'top-center', 
-          autoClose: 3000 
-        });
+        // Create transaction metadata
+        const metadata = createTransactionMetadata(
+          transactionTypes.PRICE_UPDATE,
+          `Update prices: Phase 0 to ${formattedP0Price}, Phase 1 to ${formattedP1Price}`,
+          {
+            p0Price: formattedP0Price,
+            p1Price: formattedP1Price,
+            chainId: supplyChain,
+            namespace,
+            moduleName: salesModuleName,
+          }
+        );
 
+        // Submit transaction using the new manager
         try {
-          const finalResult = await pollForTransactionResult(
-            res.pactClient, 
-            res.transactionDescriptor,
-            30,
-            3000
-          );
+          const finalResult = await submitTransaction({
+            txId: txKey,
+            pactClient: res.pactClient,
+            transactionDescriptor: res.transactionDescriptor,
+            metadata,
+            pollingConfig: {
+              enableToasts: true,
+            }
+          });
 
           if (finalResult?.result?.status === 'success') {
-            setTransactionStatus && setTransactionStatus('success');
-            setTransactionMessage && setTransactionMessage('Prices updated successfully!');
-            toast.success('Prices updated successfully!', { 
-              position: 'top-center',
-              autoClose: 5000 
-            });
-            
             await fetchP0Price(namespace, salesModuleName, supplyChain, pubKey);
             await fetchP1Price(namespace, salesModuleName, supplyChain, pubKey);
-            
             onSuccess && onSuccess();
-          } else {
-            setTransactionStatus && setTransactionStatus('error');
-            setTransactionMessage && setTransactionMessage(finalResult?.result?.error?.message || 'Price update failed');
-            toast.error(`Price update failed: ${finalResult?.result?.error?.message || 'Unknown error'}`, {
-              position: 'top-center',
-              autoClose: 5000
-            });
           }
         } catch (pollError) {
-          console.error('Polling error:', pollError);
-          setTransactionStatus && setTransactionStatus('error');
-          setTransactionMessage && setTransactionMessage('Transaction status unknown - please check explorer');
-          toast.warning('Transaction submitted but confirmation timed out. Please check the explorer for status.', {
-            position: 'top-center',
-            autoClose: 7000
-          });
+          console.error('Transaction polling error:', pollError);
         }
       } else {
-        setTransactionStatus && setTransactionStatus('error');
-        setTransactionMessage && setTransactionMessage('Price update submission failed');
         toast.error('Price update submission failed');
       }
     } catch (error) {
       console.error('Error updating prices:', error);
-      setTransactionStatus && setTransactionStatus('error');
-      setTransactionMessage && setTransactionMessage(`Price update failed: ${error.message}`);
       toast.error('Failed to update prices');
     } finally {
       setIsUpdatingPrices(false);

@@ -16,10 +16,7 @@ const ManageSales = ({
   tokenSymbol, 
   namespace, 
   moduleName, 
-  supplyChain,
-  setReqKey,
-  setTransactionStatus,
-  setTransactionMessage
+  supplyChain
 }) => {
   const SALES_MODULE_NAME = `${moduleName}-sales`;
   const { pubKey } = useWalletStore();
@@ -106,18 +103,15 @@ const ManageSales = ({
         {isPreWl && (
           <div className="space-y-4">
             <PhaseIndicator title="Pre-Whitelist" className="text-yellow-400" />
-            <PriceUpdateSection
+                        <PriceUpdateSection
+              tokenSymbol={tokenSymbol}
               namespace={namespace}
-              salesModuleName={SALES_MODULE_NAME}
               supplyChain={supplyChain}
               client={client}
               session={session}
               moduleName={moduleName}
               p0Price={p0Price}
               p1Price={p1Price}
-              setReqKey={setReqKey}
-              setTransactionStatus={setTransactionStatus}
-              setTransactionMessage={setTransactionMessage}
               fetchP0Price={fetchP0Price}
               fetchP1Price={fetchP1Price}
               pubKey={pubKey}
@@ -166,9 +160,6 @@ const ManageSales = ({
                 client={client}
                 session={session}
                 moduleName={moduleName}
-                setReqKey={setReqKey}
-                setTransactionStatus={setTransactionStatus}
-                setTransactionMessage={setTransactionMessage}
                 onBack={() => setWhitelistForm(false)}
                 onSuccess={handleWhitelistSuccess}
               />
@@ -201,10 +192,6 @@ ManageSales.propTypes = {
   namespace: PropTypes.string.isRequired,
   moduleName: PropTypes.string.isRequired,
   supplyChain: PropTypes.string.isRequired,
-  setReqKey: PropTypes.func,
-  transactionStatus: PropTypes.string,
-  setTransactionStatus: PropTypes.func,
-  setTransactionMessage: PropTypes.func,
 };
 
 export default ManageSales;

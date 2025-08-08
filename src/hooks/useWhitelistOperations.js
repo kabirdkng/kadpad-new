@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
-import { pactCallsSales, pollForTransactionResult } from '../pactcalls/kadena';
+import { pactCallsSales } from '../pactcalls/kadena';
+import useTransactionManager from './useTransactionManager';
 
 export const useWhitelistOperations = (
   namespace, 
@@ -8,21 +9,18 @@ export const useWhitelistOperations = (
   supplyChain,
   client,
   session,
-  moduleName,
-  setReqKey,
-  setTransactionStatus,
-  setTransactionMessage
+  moduleName
 ) => {
   const [isWhitelisting, setIsWhitelisting] = useState(false);
+  const { 
+    submitTransaction, 
+    createTransactionMetadata, 
+    transactionTypes 
+  } = useTransactionManager();
 
   const whitelistAddresses = async (walletsToWhitelist, onSuccess) => {
     try {
       setIsWhitelisting(true);
-      if (setTransactionStatus) {
-        setTransactionStatus('');
-        setTransactionMessage('');
-        setReqKey && setReqKey('');
-      }
       
       const walletList = walletsToWhitelist.map(
         (wallet) => `(reserve-batch "${wallet}")`
@@ -34,60 +32,43 @@ export const useWhitelistOperations = (
       
       if (res?.preflightResult?.result?.status === 'success') {
         const txKey = res.transactionDescriptor?.requestKey;
-        if (setReqKey && txKey) {
-          setReqKey(txKey);
-          setTransactionStatus && setTransactionStatus('pending');
-          setTransactionMessage && setTransactionMessage('Whitelist transaction submitted, waiting for confirmation...');
-        }
         
-        toast.info('Transaction submitted! Waiting for confirmation...', { 
-          position: 'top-center', 
-          autoClose: 3000 
-        });
+        // Create transaction metadata
+        const metadata = createTransactionMetadata(
+          transactionTypes.WHITELIST_ADDRESSES,
+          `Whitelist ${walletsToWhitelist.length} address${walletsToWhitelist.length > 1 ? 'es' : ''}`,
+          {
+            addresses: walletsToWhitelist,
+            count: walletsToWhitelist.length,
+            chainId: supplyChain,
+            namespace,
+            moduleName: salesModuleName,
+          }
+        );
 
+        // Submit transaction using the new manager
         try {
-          const finalResult = await pollForTransactionResult(
-            res.pactClient, 
-            res.transactionDescriptor,
-            30,
-            3000
-          );
+          const finalResult = await submitTransaction({
+            txId: txKey,
+            pactClient: res.pactClient,
+            transactionDescriptor: res.transactionDescriptor,
+            metadata,
+            pollingConfig: {
+              enableToasts: true,
+            }
+          });
 
           if (finalResult?.result?.status === 'success') {
-            setTransactionStatus && setTransactionStatus('success');
-            setTransactionMessage && setTransactionMessage('Addresses whitelisted successfully!');
-            toast.success('Addresses whitelisted successfully!', { 
-              position: 'top-center',
-              autoClose: 5000 
-            });
-            
             onSuccess && onSuccess();
-          } else {
-            setTransactionStatus && setTransactionStatus('error');
-            setTransactionMessage && setTransactionMessage(finalResult?.result?.error?.message || 'Whitelist failed');
-            toast.error(`Whitelist failed: ${finalResult?.result?.error?.message || 'Unknown error'}`, {
-              position: 'top-center',
-              autoClose: 5000
-            });
           }
         } catch (pollError) {
-          console.error('Polling error:', pollError);
-          setTransactionStatus && setTransactionStatus('error');
-          setTransactionMessage && setTransactionMessage('Transaction status unknown - please check explorer');
-          toast.warning('Transaction submitted but confirmation timed out. Please check the explorer for status.', {
-            position: 'top-center',
-            autoClose: 7000
-          });
+          console.error('Transaction polling error:', pollError);
         }
       } else {
-        setTransactionStatus && setTransactionStatus('error');
-        setTransactionMessage && setTransactionMessage('Whitelist submission failed');
         toast.error('Failed to whitelist addresses');
       }
     } catch (error) {
       console.error('Error whitelisting addresses:', error);
-      setTransactionStatus && setTransactionStatus('error');
-      setTransactionMessage && setTransactionMessage(`Whitelist failed: ${error.message}`);
       toast.error('Failed to whitelist addresses');
     } finally {
       setIsWhitelisting(false);

@@ -12,9 +12,6 @@ const WhitelistForm = ({
   client,
   session,
   moduleName,
-  setReqKey,
-  setTransactionStatus,
-  setTransactionMessage,
   onBack,
   onSuccess
 }) => {
@@ -30,10 +27,7 @@ const WhitelistForm = ({
     supplyChain,
     client,
     session,
-    moduleName,
-    setReqKey,
-    setTransactionStatus,
-    setTransactionMessage
+    moduleName
   );
 
   const handleAddToWhitelist = () => {
@@ -300,9 +294,6 @@ WhitelistForm.propTypes = {
   client: PropTypes.object,
   session: PropTypes.object,
   moduleName: PropTypes.string.isRequired,
-  setReqKey: PropTypes.func,
-  setTransactionStatus: PropTypes.func,
-  setTransactionMessage: PropTypes.func,
   onBack: PropTypes.func.isRequired,
   onSuccess: PropTypes.func
 };

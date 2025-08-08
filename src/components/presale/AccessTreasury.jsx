@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Vault, Send, RefreshCw } from 'lucide-react';
-import { fetchBalance, pactCalls, transferCoinTreasury, pollForTransactionResult } from '../../pactcalls/kadena';
+import { fetchBalance, pactCalls, transferCoinTreasury } from '../../pactcalls/kadena';
 import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
 import useWalletStore from '../../wallet/walletStore';
+import useTransactionManager from '../../hooks/useTransactionManager';
 import { addComma } from '../../utils/numberUtils';
 import { toast } from 'react-toastify';
 
@@ -11,17 +12,17 @@ const AccessTreasury = ({
   tokenSymbol, 
   namespace, 
   moduleName, 
-  supplyChain,
-  reqKey,
-  setReqKey,
-  transactionStatus,
-  setTransactionStatus,
-  transactionMessage,
-  setTransactionMessage
+  supplyChain
 }) => {
   const TREASURY_MODULE_NAME = `${moduleName}-treasury`;
   const { pubKey } = useWalletStore();
   const { client, session } = useWalletConnectClient();
+  const { 
+    submitTransaction, 
+    createTransactionMetadata, 
+    transactionTypes 
+  } = useTransactionManager();
+  
   const [treasuryTokenBalance, setTreasuryTokenBalance] = useState(0);
   const [treasuryContractAccount, setTreasuryContractAccount] = useState('');
   const [transferAccount, setTransferAccount] = useState('');
@@ -69,14 +70,9 @@ const getTreasuryTokenBalance = useCallback(async () => {
 
     try {
       setIsLoading(true);
-      if (setTransactionStatus) {
-        setTransactionStatus('');
-        setTransactionMessage('');
-        setReqKey && setReqKey('');
-      }
       
       const token = `${namespace}.${moduleName}`;
-      const code = `(${token}.transfer-create "${treasuryContractAccount}" "${transferAccount}" (read-keyset "ac-keyset") ${transferAmount})`;
+      const code = `(${token}.transfer-create "${treasuryContractAccount}" "${transferAccount}" (read-keyset 'ks) ${transferAmount})`;
       
       toast.info('Submitting transfer...', { position: 'top-center', autoClose: 2000 });
       const res = await transferCoinTreasury(
@@ -86,7 +82,7 @@ const getTreasuryTokenBalance = useCallback(async () => {
         pubKey, 
         treasuryContractAccount, 
         transferAccount, 
-        `(read-keyset "ac-keyset")`,
+        `(read-keyset 'ks)`,
         parseFloat(transferAmount), 
         client, 
         session
@@ -94,64 +90,48 @@ const getTreasuryTokenBalance = useCallback(async () => {
       
       if (res?.preflightResult?.result?.status === 'success') {
         const txKey = res.transactionDescriptor?.requestKey;
-        if (setReqKey && txKey) {
-          setReqKey(txKey);
-          setTransactionStatus && setTransactionStatus('pending');
-          setTransactionMessage && setTransactionMessage('Transfer submitted, waiting for confirmation...');
-        }
-        
-        toast.info('Transaction submitted! Waiting for confirmation...', { 
-          position: 'top-center', 
-          autoClose: 3000 
-        });
 
+        // Create transaction metadata
+        const metadata = createTransactionMetadata(
+          transactionTypes.TRANSFER_TREASURY,
+          `Transfer ${transferAmount} ${tokenSymbol} from treasury to ${transferAccount}`,
+          {
+            amount: transferAmount,
+            token: tokenSymbol,
+            from: treasuryContractAccount,
+            to: transferAccount,
+            chainId: supplyChain,
+            namespace,
+            moduleName,
+          }
+        );
+
+        // Submit transaction using the new manager
         try {
-          // Poll for the transaction result
-          const finalResult = await pollForTransactionResult(
-            res.pactClient, 
-            res.transactionDescriptor,
-            30, // maxRetries
-            3000 // retryInterval (3 seconds)
-          );
+          const finalResult = await submitTransaction({
+            txId: txKey,
+            pactClient: res.pactClient,
+            transactionDescriptor: res.transactionDescriptor,
+            metadata,
+            pollingConfig: {
+              enableToasts: true,
+            }
+          });
 
           if (finalResult?.result?.status === 'success') {
-            setTransactionStatus && setTransactionStatus('success');
-            setTransactionMessage && setTransactionMessage('Transfer completed successfully!');
-            toast.success('Transfer completed successfully!', { 
-              position: 'top-center',
-              autoClose: 5000 
-            });
-            
             // Clear form and refresh balance
             setTransferAccount('');
             setTransferAmount('');
             await getTreasuryTokenBalance();
-          } else {
-            setTransactionStatus && setTransactionStatus('error');
-            setTransactionMessage && setTransactionMessage(finalResult?.result?.error?.message || 'Transfer failed');
-            toast.error(`Transfer failed: ${finalResult?.result?.error?.message || 'Unknown error'}`, {
-              position: 'top-center',
-              autoClose: 5000
-            });
           }
         } catch (pollError) {
-          console.error('Polling error:', pollError);
-          setTransactionStatus && setTransactionStatus('error');
-          setTransactionMessage && setTransactionMessage('Transaction status unknown - please check explorer');
-          toast.warning('Transaction submitted but confirmation timed out. Please check the explorer for status.', {
-            position: 'top-center',
-            autoClose: 7000
-          });
+          console.error('Transaction polling error:', pollError);
         }
       } else {
-        setTransactionStatus && setTransactionStatus('error');
-        setTransactionMessage && setTransactionMessage('Transfer submission failed');
         toast.error('Transfer failed');
       }
     } catch (error) {
       console.error('Error transferring tokens:', error);
-      setTransactionStatus && setTransactionStatus('error');
-      setTransactionMessage && setTransactionMessage(`Transfer failed: ${error.message}`);
       toast.error('Transfer failed');
     } finally {
       setIsLoading(false);
@@ -194,7 +174,7 @@ const getTreasuryTokenBalance = useCallback(async () => {
               <p className="text-3xl font-bold text-accent-primary mb-2">
                 {addComma(treasuryTokenBalance)} ${tokenSymbol}
               </p>
-              <p className="text-sm text-secondary">
+              <p className="text-sm text-secondary break-all">
                 Account: {treasuryContractAccount || 'Loading...'}
               </p>
             </div>
@@ -265,12 +245,6 @@ AccessTreasury.propTypes = {
   namespace: PropTypes.string.isRequired,
   moduleName: PropTypes.string.isRequired,
   supplyChain: PropTypes.string.isRequired,
-  reqKey: PropTypes.string,
-  setReqKey: PropTypes.func,
-  transactionStatus: PropTypes.string,
-  setTransactionStatus: PropTypes.func,
-  transactionMessage: PropTypes.string,
-  setTransactionMessage: PropTypes.func,
 };
 
 export default AccessTreasury;
