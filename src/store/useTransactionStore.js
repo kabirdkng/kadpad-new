@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { generateExplorerUrl, isValidTransactionKey } from '../utils/explorerUtils';
 
 const useTransactionStore = create(
   persist(
@@ -10,6 +11,8 @@ const useTransactionStore = create(
       
       // Add a new transaction
       addTransaction: (txId, txData) => {
+        const explorerUrl = isValidTransactionKey(txId) ? generateExplorerUrl(txId) : null;
+        
         set((state) => ({
           transactions: {
             ...state.transactions,
@@ -18,6 +21,7 @@ const useTransactionStore = create(
               status: 'pending',
               createdAt: Date.now(),
               updatedAt: Date.now(),
+              explorerUrl,
               ...txData,
             },
           },
@@ -31,9 +35,14 @@ const useTransactionStore = create(
           const transaction = state.transactions[txId];
           if (!transaction) return state;
 
+          // Preserve or generate explorer URL if not already set
+          const explorerUrl = transaction.explorerUrl || 
+            (isValidTransactionKey(txId) ? generateExplorerUrl(txId) : null);
+
           const updatedTransaction = {
             ...transaction,
             ...updates,
+            explorerUrl,
             updatedAt: Date.now(),
           };
 
@@ -71,12 +80,23 @@ const useTransactionStore = create(
 
       // Get transaction by ID
       getTransaction: (txId) => {
-        return get().transactions[txId] || null;
+        const transaction = get().transactions[txId] || null;
+        if (!transaction) return null;
+        
+        return {
+          ...transaction,
+          explorerUrl: transaction.explorerUrl || (isValidTransactionKey(txId) ? generateExplorerUrl(txId) : null)
+        };
       },
 
       // Get all transactions
       getAllTransactions: () => {
-        return Object.values(get().transactions).sort((a, b) => b.createdAt - a.createdAt);
+        const transactions = Object.values(get().transactions);
+        // Ensure all transactions have explorer URLs if they don't already
+        return transactions.map(tx => ({
+          ...tx,
+          explorerUrl: tx.explorerUrl || (isValidTransactionKey(tx.id) ? generateExplorerUrl(tx.id) : null)
+        })).sort((a, b) => b.createdAt - a.createdAt);
       },
 
       // Get active transactions
@@ -85,6 +105,10 @@ const useTransactionStore = create(
         return Array.from(activeTransactions)
           .map(id => transactions[id])
           .filter(Boolean)
+          .map(tx => ({
+            ...tx,
+            explorerUrl: tx.explorerUrl || (isValidTransactionKey(tx.id) ? generateExplorerUrl(tx.id) : null)
+          }))
           .sort((a, b) => b.createdAt - a.createdAt);
       },
 
@@ -92,6 +116,10 @@ const useTransactionStore = create(
       getTransactionsByStatus: (status) => {
         return Object.values(get().transactions)
           .filter(tx => tx.status === status)
+          .map(tx => ({
+            ...tx,
+            explorerUrl: tx.explorerUrl || (isValidTransactionKey(tx.id) ? generateExplorerUrl(tx.id) : null)
+          }))
           .sort((a, b) => b.createdAt - a.createdAt);
       },
 
@@ -99,6 +127,10 @@ const useTransactionStore = create(
       getTransactionsByType: (type) => {
         return Object.values(get().transactions)
           .filter(tx => tx.type === type)
+          .map(tx => ({
+            ...tx,
+            explorerUrl: tx.explorerUrl || (isValidTransactionKey(tx.id) ? generateExplorerUrl(tx.id) : null)
+          }))
           .sort((a, b) => b.createdAt - a.createdAt);
       },
 

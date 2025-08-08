@@ -114,6 +114,18 @@ const TransactionTracker = ({ isOpen, onClose }) => {
           </div>
           
           <div className="flex items-center gap-1 flex-shrink-0">
+            {transaction.explorerUrl && (
+              <a
+                href={transaction.explorerUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 hover:bg-hover-bg rounded text-accent-primary hover:text-accent-primary/80"
+                title="View on Explorer"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+            
             <button
               onClick={() => handleToggleDetails(transaction.id)}
               className="p-1 hover:bg-hover-bg rounded"
@@ -186,6 +198,21 @@ const TransactionTracker = ({ isOpen, onClose }) => {
         {/* Details Section - Minimal for mobile */}
         {isDetailsOpen && (
           <div className="border-t border-border-color pt-3 space-y-2">
+            {/* Explorer Link - Make it prominent */}
+            {transaction.explorerUrl && (
+              <div className="mb-3">
+                <a
+                  href={transaction.explorerUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-3 py-2 bg-accent-primary/10 border border-accent-primary/20 rounded-lg text-accent-primary hover:bg-accent-primary/20 transition-colors text-sm font-medium"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  View on Explorer
+                </a>
+              </div>
+            )}
+            
             {transaction.message && transaction.message.length >= 100 && (
               <div>
                 <span className="text-xs font-medium text-secondary">Message:</span>
@@ -205,18 +232,6 @@ const TransactionTracker = ({ isOpen, onClose }) => {
                 <span className="text-xs font-medium text-red-400">Error:</span>
                 <p className="text-xs text-red-300 mt-1 break-words">{transaction.lastError}</p>
               </div>
-            )}
-            
-            {transaction.explorerUrl && (
-              <a
-                href={transaction.explorerUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-xs text-accent-primary hover:text-accent-primary/80 break-all"
-              >
-                Explorer
-                <ExternalLink className="w-3 h-3 flex-shrink-0" />
-              </a>
             )}
           </div>
         )}

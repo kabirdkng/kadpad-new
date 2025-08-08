@@ -125,7 +125,7 @@ const LaunchedState = ({ tokenDetails, project }) => {
                         {key}
                       </code>
                       <button
-                        onClick={() => window.open(`https://explorer.kadena.io/${config.networkId}/transaction/${key}`, '_blank')}
+                        onClick={() => window.open(`https://explorer.kadena.io/${config.name}/transaction/${key}`, '_blank')}
                         className="flex items-center gap-1 px-2 py-1 text-xs bg-purple-500/20 hover:bg-purple-500/30 rounded text-purple-300 hover:text-purple-200 transition-colors flex-shrink-0"
                         title="View on Explorer"
                       >
