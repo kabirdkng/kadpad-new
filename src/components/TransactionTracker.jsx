@@ -45,10 +45,6 @@ const TransactionTracker = ({ isOpen, onClose }) => {
     }));
   };
 
-  const formatTimestamp = (timestamp) => {
-    return new Date(timestamp).toLocaleString();
-  };
-
   const formatDuration = (startTime, endTime = Date.now()) => {
     const duration = endTime - startTime;
     const seconds = Math.floor(duration / 1000) % 60;
@@ -95,27 +91,29 @@ const TransactionTracker = ({ isOpen, onClose }) => {
     const isDetailsOpen = showDetails[transaction.id];
 
     return (
-      <div className="bg-secondary-bg border border-border-color rounded-lg p-4 space-y-3">
+      <div className="bg-secondary-bg border border-border-color rounded-lg p-3 md:p-4 space-y-3">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {getStatusIcon(transaction.status, isPolling)}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
+            <div className="flex-shrink-0 mt-0.5">
+              {getStatusIcon(transaction.status, isPolling)}
+            </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-primary-text">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                <span className="font-medium text-primary-text text-sm md:text-base">
                   {transaction.type || 'Transaction'}
                 </span>
-                <span className={`px-2 py-1 rounded text-xs font-medium border ${getStatusColor(transaction.status)}`}>
+                <span className={`px-2 py-1 rounded text-xs font-medium border ${getStatusColor(transaction.status)} self-start`}>
                   {transaction.status}
                 </span>
               </div>
-              <p className="text-sm text-secondary truncate">
-                ID: {transaction.id}
+              <p className="text-xs md:text-sm text-secondary break-all font-mono mt-1">
+                {transaction.id}
               </p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <button
               onClick={() => handleToggleDetails(transaction.id)}
               className="p-1 hover:bg-hover-bg rounded"
@@ -150,9 +148,9 @@ const TransactionTracker = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Message */}
-        {transaction.message && (
-          <p className="text-sm text-secondary">
+        {/* Message - Only show if not too long */}
+        {transaction.message && transaction.message.length < 100 && (
+          <p className="text-xs md:text-sm text-secondary break-words">
             {transaction.message}
           </p>
         )}
@@ -161,7 +159,7 @@ const TransactionTracker = ({ isOpen, onClose }) => {
         {transaction.status === 'pending' && transaction.pollAttempt && transaction.maxRetries && (
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-secondary">
-              <span>Confirmation Progress</span>
+              <span>Progress</span>
               <span>{transaction.pollAttempt}/{transaction.maxRetries}</span>
             </div>
             <div className="w-full bg-gray-700 rounded-full h-1">
@@ -175,44 +173,37 @@ const TransactionTracker = ({ isOpen, onClose }) => {
           </div>
         )}
 
-        {/* Timestamps */}
-        <div className="flex justify-between text-xs text-secondary">
-          <span>Created: {formatTimestamp(transaction.createdAt)}</span>
+        {/* Timestamps - Mobile friendly */}
+        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-xs text-secondary">
+          <span className="break-words">
+            {new Date(transaction.createdAt).toLocaleTimeString()}
+          </span>
           <span>
-            Duration: {formatDuration(transaction.createdAt, transaction.updatedAt)}
+            {formatDuration(transaction.createdAt, transaction.updatedAt)}
           </span>
         </div>
 
-        {/* Details Section */}
+        {/* Details Section - Minimal for mobile */}
         {isDetailsOpen && (
           <div className="border-t border-border-color pt-3 space-y-2">
-            {transaction.description && (
+            {transaction.message && transaction.message.length >= 100 && (
               <div>
-                <span className="text-xs font-medium text-secondary">Description:</span>
-                <p className="text-sm text-primary-text mt-1">{transaction.description}</p>
+                <span className="text-xs font-medium text-secondary">Message:</span>
+                <p className="text-xs text-primary-text mt-1 break-words">{transaction.message}</p>
               </div>
             )}
             
             {transaction.amount && (
               <div>
                 <span className="text-xs font-medium text-secondary">Amount:</span>
-                <p className="text-sm text-primary-text">{transaction.amount}</p>
+                <p className="text-xs text-primary-text break-words">{transaction.amount}</p>
               </div>
             )}
             
             {transaction.lastError && (
               <div>
-                <span className="text-xs font-medium text-red-400">Last Error:</span>
-                <p className="text-sm text-red-300 mt-1">{transaction.lastError}</p>
-              </div>
-            )}
-            
-            {transaction.result && (
-              <div>
-                <span className="text-xs font-medium text-secondary">Result:</span>
-                <pre className="text-xs bg-hover-bg p-2 rounded mt-1 overflow-x-auto">
-                  {JSON.stringify(transaction.result, null, 2)}
-                </pre>
+                <span className="text-xs font-medium text-red-400">Error:</span>
+                <p className="text-xs text-red-300 mt-1 break-words">{transaction.lastError}</p>
               </div>
             )}
             
@@ -221,16 +212,34 @@ const TransactionTracker = ({ isOpen, onClose }) => {
                 href={transaction.explorerUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-accent-primary hover:text-accent-primary/80"
+                className="inline-flex items-center gap-1 text-xs text-accent-primary hover:text-accent-primary/80 break-all"
               >
-                View in Explorer
-                <ExternalLink className="w-3 h-3" />
+                Explorer
+                <ExternalLink className="w-3 h-3 flex-shrink-0" />
               </a>
             )}
           </div>
         )}
       </div>
     );
+  };
+
+  TransactionCard.propTypes = {
+    transaction: PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      status: PropTypes.string.isRequired,
+      type: PropTypes.string,
+      message: PropTypes.string,
+      pollAttempt: PropTypes.number,
+      maxRetries: PropTypes.number,
+      createdAt: PropTypes.number.isRequired,
+      updatedAt: PropTypes.number,
+      description: PropTypes.string,
+      amount: PropTypes.string,
+      lastError: PropTypes.string,
+      result: PropTypes.any,
+      explorerUrl: PropTypes.string,
+    }).isRequired,
   };
 
   const TabButton = ({ id, label, count, isActive, onClick }) => (
@@ -245,6 +254,14 @@ const TransactionTracker = ({ isOpen, onClose }) => {
       {label} {count > 0 && <span className="ml-1">({count})</span>}
     </button>
   );
+
+  TabButton.propTypes = {
+    id: PropTypes.string.isRequired,
+    label: PropTypes.string.isRequired,
+    count: PropTypes.number.isRequired,
+    isActive: PropTypes.bool.isRequired,
+    onClick: PropTypes.func.isRequired,
+  };
 
   if (!isOpen) return null;
 
@@ -266,14 +283,14 @@ const TransactionTracker = ({ isOpen, onClose }) => {
 
   return createPortal(
     <div
-      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[1000] p-4"
+      className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[1000] p-2 md:p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-primary-bg border border-border-color rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-xl">
+      <div className="bg-primary-bg border border-border-color rounded-xl w-full max-w-4xl max-h-[95vh] md:max-h-[90vh] flex flex-col shadow-xl">
         {/* Header */}
-        <div className="p-6 border-b border-border-color flex-shrink-0">
+        <div className="p-4 md:p-6 border-b border-border-color flex-shrink-0">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-primary-text">Transaction Tracker</h2>
+            <h2 className="text-xl md:text-2xl font-bold text-primary-text">Transactions</h2>
             <button
               onClick={onClose}
               className="p-2 hover:bg-hover-bg rounded-lg transition-colors"
@@ -283,29 +300,29 @@ const TransactionTracker = ({ isOpen, onClose }) => {
           </div>
           
           {/* Stats */}
-          <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-secondary-bg border border-border-color rounded-lg p-3">
-              <div className="text-lg font-bold text-primary-text">{stats.total}</div>
-              <div className="text-sm text-secondary">Total</div>
+          <div className="mt-3 md:mt-4 grid grid-cols-4 gap-2 md:gap-4">
+            <div className="bg-secondary-bg border border-border-color rounded-lg p-2 md:p-3">
+              <div className="text-sm md:text-lg font-bold text-primary-text">{stats.total}</div>
+              <div className="text-xs md:text-sm text-secondary">Total</div>
             </div>
-            <div className="bg-secondary-bg border border-border-color rounded-lg p-3">
-              <div className="text-lg font-bold text-yellow-400">{stats.pending}</div>
-              <div className="text-sm text-secondary">Pending</div>
+            <div className="bg-secondary-bg border border-border-color rounded-lg p-2 md:p-3">
+              <div className="text-sm md:text-lg font-bold text-yellow-400">{stats.pending}</div>
+              <div className="text-xs md:text-sm text-secondary">Pending</div>
             </div>
-            <div className="bg-secondary-bg border border-border-color rounded-lg p-3">
-              <div className="text-lg font-bold text-green-400">{stats.success}</div>
-              <div className="text-sm text-secondary">Success</div>
+            <div className="bg-secondary-bg border border-border-color rounded-lg p-2 md:p-3">
+              <div className="text-sm md:text-lg font-bold text-green-400">{stats.success}</div>
+              <div className="text-xs md:text-sm text-secondary">Success</div>
             </div>
-            <div className="bg-secondary-bg border border-border-color rounded-lg p-3">
-              <div className="text-lg font-bold text-red-400">{stats.error}</div>
-              <div className="text-sm text-secondary">Error</div>
+            <div className="bg-secondary-bg border border-border-color rounded-lg p-2 md:p-3">
+              <div className="text-sm md:text-lg font-bold text-red-400">{stats.error}</div>
+              <div className="text-xs md:text-sm text-secondary">Error</div>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="p-4 border-b border-border-color flex-shrink-0">
-          <div className="flex gap-2 flex-wrap">
+        <div className="p-3 md:p-4 border-b border-border-color flex-shrink-0">
+          <div className="flex gap-1 md:gap-2 flex-wrap">
             <TabButton
               id="active"
               label="Active"
@@ -354,16 +371,16 @@ const TransactionTracker = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="p-4 overflow-y-auto flex-grow">
+        <div className="p-3 md:p-4 overflow-y-auto flex-grow">
           {transactions.length === 0 ? (
-            <div className="text-center py-12">
-              <Clock className="w-12 h-12 text-secondary mx-auto mb-4" />
-              <p className="text-secondary">
+            <div className="text-center py-8 md:py-12">
+              <Clock className="w-8 h-8 md:w-12 md:h-12 text-secondary mx-auto mb-4" />
+              <p className="text-secondary text-sm md:text-base">
                 {activeTab === 'active' ? 'No active transactions' : `No ${activeTab} transactions`}
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {transactions.map((transaction) => (
                 <TransactionCard key={transaction.id} transaction={transaction} />
               ))}
