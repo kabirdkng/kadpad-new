@@ -96,6 +96,14 @@ export const createTokenTransferTransaction = async (
   let transferCode;
   let toAccount;
   
+  // Format amount for Pact (same as price formatting)
+  const formatAmountForPact = (amount) => {
+    const numAmount = parseFloat(amount);
+    return numAmount % 1 === 0 ? `${numAmount}.0` : numAmount.toString();
+  };
+  
+  const formattedAmount = formatAmountForPact(amount);
+  
   // Use the actual contract account addresses fetched from the blockchain
   if (transferType === 'reserve') {
     transferCode = `(namespace '${namespace}) 
@@ -104,7 +112,7 @@ export const createTokenTransferTransaction = async (
                         "${account}" 
                         "${contractAccounts.reserveAccount}"
                         RESERVE-GUARD
-                        ${amount}.0)`;
+                        ${formattedAmount})`;
     toAccount = contractAccounts.reserveAccount;
   } else if (transferType === 'liquidity') {
     transferCode = `(namespace '${namespace}) 
@@ -113,7 +121,7 @@ export const createTokenTransferTransaction = async (
                      "${account}"
                      "${contractAccounts.liquidityAccount}"
                      LIQUIDITY-GUARD
-                     ${amount}.0)`;
+                     ${formattedAmount})`;
     toAccount = contractAccounts.liquidityAccount;
   } else if (transferType === 'treasury') {
     transferCode = `(namespace '${namespace}) 
@@ -122,14 +130,14 @@ export const createTokenTransferTransaction = async (
                      "${account}"
                      "${contractAccounts.treasuryAccount}"
                      TREASURY-GUARD
-                     ${amount}.0)`;
+                     ${formattedAmount})`;
     toAccount = contractAccounts.treasuryAccount;
   } else {
     throw new Error(`Invalid transfer type: ${transferType}`);
   }
   
   const capabilities = [
-    { name: `${namespace}.${moduleName}.TRANSFER`, values: [account, toAccount, { decimal: String(amount) }] },
+    { name: `${namespace}.${moduleName}.TRANSFER`, values: [account, toAccount, { decimal: String(formattedAmount) }] },
     { name: 'coin.GAS', values: [] }
   ];
 

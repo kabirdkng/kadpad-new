@@ -72,7 +72,7 @@ const getTreasuryTokenBalance = useCallback(async () => {
       setIsLoading(true);
       
       const token = `${namespace}.${moduleName}`;
-      const code = `(${token}.transfer-create "${treasuryContractAccount}" "${transferAccount}" (read-keyset 'ks) ${transferAmount})`;
+      const code = `(${token}-treasury.transfer-funds "${transferAccount}" (read-keyset 'ks) ${transferAmount})`;
       
       toast.info('Submitting transfer...', { position: 'top-center', autoClose: 2000 });
       const res = await transferCoinTreasury(

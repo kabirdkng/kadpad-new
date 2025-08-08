@@ -193,7 +193,7 @@ export const fetchBalance = async(code, chain) => {
   }
 }
 
-export const buyTokensSale = async(code, chain, salesAccount, amount, client, session, namespace, moduleName) => {
+export const buyTokensSale = async(code, chain, salesAccount, amount, client, session) => {
   try {
     const { account, pubKey } = useWalletStore.getState();
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`)
@@ -272,7 +272,6 @@ export const buyTokensSale = async(code, chain, salesAccount, amount, client, se
 export const transferCoinTreasury = async (token, code, chain, pubKey, sender, receiver, guard, amount, client, session) => {
   try {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
-    const recPubKey = receiver.slice(2, 66)
     const providerName = useWalletStore.getState().provider;
     const provider = providers[providerName]
     console.log(provider)
@@ -282,10 +281,8 @@ export const transferCoinTreasury = async (token, code, chain, pubKey, sender, r
     }
     const tx = Pact.builder
       .execution(code)
-      .addData("ac-keyset", { "keys": [ recPubKey ], "pred": "keys-all" })
       .addSigner(pubKey, (signFor) => [
-        signFor(`${token}.TRANSFER`, sender, receiver, guard, Number(amount)),
-        signFor(`${token}-treasury.TREASURY`),
+        signFor(`${token}-treasury.OPERATE-TREASURY`),
         signFor('coin.GAS'),
       ])
       .setMeta({
