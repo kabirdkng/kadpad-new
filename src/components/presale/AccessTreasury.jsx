@@ -15,7 +15,7 @@ const AccessTreasury = ({
   supplyChain
 }) => {
   const TREASURY_MODULE_NAME = `${moduleName}-treasury`;
-  const { pubKey } = useWalletStore();
+  const { pubKey, account } = useWalletStore();
   const { client, session } = useWalletConnectClient();
   const { 
     submitTransaction, 
@@ -58,6 +58,14 @@ const getTreasuryTokenBalance = useCallback(async () => {
       return;
     }
 
+    // Format amount for Pact (same as price formatting)
+  const formatAmountForPact = (amount) => {
+    const numAmount = parseFloat(amount);
+    return numAmount % 1 === 0 ? `${numAmount}.0` : numAmount.toString();
+  };
+
+  const formattedAmount = formatAmountForPact(transferAmount);
+
     // Validate account format (should be k:account or account name)
     const isValidAccount = transferAccount.startsWith('k:') ? 
       transferAccount.slice(2).length === 64 : 
@@ -72,18 +80,15 @@ const getTreasuryTokenBalance = useCallback(async () => {
       setIsLoading(true);
       
       const token = `${namespace}.${moduleName}`;
-      const code = `(${token}-treasury.transfer-funds "${transferAccount}" (read-keyset 'ks) ${transferAmount})`;
-      
+      const code = `(${token}-treasury.transfer-funds "${transferAccount}" (read-keyset 'ks) ${formattedAmount})`;
+
       toast.info('Submitting transfer...', { position: 'top-center', autoClose: 2000 });
       const res = await transferCoinTreasury(
         token, 
         code, 
         supplyChain, 
         pubKey, 
-        treasuryContractAccount, 
-        transferAccount, 
-        `(read-keyset 'ks)`,
-        parseFloat(transferAmount), 
+        account, 
         client, 
         session
       );

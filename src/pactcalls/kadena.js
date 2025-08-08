@@ -269,7 +269,7 @@ export const buyTokensSale = async(code, chain, salesAccount, amount, client, se
   }
 }
 
-export const transferCoinTreasury = async (token, code, chain, pubKey, sender, receiver, guard, amount, client, session) => {
+export const transferCoinTreasury = async (token, code, chain, pubKey, sender, client, session) => {
   try {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
     const providerName = useWalletStore.getState().provider;
