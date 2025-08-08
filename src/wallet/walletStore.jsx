@@ -4,23 +4,57 @@ import providers from "./providers/providers";
 import walletConnectStore from "./providers/connectWalletModalSlice";
 import { toast } from "react-toastify";
 import config from "./config";
+import { 
+  saveWalletToStorage, 
+  loadWalletFromStorage, 
+  clearWalletFromStorage, 
+  isWalletStorageAvailable 
+} from "./walletPersistence";
+
+// Load initial state from localStorage
+const getInitialState = () => {
+  if (typeof window !== 'undefined' && isWalletStorageAvailable()) {
+    const savedWallet = loadWalletFromStorage();
+    if (savedWallet) {
+      return {
+        provider: savedWallet.provider,
+        account: savedWallet.account,
+        pubKey: savedWallet.pubKey,
+        isConnected: savedWallet.isConnected,
+        messages: savedWallet.isConnected ? "Restored from previous session." : "",
+        session: undefined,
+      };
+    }
+  }
+  
+  return {
+    provider: null,
+    account: null,
+    pubKey: null,
+    isConnected: false,
+    messages: "",
+    session: undefined,
+  };
+};
 
 const useWalletStore = create((set) => ({
-  provider: null,
-  account: null,
-  pubKey: null,
-  isConnected: false,
-  messages: "",
-  session: undefined,
+  ...getInitialState(),
 
   setSessionData: ({ provider, account, pubKey, isConnected }) => {
-    set({
+    const newState = {
       provider,
       account,
       pubKey,
       isConnected,
       messages: isConnected ? "Successfully connected." : "",
-    });
+    };
+    
+    set(newState);
+    
+    // Save to localStorage when session data is set
+    if (isConnected && isWalletStorageAvailable()) {
+      saveWalletToStorage(newState);
+    }
   },
 
   connectWallet: async (providerId, connectWithWalletConnect) => {
@@ -41,13 +75,21 @@ const useWalletStore = create((set) => ({
         connectResult = await provider.connect();
       }
       if (connectResult.status === "success") {
-        set({
+        const newWalletState = {
           provider: providerId,
           account: connectResult.account.account,
           pubKey: connectResult.account.publicKey,
           isConnected: true,
           messages: "Successfully connected.",
-        });
+        };
+        
+        set(newWalletState);
+        
+        // Save to localStorage
+        if (isWalletStorageAvailable()) {
+          saveWalletToStorage(newWalletState);
+        }
+        
         sethideConnectWalletModal();
       } else if (connectResult.message === "Network invalid") {
         // Specific handling when the network is invalid
@@ -82,12 +124,45 @@ const useWalletStore = create((set) => ({
 
     // Always reset the state after attempting to disconnect
     localStorage.removeItem("spireKeySession"); // Clear SpireKey session from localStorage
+    
+    // Clear wallet data from localStorage
+    clearWalletFromStorage();
+    
     set({
       provider: null,
       account: null,
       pubKey: null,
       isConnected: false,
       messages: "Disconnected",
+    });
+  },
+
+  restoreWalletSession: () => {
+    if (typeof window !== 'undefined' && isWalletStorageAvailable()) {
+      const savedWallet = loadWalletFromStorage();
+      if (savedWallet && savedWallet.isConnected) {
+        set({
+          provider: savedWallet.provider,
+          account: savedWallet.account,
+          pubKey: savedWallet.pubKey,
+          isConnected: savedWallet.isConnected,
+          messages: "Session restored from storage.",
+        });
+        return savedWallet;
+      }
+    }
+    return null;
+  },
+
+  clearWalletSession: () => {
+    clearWalletFromStorage();
+    set({
+      provider: null,
+      account: null,
+      pubKey: null,
+      isConnected: false,
+      messages: "",
+      session: undefined,
     });
   },
 

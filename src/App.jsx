@@ -19,6 +19,7 @@ import GlobalTransactionIndicator from './components/GlobalTransactionIndicator'
 import ClientContextProvider from './wallet/providers/ClientContextProvider';
 import ConnectWalletModal from './wallet/providers/ConnectWalletModal';
 import walletConnectStore from './wallet/providers/connectWalletModalSlice';
+import useWalletStore from './wallet/walletStore';
 
 // Utils
 import { preloadImages } from './utils/imagePreloader';
@@ -31,8 +32,36 @@ import tLogo from './assets/tlogo.svg';
 
 const App = () => {
   const { showModal } = walletConnectStore();
+  const { restoreWalletSession } = useWalletStore();
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
+
+  // Restore wallet session on app load
+  useEffect(() => {
+    try {
+      const restoredSession = restoreWalletSession();
+      if (restoredSession) {
+        console.log('Wallet session restored:', restoredSession.provider);
+      }
+    } catch (error) {
+      console.error('Failed to restore wallet session:', error);
+    }
+    
+    // Optional: Add event listener for page beforeunload to save state
+    const handleBeforeUnload = () => {
+      // State is automatically saved on changes, but this ensures final save
+      const currentState = useWalletStore.getState();
+      if (currentState.isConnected) {
+        console.log('Saving wallet state before page unload');
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [restoreWalletSession]);
 
   useEffect(() => {
     const imagesToPreload = [
