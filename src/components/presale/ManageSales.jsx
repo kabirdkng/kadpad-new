@@ -106,6 +106,7 @@ const ManageSales = ({
                         <PriceUpdateSection
               tokenSymbol={tokenSymbol}
               namespace={namespace}
+              salesModuleName={SALES_MODULE_NAME}
               supplyChain={supplyChain}
               client={client}
               session={session}
