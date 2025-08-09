@@ -24,7 +24,7 @@ const Footer = () => {
     },
     {
       name: 'Discord',
-      url: 'https://discord.gg/Me8k8wsd',
+      url: 'https://discord.gg/3jkAcdtAxf',
       icon: <MessageCircle size={20} />,
       color: 'hover:text-indigo-400'
     },
@@ -45,9 +45,8 @@ const Footer = () => {
 
   const resources = [
     { name: 'Help Center', url: 'mailto:support@kadpad.xyz' },
-    { name: 'Terms of Service', url: '#' },
-    { name: 'Privacy Policy', url: '#' },
-    { name: 'Security', url: '#' }
+    { name: 'Terms of Service', url: 'https://docs.kadpad.xyz/documentation/terms-of-service/' },
+    { name: 'Privacy Policy', url: 'https://docs.kadpad.xyz/documentation/privacy-policy/' }
   ];
 
   return (
@@ -147,7 +146,7 @@ const Footer = () => {
               </ul>
 
               {/* Newsletter Signup */}
-              <div className="mt-6 lg:mt-8">
+              {/* <div className="mt-6 lg:mt-8">
                 <h4 className="text-sm font-medium text-primary-text mb-3">Stay Updated</h4>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <input
@@ -159,7 +158,7 @@ const Footer = () => {
                     <Send size={16} className="text-white" />
                   </button>
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
