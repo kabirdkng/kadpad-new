@@ -11,7 +11,7 @@ import {
   isWalletStorageAvailable 
 } from "./walletPersistence";
 
-// Load initial state from localStorage
+// Load initial state from sessionStorage
 const getInitialState = () => {
   if (typeof window !== 'undefined' && isWalletStorageAvailable()) {
     const savedWallet = loadWalletFromStorage();
@@ -51,7 +51,7 @@ const useWalletStore = create((set) => ({
     
     set(newState);
     
-    // Save to localStorage when session data is set
+    // Save to sessionStorage when session data is set
     if (isConnected && isWalletStorageAvailable()) {
       saveWalletToStorage(newState);
     }
@@ -85,7 +85,7 @@ const useWalletStore = create((set) => ({
         
         set(newWalletState);
         
-        // Save to localStorage
+        // Save to sessionStorage
         if (isWalletStorageAvailable()) {
           saveWalletToStorage(newWalletState);
         }
@@ -125,7 +125,7 @@ const useWalletStore = create((set) => ({
     // Always reset the state after attempting to disconnect
     localStorage.removeItem("spireKeySession"); // Clear SpireKey session from localStorage
     
-    // Clear wallet data from localStorage
+    // Clear wallet data from sessionStorage
     clearWalletFromStorage();
     
     set({

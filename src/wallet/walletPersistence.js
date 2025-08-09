@@ -10,15 +10,15 @@ export const saveWalletToStorage = (walletData) => {
       isConnected: walletData.isConnected,
       timestamp: Date.now(), // Add timestamp for potential expiration
     };
-    localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(dataToStore));
+    sessionStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(dataToStore));
   } catch (error) {
-    console.error('Failed to save wallet data to localStorage:', error);
+    console.error('Failed to save wallet data to sessionStorage:', error);
   }
 };
 
 export const loadWalletFromStorage = () => {
   try {
-    const storedData = localStorage.getItem(WALLET_STORAGE_KEY);
+    const storedData = sessionStorage.getItem(WALLET_STORAGE_KEY);
     if (!storedData) {
       return null;
     }
@@ -45,7 +45,7 @@ export const loadWalletFromStorage = () => {
       isConnected: parsedData.isConnected,
     };
   } catch (error) {
-    console.error('Failed to load wallet data from localStorage:', error);
+    console.error('Failed to load wallet data from sessionStorage:', error);
     clearWalletFromStorage(); // Clear corrupted data
     return null;
   }
@@ -53,17 +53,17 @@ export const loadWalletFromStorage = () => {
 
 export const clearWalletFromStorage = () => {
   try {
-    localStorage.removeItem(WALLET_STORAGE_KEY);
+    sessionStorage.removeItem(WALLET_STORAGE_KEY);
   } catch (error) {
-    console.error('Failed to clear wallet data from localStorage:', error);
+    console.error('Failed to clear wallet data from sessionStorage:', error);
   }
 };
 
 export const isWalletStorageAvailable = () => {
   try {
     const test = '__test__';
-    localStorage.setItem(test, test);
-    localStorage.removeItem(test);
+    sessionStorage.setItem(test, test);
+    sessionStorage.removeItem(test);
     return true;
   } catch {
     return false;
@@ -72,7 +72,7 @@ export const isWalletStorageAvailable = () => {
 
 export const hasStoredWalletSession = () => {
   try {
-    const storedData = localStorage.getItem(WALLET_STORAGE_KEY);
+    const storedData = sessionStorage.getItem(WALLET_STORAGE_KEY);
     if (!storedData) {
       return false;
     }
