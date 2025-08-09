@@ -246,7 +246,7 @@ const LaunchPage = () => {
               Get help from our community and team
             </p>
             <a 
-              href="https://discord.gg/kadpad" 
+              href="https://discord.gg/3jkAcdtAxf" 
               target="_blank" 
               rel="noopener noreferrer"
               className="btn btn-ghost text-sm"
@@ -264,7 +264,9 @@ const LaunchPage = () => {
               Access our suite of development tools
             </p>
             <a 
-              href="/tools" 
+              href="https://tools.kadena.io/" 
+              target="_blank" 
+              rel="noopener noreferrer"
               className="btn btn-ghost text-sm"
             >
               Explore Tools

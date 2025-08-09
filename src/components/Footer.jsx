@@ -13,6 +13,7 @@ import {
   Heart
 } from 'lucide-react';
 import logo from '/favicon.svg';
+import discordLogo from '../assets/Discord-Symbol-White.svg';
 
 const Footer = () => {
   const socialLinks = [
@@ -25,7 +26,7 @@ const Footer = () => {
     {
       name: 'Discord',
       url: 'https://discord.gg/3jkAcdtAxf',
-      icon: <MessageCircle size={20} />,
+      icon: <img src={discordLogo} alt="Discord" className="w-5 h-5" />,
       color: 'hover:text-indigo-400'
     },
     {
