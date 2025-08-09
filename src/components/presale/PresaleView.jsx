@@ -4,7 +4,7 @@ import { Rocket, Shield, Clock, TrendingUp, Users, DollarSign, Info, Database, L
 import usePresaleStore from '../../store/usePresaleStore';
 import useWalletStore from '../../wallet/walletStore';
 import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
-import { buyTokensSale, pactCallsSig } from '../../pactcalls/kadena';
+import { buyTokensSale, pactCalls } from '../../pactcalls/kadena';
 import useTransactionManager from '../../hooks/useTransactionManager';
 import { toast } from 'react-toastify';
 import { addComma } from '../../utils/numberUtils';
@@ -314,16 +314,34 @@ const PresaleView = ({ namespace, moduleName }) => {
       return;
     }
 
-    let currentDeployerKey = deployerPubKey;
+    let isDeployer = false;
     
-    if (!currentDeployerKey) {
+    if (!deployerPubKey) {
       toast.info('Verifying deployer access...', { position: 'top-center' });
       try {
         setIsDeployerLoading(true);
         const code = `(describe-keyset "${namespace}.gov")`;
-        const result = await pactCallsSig(code, supplyChain, client, session);
-        currentDeployerKey = result.preflightResult?.result?.data?.keys?.[0];
-        setDeployerPubKey(currentDeployerKey || '');
+        const result = await pactCalls(code, supplyChain);
+        console.log('Keyset result:', result);
+        
+        if (result && result.result && result.result.status === 'success') {
+          const keysetData = result.result.data;
+          if (keysetData && keysetData.keys && Array.isArray(keysetData.keys)) {
+            // Check if the wallet's public key is in the keyset keys array
+            isDeployer = keysetData.keys.includes(pubKey);
+            
+            if (isDeployer) {
+              setDeployerPubKey(pubKey);
+            }
+          } else {
+            toast.error('Invalid keyset format received');
+            return;
+          }
+        } else {
+          const errorMessage = result?.result?.error?.message || 'Unknown error occurred';
+          toast.error(`Failed to fetch deployer information: ${errorMessage}`);
+          return;
+        }
       } catch (error) {
         console.error('Error fetching deployer:', error);
         toast.error('Failed to fetch deployer information');
@@ -331,14 +349,15 @@ const PresaleView = ({ namespace, moduleName }) => {
       } finally {
         setIsDeployerLoading(false);
       }
+    } else {
+      // If we already have the deployer key stored, just check if it matches
+      isDeployer = (pubKey === deployerPubKey);
     }
     
-    if (currentDeployerKey && pubKey === currentDeployerKey) {
+    if (isDeployer) {
       setShowDeployerPanel(true);
-    } else if (currentDeployerKey && pubKey !== currentDeployerKey) {
-      toast.error('You are not the deployer of this token. Please use the wallet that deployed this token.');
     } else {
-      toast.error('Unable to verify deployer status. Please try again.');
+      toast.error('You are not the deployer of this token. Please use the wallet that deployed this token.');
     }
   };
 

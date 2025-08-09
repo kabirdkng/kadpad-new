@@ -13,7 +13,6 @@ import tokenGoLogo from '../../assets/tokengo-logo.png';
 
 const CreateVerifyStep = ({ isVerified, setIsVerified, setTokenDetails }) => {
   const { pubKey, provider, account } = useWalletStore();
-  const { client, session } = useWalletConnectClient();
 
   const [contractAddress, setContractAddress] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -42,15 +41,32 @@ const CreateVerifyStep = ({ isVerified, setIsVerified, setTokenDetails }) => {
       const ns = contractAddress.split('.')[0];
       const code = `(describe-keyset "${ns}.gov")`;
       const chain = config.chainId;
-      const { preflightResult } = await pactCallsSig(code, chain, client, session);
-      console.log(preflightResult);
-      
-      if (preflightResult.result.status === 'success') {
-        toast.success('Ownership verified successfully!');
-        setIsVerified(true);
-        await fetchTokenDetails();
+      const res = await pactCalls(code, chain);
+      console.log('Keyset result:', res);
+
+      if (res && res.result && res.result.status === 'success') {
+        const keysetData = res.result.data;
+        console.log('Keyset data:', keysetData);
+        
+        // Check if the wallet's public key is in the keyset keys array
+        if (keysetData && keysetData.keys && Array.isArray(keysetData.keys)) {
+          const isOwner = keysetData.keys.includes(pubKey);
+          
+          if (isOwner) {
+            toast.success('Ownership verified successfully!');
+            setIsVerified(true);
+            await fetchTokenDetails();
+          } else {
+            toast.error('Ownership verification failed: Your wallet key is not authorized for this token');
+            setIsVerified(false);
+          }
+        } else {
+          toast.error('Invalid keyset format received');
+          setIsVerified(false);
+        }
       } else {
-        toast.error('Ownership verification failed');
+        const errorMessage = res?.result?.error?.message || 'Unknown error occurred';
+        toast.error(`Ownership verification failed: ${errorMessage}`);
         setIsVerified(false);
       }
     } catch (error) {
