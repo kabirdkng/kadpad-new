@@ -1,5 +1,6 @@
 import React from 'react';
 import { Clock, CheckCircle, DollarSign, AlertCircle } from 'lucide-react';
+import FeeDisplay from './FeeDisplay';
 
 const NextStepsCard = ({ existingProject }) => {
   if (!existingProject) return null;
@@ -60,10 +61,12 @@ const NextStepsCard = ({ existingProject }) => {
               {existingProject.feeDetails && (
                 <div className="bg-secondary-bg p-3 rounded-lg mb-3">
                   <div className="text-sm space-y-1">
-                    <p className="text-primary-text">
-                      <span className="text-secondary">Amount:</span> 
-                      <span className="font-medium ml-2">${existingProject.feeDetails.amount}</span>
-                    </p>
+                    <div className="flex items-start justify-between">
+                      <span className="text-secondary">Amount:</span>
+                      <div className="text-right">
+                        <FeeDisplay usdAmount={existingProject.feeDetails.amount} />
+                      </div>
+                    </div>
                     {existingProject.feeDetails.dueDate && (
                       <p className="text-primary-text">
                         <span className="text-secondary">Due Date:</span>

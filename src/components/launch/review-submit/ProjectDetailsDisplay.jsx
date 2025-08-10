@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, Globe } from 'lucide-react';
 import { getStatusInfo } from './statusConfig';
+import FeeDisplay from './FeeDisplay';
 
 const ProjectDetailsDisplay = ({ existingProject }) => {
   if (!existingProject) return null;
@@ -84,22 +85,29 @@ const ProjectDetailsDisplay = ({ existingProject }) => {
         {/* Fee Details if applicable */}
         {existingProject.feeDetails && existingProject.feeDetails.amount > 0 && (
           <div className="bg-blue-500/5 border border-blue-500/20 p-3 rounded-lg">
-            <label className="block text-sm font-medium text-blue-400 mb-1">Fee Information</label>
-            <div className="text-sm space-y-1">
-              <p className="text-primary-text">
-                Amount: <span className="font-medium">${existingProject.feeDetails.amount}</span>
-              </p>
+            <label className="block text-sm font-medium text-blue-400 mb-2">Fee Information</label>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-secondary mb-1">Amount:</label>
+                <FeeDisplay usdAmount={existingProject.feeDetails.amount} />
+              </div>
               {existingProject.feeDetails.dueDate && (
-                <p className="text-secondary">
-                  Due: {new Date(existingProject.feeDetails.dueDate).toLocaleDateString()}
-                </p>
+                <div>
+                  <label className="block text-xs text-secondary mb-1">Due Date:</label>
+                  <p className="text-sm text-primary-text">
+                    {new Date(existingProject.feeDetails.dueDate).toLocaleDateString()}
+                  </p>
+                </div>
               )}
-              <p className="text-secondary">
-                Status: {existingProject.feeDetails.paid ? 
-                  <span className="text-green-400">Paid</span> : 
-                  <span className="text-yellow-400">Pending</span>
-                }
-              </p>
+              <div>
+                <label className="block text-xs text-secondary mb-1">Payment Status:</label>
+                <span className="text-sm">
+                  {existingProject.feeDetails.paid ? 
+                    <span className="text-green-400 font-medium">✓ Paid</span> : 
+                    <span className="text-yellow-400 font-medium">⏳ Pending</span>
+                  }
+                </span>
+              </div>
             </div>
           </div>
         )}
