@@ -39,14 +39,14 @@ const FeeDisplay = ({ usdAmount, className = '' }) => {
   const renderKDAAmount = () => {
     if (loading) {
       return (
-        <div className="mt-2">
-          <div className="bg-secondary-bg border border-gray-600 rounded-lg p-3 animate-pulse">
+        <div className="mt-1">
+          <div className="bg-secondary-bg border border-gray-600 rounded-md p-2 animate-pulse">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <div className="h-4 bg-gray-700 rounded w-20 mb-2"></div>
-                <div className="h-3 bg-gray-700 rounded w-24"></div>
+                <div className="h-3 bg-gray-700 rounded w-16 mb-1"></div>
+                <div className="h-2 bg-gray-700 rounded w-20"></div>
               </div>
-              <div className="w-8 h-8 bg-gray-700 rounded"></div>
+              <div className="w-6 h-6 bg-gray-700 rounded"></div>
             </div>
           </div>
         </div>
@@ -55,9 +55,9 @@ const FeeDisplay = ({ usdAmount, className = '' }) => {
 
     if (error) {
       return (
-        <div className="mt-2">
-          <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-            <div className="text-sm text-red-400">
+        <div className="mt-1">
+          <div className="bg-red-500/10 border border-red-500/20 rounded-md p-2">
+            <div className="text-xs text-red-400">
               Unable to fetch KDA price
             </div>
           </div>
@@ -69,25 +69,25 @@ const FeeDisplay = ({ usdAmount, className = '' }) => {
       try {
         const kdaAmount = convertUSDToKDA(usdAmount, kdaPrice);
         return (
-          <div className="mt-2 space-y-2">
-            <div className="bg-secondary-bg border border-gray-600 rounded-lg p-3 flex items-center justify-between">
+          <div className="mt-1 space-y-1">
+            <div className="bg-secondary-bg border border-gray-600 rounded-md p-2 flex items-center justify-between">
               <div className="flex-1">
-                <div className="text-sm font-medium text-primary-text">
+                <div className="text-xs font-medium text-primary-text">
                   {formatKDAAmount(kdaAmount)} KDA
                 </div>
                 <div className="text-xs text-secondary">
-                  1 KDA = ${kdaPrice.toFixed(4)} • Live rate
+                  1 KDA = ${kdaPrice.toFixed(4)}
                 </div>
               </div>
               <button
                 onClick={() => handleCopyKDA(kdaAmount)}
-                className="ml-3 p-2 rounded-md hover:bg-gray-700 transition-colors duration-200 text-secondary hover:text-primary-text"
+                className="ml-2 p-1 rounded-md hover:bg-gray-700 transition-colors duration-200 text-secondary hover:text-primary-text"
                 title={copied ? "Copied!" : "Copy KDA amount"}
               >
                 {copied ? (
-                  <Check className="w-4 h-4 text-green-400" />
+                  <Check className="w-3 h-3 text-green-400" />
                 ) : (
-                  <Copy className="w-4 h-4" />
+                  <Copy className="w-3 h-3" />
                 )}
               </button>
             </div>
@@ -95,7 +95,7 @@ const FeeDisplay = ({ usdAmount, className = '' }) => {
         );
       } catch (err) {
         return (
-          <div className="text-sm text-red-400">
+          <div className="text-xs text-red-400">
             Error calculating KDA amount
           </div>
         );
@@ -112,7 +112,7 @@ const FeeDisplay = ({ usdAmount, className = '' }) => {
       </div>
       {copied && (
         <div className="text-xs text-green-400 mb-1">
-          ✓ KDA amount copied to clipboard
+          ✓ Copied to clipboard
         </div>
       )}
       {renderKDAAmount()}
