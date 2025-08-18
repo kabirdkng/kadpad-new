@@ -11,7 +11,7 @@ const PostSalesManager = ({
   client,
   session,
   moduleName,
-  onBack
+  onBack = null
 }) => {
   const [distributionRoundsNeeded, setDistributionRoundsNeeded] = useState(0);
   const [currentStep, setCurrentStep] = useState('distribution');
@@ -135,12 +135,14 @@ const PostSalesManager = ({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <button
-          onClick={onBack}
-          className="text-accent-primary hover:text-accent-primary/80 transition-colors"
-        >
-          ← Back to options
-        </button>
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="text-accent-primary hover:text-accent-primary/80 transition-colors"
+          >
+            ← Back to options
+          </button>
+        )}
         <div className="flex items-center justify-center p-8">
           <div className="w-6 h-6 border-2 border-accent-primary border-t-transparent rounded-full animate-spin"></div>
           <span className="ml-2 text-secondary">Loading post-sales status...</span>
@@ -151,21 +153,35 @@ const PostSalesManager = ({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <button
-          onClick={onBack}
-          className="text-accent-primary hover:text-accent-primary/80 transition-colors"
-        >
-          ← Back to options
-        </button>
-        <button
-          onClick={refreshStatus}
-          className="p-2 hover:bg-hover-bg rounded-lg transition-colors"
-          disabled={isLoading}
-        >
-          <RotateCcw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
+      {onBack && (
+        <div className="flex items-center justify-between">
+          <button
+            onClick={onBack}
+            className="text-accent-primary hover:text-accent-primary/80 transition-colors"
+          >
+            ← Back to options
+          </button>
+          <button
+            onClick={refreshStatus}
+            className="p-2 hover:bg-hover-bg rounded-lg transition-colors"
+            disabled={isLoading}
+          >
+            <RotateCcw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      )}
+
+      {!onBack && (
+        <div className="flex justify-end">
+          <button
+            onClick={refreshStatus}
+            className="p-2 hover:bg-hover-bg rounded-lg transition-colors"
+            disabled={isLoading}
+          >
+            <RotateCcw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          </button>
+        </div>
+      )}
 
       <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
         <h3 className="text-lg font-semibold text-orange-400 mb-2">Post-Sales Management</h3>
@@ -349,7 +365,7 @@ PostSalesManager.propTypes = {
   client: PropTypes.object,
   session: PropTypes.object,
   moduleName: PropTypes.string.isRequired,
-  onBack: PropTypes.func.isRequired
+  onBack: PropTypes.func
 };
 
 export default PostSalesManager;

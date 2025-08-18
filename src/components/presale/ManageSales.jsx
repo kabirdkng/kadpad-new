@@ -34,7 +34,6 @@ const ManageSales = ({
 
   const [whitelistForm, setWhitelistForm] = useState(false);
   const [reservationList, setReservationList] = useState(false);
-  const [showPostSales, setShowPostSales] = useState(false);
 
   // Use custom hook for presale data
   const {
@@ -56,19 +55,11 @@ const ManageSales = ({
   const showWhiteListForm = () => {
     setWhitelistForm(true);
     setReservationList(false);
-    setShowPostSales(false);
   };
 
   const showReservationList = () => {
     setReservationList(true);
     setWhitelistForm(false);
-    setShowPostSales(false);
-  };
-
-  const showPostSalesManager = () => {
-    setShowPostSales(true);
-    setWhitelistForm(false);
-    setReservationList(false);
   };
 
   const handleWhitelistSuccess = async () => {
@@ -78,7 +69,6 @@ const ManageSales = ({
   const handleBackToOptions = () => {
     setWhitelistForm(false);
     setReservationList(false);
-    setShowPostSales(false);
   };
 
   useEffect(() => {
@@ -201,33 +191,14 @@ const ManageSales = ({
           <div className="space-y-6">
             <PhaseIndicator title="Sales Ended - Post-Sales Management" className="text-orange-400" />
             
-            {!showPostSales && (
-              <div className="space-y-4">
-                <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
-                  <p className="text-orange-400 mb-3">
-                    Sales have ended. You need to complete post-sales operations.
-                  </p>
-                  <button 
-                    className="btn btn-primary"
-                    onClick={showPostSalesManager}
-                  >
-                    Manage Post-Sales Operations
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {showPostSales && (
-              <PostSalesManager
-                namespace={namespace}
-                salesModuleName={SALES_MODULE_NAME}
-                supplyChain={supplyChain}
-                client={client}
-                session={session}
-                moduleName={moduleName}
-                onBack={handleBackToOptions}
-              />
-            )}
+            <PostSalesManager
+              namespace={namespace}
+              salesModuleName={SALES_MODULE_NAME}
+              supplyChain={supplyChain}
+              client={client}
+              session={session}
+              moduleName={moduleName}
+            />
           </div>
         )}
       </div>
