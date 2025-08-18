@@ -80,7 +80,7 @@ const PresaleView = ({ namespace, moduleName }) => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Deployer panel states
-  const [deployerPubKey, setDeployerPubKey] = useState('');
+  const [isDeployer, setIsDeployer] = useState(false);
   const [isDeployerLoading, setIsDeployerLoading] = useState(false);
   const [showDeployerPanel, setShowDeployerPanel] = useState(false);
 
@@ -165,6 +165,41 @@ const PresaleView = ({ namespace, moduleName }) => {
       fetchP0Price, fetchP1Price, fetchPhase0StartTime, fetchPhase1StartTime, 
       fetchSalesAccount, fetchSalesEndTime, fetchTokenSymbol, fetchTotalSales, 
       fetchWlStatus, fetchAllSalesData, startAutoRefresh, stopAutoRefresh, resetState, setBatchCount]);
+
+  // Check deployer status when wallet connects
+  useEffect(() => {
+    const checkDeployerStatus = async () => {
+      if (!pubKey || !namespace) {
+        setIsDeployer(false);
+        return;
+      }
+
+      try {
+        setIsDeployerLoading(true);
+        const code = `(describe-keyset "${namespace}.gov")`;
+        const result = await pactCalls(code, supplyChain);
+        
+        if (result && result.result && result.result.status === 'success') {
+          const keysetData = result.result.data;
+          if (keysetData && keysetData.keys && Array.isArray(keysetData.keys)) {
+            const isDeployerWallet = keysetData.keys.includes(pubKey);
+            setIsDeployer(isDeployerWallet);
+          } else {
+            setIsDeployer(false);
+          }
+        } else {
+          setIsDeployer(false);
+        }
+      } catch (error) {
+        console.error('Error checking deployer status:', error);
+        setIsDeployer(false);
+      } finally {
+        setIsDeployerLoading(false);
+      }
+    };
+
+    checkDeployerStatus();
+  }, [pubKey, namespace, supplyChain]);
 
   // Calculate phase status (needs to be before useEffects that depend on it)
   const now = new Date();
@@ -323,51 +358,12 @@ const PresaleView = ({ namespace, moduleName }) => {
       return;
     }
 
-    let isDeployer = false;
-    
-    if (!deployerPubKey) {
-      toast.info('Verifying deployer access...', { position: 'top-center' });
-      try {
-        setIsDeployerLoading(true);
-        const code = `(describe-keyset "${namespace}.gov")`;
-        const result = await pactCalls(code, supplyChain);
-        console.log('Keyset result:', result);
-        
-        if (result && result.result && result.result.status === 'success') {
-          const keysetData = result.result.data;
-          if (keysetData && keysetData.keys && Array.isArray(keysetData.keys)) {
-            // Check if the wallet's public key is in the keyset keys array
-            isDeployer = keysetData.keys.includes(pubKey);
-            
-            if (isDeployer) {
-              setDeployerPubKey(pubKey);
-            }
-          } else {
-            toast.error('Invalid keyset format received');
-            return;
-          }
-        } else {
-          const errorMessage = result?.result?.error?.message || 'Unknown error occurred';
-          toast.error(`Failed to fetch deployer information: ${errorMessage}`);
-          return;
-        }
-      } catch (error) {
-        console.error('Error fetching deployer:', error);
-        toast.error('Failed to fetch deployer information');
-        return;
-      } finally {
-        setIsDeployerLoading(false);
-      }
-    } else {
-      // If we already have the deployer key stored, just check if it matches
-      isDeployer = (pubKey === deployerPubKey);
-    }
-    
-    if (isDeployer) {
-      setShowDeployerPanel(true);
-    } else {
+    if (!isDeployer) {
       toast.error('You are not the deployer of this token. Please use the wallet that deployed this token.');
+      return;
     }
+    
+    setShowDeployerPanel(true);
   };
 
   const phaseInfo = getPhaseInfo();
@@ -663,7 +659,7 @@ const PresaleView = ({ namespace, moduleName }) => {
             )}
 
             {/* Deployer Dashboard Access */}
-            {account && (
+            {account && isDeployer && (
               <div className="card">
                 <div className="flex items-center gap-3 mb-4">
                   <Settings className="w-6 h-6 text-purple-400" />
