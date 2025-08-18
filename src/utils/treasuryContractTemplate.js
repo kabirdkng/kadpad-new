@@ -45,6 +45,10 @@ ${keys}
   (defcap OPERATOR ()
     (enforce-keyset "${namespace}.operator"))
 
+  (defcap OPERATE-TREASURY ()
+    (compose-capability (OPERATOR))
+    (compose-capability (TREASURY)))
+
   (defcap OPERATE-DEX ()
     (compose-capability (OPERATOR))
     (compose-capability (LIQUIDITY)))
