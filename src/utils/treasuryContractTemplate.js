@@ -13,6 +13,13 @@ export const generateTreasuryContract = (moduleName, namespace, options = {}) =>
   const supply = networkConfig.supplyChain || options.supplyChain || "1";
   const { dexNs } = getNetworkDexConfig(supply);
   
+  // Get vault namespace based on network
+  const getVaultNs = () => {
+    const isTestnet = networkConfig.networkId === 'testnet04';
+    return isTestnet ? 'n_f9b22d2046c2a52575cc94f961c8b9a095e349e7' : 'DefaultMainnetVaultNamespace';
+  };
+  
+  const vaultNs = getVaultNs();
 
 return `
 (namespace '${namespace})
@@ -23,7 +30,6 @@ ${keys}
   (use free.util-math)
   (use free.util-time)
   (use free.util-lists)
-  (use n_e309f0fa7cf3a13f93a8da5325cdad32790d2070.burn [BURN-ACCOUNT BURN-GUARD])
 
   ;-----------------------------------------------------------------------------
   ; Administrative and ops capabilities
@@ -33,18 +39,18 @@ ${keys}
 
   (defcap INIT ()
     (compose-capability (GOVERNANCE))
-    (compose-capability (LIQUIDITY)))
+    (compose-capability (LIQUIDITY))
+    (compose-capability (LOCK_LIQUIDITY)))
 
   (defcap OPERATOR ()
     (enforce-keyset "${namespace}.operator"))
 
-  (defcap OPERATE-TREASURY ()
-    (compose-capability (OPERATOR))
-    (compose-capability (TREASURY)))
-
   (defcap OPERATE-DEX ()
     (compose-capability (OPERATOR))
     (compose-capability (LIQUIDITY)))
+
+  (defcap LOCK_LIQUIDITY () 
+    true)
 
   ;-----------------------------------------------------------------------------
   ; Caps and internal accounts management
@@ -59,11 +65,6 @@ ${keys}
 
    ; Using a defconst for the DEX key saves gas
   (defconst DEX-KEY (get-pair-key coin ${moduleName}))
-
-  (defcap BURN-LP (token:string from:string to:string amount:decimal)
-    @event 
-    true
-  )
 
   ;-----------------------------------------------------------------------------
   ; Schemas and Tables
@@ -131,14 +132,6 @@ ${keys}
     @doc "Token balance of the liquidity account"
     (${moduleName}.get-balance LIQUIDITY-ACCOUNT))
 
-  (defun ${moduleName}-t-balance:decimal ()
-    @doc "Token balance of the liquidity account"
-    (${moduleName}.get-balance TREASURY-ACCOUNT))
-
-  (defun coin-t-balance:decimal ()
-    @doc "Coin balance of the liquidity account"
-    (coin.get-balance TREASURY-ACCOUNT))
-
   ;-----------------------------------------------------------------------------
   ; Private functions
   ;-----------------------------------------------------------------------------
@@ -165,17 +158,6 @@ ${keys}
     ))
   )
 
-  (defun transfer-coin-funds (receiver:string g:guard amount:decimal)
-    @doc "Send KDA Tokens to the receiver"
-    (let (
-      (b (coin-t-balance)))
-    (with-capability (OPERATE-TREASURY)
-    (enforce (<= amount b) "Insufficient Treasury balance")
-    (install-capability (coin.TRANSFER TREASURY-ACCOUNT receiver amount))
-    (coin.transfer-create TREASURY-ACCOUNT receiver g amount)
-    ))
-  )
-
   (defun gather-rewards:string ()
     @doc "Administrative function to be called regurarly to gather DEX rewards"
     (with-capability (OPERATE-DEX)
@@ -189,21 +171,35 @@ ${keys}
       (install-capability (${moduleName}.TRANSFER LIQUIDITY-ACCOUNT TREASURY-ACCOUNT (${moduleName}-balance)))
       (${moduleName}.transfer-create LIQUIDITY-ACCOUNT TREASURY-ACCOUNT TREASURY-GUARD (${moduleName}-balance))
 
-      ; Swap all KDAs directly to the Token treasury
+      ; Swap all KDAs directly to the ${moduleName} treasury
       (swap ${moduleName}-treasury TREASURY-ACCOUNT TREASURY-GUARD ${moduleName} (kda-to-${moduleName} (kda-balance)) coin)
       "Rewards successfuly gathered")
   )
 
-  (defun burn-lp:string ()
-    @doc "Burn all LP tokens"
-    (let (
-         (balance (current-balance)))
-    (with-capability (OPERATE-DEX)
-    (install-capability (${dexNs}.tokens.TRANSFER DEX-KEY LIQUIDITY-ACCOUNT BURN-ACCOUNT balance))
-    (${dexNs}.tokens.transfer-create DEX-KEY LIQUIDITY-ACCOUNT BURN-ACCOUNT BURN-GUARD balance)
-    (emit-event (BURN-LP DEX-KEY LIQUIDITY-ACCOUNT BURN-ACCOUNT balance))
-    (format "{} LP tokens burned for {}" [DEX-KEY balance])))
-  )
+  (defun lock-lp-in-vault:string ()
+    @doc "Transfer all LP tokens to protocol-treasury vault"
+      (require-capability (LOCK_LIQUIDITY))
+    (let ((lp-amount (current-balance))
+          (position-key (${vaultNs}.protocol-treasury.format-position-key tokenname LIQUIDITY-ACCOUNT 0))
+          (vault-liquidity-account (${vaultNs}.protocol-treasury.get-liquidity-account
+                                    (${vaultNs}.protocol-treasury.format-position-key tokenname LIQUIDITY-ACCOUNT 0))))
+
+      ; Install capability to transfer LP to protocol-treasury
+      (install-capability (DEX_NS.tokens.TRANSFER DEX-KEY LIQUIDITY-ACCOUNT vault-liquidity-account lp-amount))
+
+      ; Lock the LP in protocol-treasury
+      (${vaultNs}.protocol-treasury.lock-protocol-lp
+        tokenname                        ; project-token
+        LIQUIDITY-ACCOUNT          ; user/sender
+        coin                       ; token0
+        tokenname                        ; token1
+        DEX-KEY                    ; lp-token (the pair key)
+        "ecko"                     ; dex-name
+        lp-amount                  ; amount - all current LP
+        true                       ; is-transferable
+        LIQUIDITY-GUARD) ; project-keyset
+
+      (format "Locked {} LP in vault at position {}" [lp-amount position-key])))
 
   (defun init-liquidity:string ()
     @doc "To be called only once.. It creates the intial liquidity reserve"
@@ -219,6 +215,9 @@ ${keys}
       (install-capability (coin.TRANSFER LIQUIDITY-ACCOUNT (dex-account) (kda-balance)))
       (install-capability (${moduleName}.TRANSFER LIQUIDITY-ACCOUNT  (dex-account) (${moduleName}-balance)))
       (add-liquidity coin ${moduleName} (kda-balance) (${moduleName}-balance) 0.0 0.0 LIQUIDITY-ACCOUNT LIQUIDITY-ACCOUNT LIQUIDITY-GUARD)
+
+      ; Lock the LP in protocol-treasury vault
+      (lock-lp-in-vault)
 
       (write liquidity-management "" {'liquidity-target:(current-liquidity),
                                       'init:true}))

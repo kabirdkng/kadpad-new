@@ -93,6 +93,7 @@ ${keys}
   (defschema counters-sch
     sold:integer
     reserved:integer
+    accounts:integer
   )
 
   (deftable global-counters:{counters-sch})
@@ -219,7 +220,7 @@ ${keys}
     @doc "Verify that the account has reserved a batch"
     (enforce (in-phase-0) "No Reservation found")
           (with-default-read accounts-table account {'reserved:0, 'bought:0} {'reserved:=reserved, 'bought:=bought}
-            (and (< bought reserved) (> reserved 0))) ;; Needed for update
+            (and (< bought reserved) (> reserved 0)))
   )
 
   (defun enforce-has-reservation:bool (account:string)
@@ -235,9 +236,9 @@ ${keys}
     (with-read accounts-table account {'prev-account:=prev-account, 'bought:=bought}
      
      (require-capability (RESERVE))
-        (install-capability (${moduleName}.TRANSFER RESERVE-ACCOUNT account (to-token-amount bought)))
-        (${moduleName}.transfer RESERVE-ACCOUNT account (to-token-amount bought))
-             
+        (install-capability (${moduleName}.TRANSFER RESERVE-ACCOUNT account (to-token-amount bought))) ;; Variable
+        (${moduleName}.transfer RESERVE-ACCOUNT account (to-token-amount bought)) ;; Variable
+
       ; here we just emit an event
       (emit-event (TOKEN-DISTRIBUTED account bought))
 
@@ -317,19 +318,21 @@ ${keys}
         (write tail-table "" {'tail-account: (if (= prev-account "") account tail-account)})
 
         ; Update global counters
-        (with-read global-counters "" {'sold:=sold, 'reserved:=global-reserved}
-          (update global-counters "" {
+        (with-read global-counters "" {'sold:=sold, 'reserved:=global-reserved, 'accounts:=accounts}
+          (let ((is-new-account (= prev-account "")))
+            (update global-counters "" {
             'sold: (+ sold to-buy),
-            'reserved: (if (in-phase-0) (- global-reserved to-buy) 0)
-          }))
+            'reserved: (if (in-phase-0) (- global-reserved to-buy) 0),
+            'accounts: (if is-new-account (+ accounts 1) accounts)
+          })))
 
         ; Update fee table
         (with-read fees (current-phase) {'count:=count}
           (update fees (current-phase) {'count:(+ count to-buy)}))
 
         ; Create the token account if it doesn't exist
-        (if (not? (account-exist) account)
-            (${moduleName}.create-account account guard)
+        (if (not (account-exist) account)
+            (${moduleName}.create-account account guard) ;;Variable
             "")
 
       ; Transfer KDAs
@@ -364,20 +367,20 @@ ${keys}
         ; Transfer remaining to treasury (if not all sold)
         (if (< sold TOTAL-BATCHES)
             (with-capability (RESERVE)
-              (install-capability (${moduleName}.TRANSFER RESERVE-ACCOUNT ${moduleName}-treasury.TREASURY-ACCOUNT (to-token-amount (- TOTAL-BATCHES sold))))
-              (${moduleName}.transfer-create RESERVE-ACCOUNT ${moduleName}-treasury.TREASURY-ACCOUNT ${moduleName}-treasury.TREASURY-GUARD (to-token-amount (- TOTAL-BATCHES sold))))
+              (install-capability (${moduleName}.TRANSFER RESERVE-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT (to-token-amount (- TOTAL-BATCHES sold)))) ;; Variable
+              (${moduleName}.transfer-create RESERVE-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT ${moduleName}-treasury.LIQUIDITY-GUARD (to-token-amount (- TOTAL-BATCHES sold)))) ;; Variable
             "")
 
       ; Transfer the income (in KDA) to treasury (for DEX liquidity)
       (with-capability (SALES-INCOME)
-        (install-capability (coin.TRANSFER SALES-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT (transfer-amount)))
-        (coin.transfer-create SALES-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT ${moduleName}-treasury.LIQUIDITY-GUARD (transfer-amount))))
+        (install-capability (coin.TRANSFER SALES-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT (transfer-amount))) ;; Variable
+        (coin.transfer-create SALES-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT ${moduleName}-treasury.LIQUIDITY-GUARD (transfer-amount)))) ;; Variable
       "Pre-sales ended")
   )
 
   (defun init:string (p0:decimal p1:decimal)
     (with-capability (GOVERNANCE)
-      (insert global-counters "" {'sold:0, 'reserved:0})
+      (insert global-counters "" {'sold:0, 'reserved:0, 'accounts:0})
       (insert fees "phase-0" {'price:p0, 'count:0})
       (insert fees "phase-1" {'price:p1, 'count:0})
       )
@@ -388,8 +391,18 @@ ${keys}
   ; Local callable functions
   ;-----------------------------------------------------------------------------
   (defun get-counters ()
-    @doc "Returns the counters: sold and reserved"
+    @doc "Returns the counters: sold, reserved and accounts"
     (read global-counters "")
+  )
+
+  (defun get-distribution-rounds-needed:integer ()
+    @doc "Returns the number of distribution rounds needed"
+    (with-read global-counters "" {'accounts:=accounts}
+      (let ((rounds (/ accounts MAX-PER-ROUND))
+            (remainder (mod accounts MAX-PER-ROUND)))
+        (if (> remainder 0)
+            (+ rounds 1)
+            rounds)))
   )
 
   (defun get-reservations:[object{presale-account-sch}] ()
@@ -406,7 +419,7 @@ ${keys}
 
   (defun get-sales ()
     @doc "Return the list of sold batch"
-    (let* (
+    (let (
         (p0 (at 'count (get-data-with-phases PHASE0)))
         (p1 (at 'count (get-data-with-phases PHASE1)))
           ) 
