@@ -167,24 +167,6 @@ const TransactionTracker = ({ isOpen, onClose }) => {
           </p>
         )}
 
-        {/* Progress for pending transactions */}
-        {transaction.status === 'pending' && transaction.pollAttempt && transaction.maxRetries && (
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-secondary">
-              <span>Progress</span>
-              <span>{transaction.pollAttempt}/{transaction.maxRetries}</span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-1">
-              <div
-                className="bg-accent-primary h-1 rounded-full transition-all duration-300"
-                style={{
-                  width: `${(transaction.pollAttempt / transaction.maxRetries) * 100}%`
-                }}
-              />
-            </div>
-          </div>
-        )}
-
         {/* Timestamps - Mobile friendly */}
         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-xs text-secondary">
           <span className="break-words">
