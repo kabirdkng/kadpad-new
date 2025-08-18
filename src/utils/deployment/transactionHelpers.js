@@ -79,7 +79,16 @@ export const submitAndWaitForTransaction = async (tx, cmd, sigs, outcomeHash) =>
   
   if (preflightResult.result.status === 'failure') {
     console.error(`Deployment failed for chain ${tx.chain}:`, preflightResult.result.error);
-    return null;
+    
+    // Check if it's a "table already exists" error (which is acceptable)
+    const errorMessage = preflightResult.result.error.message || '';
+    if (errorMessage.includes('table already exists') || errorMessage.includes('TableAlreadyExists')) {
+      console.log(`Table already exists for chain ${tx.chain}, treating as success`);
+      return null; // Return null to indicate "already exists" condition
+    }
+    
+    // For any other deployment failure, throw an error to stop the process
+    throw new Error(`Deployment preflight failed for chain ${tx.chain}: ${errorMessage}`);
   }
 
   // Submit transaction

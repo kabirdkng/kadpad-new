@@ -122,6 +122,9 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
       // Process deployment transactions
       if (progressCallback) progressCallback('Deploying contracts...');
       
+      let deploymentFailed = false;
+      let failureReason = '';
+      
       for (let i = 0; i < deploymentTransactions.length; i++) {
         const tx = deploymentTransactions[i];
         const signedTx = deploymentSignedBatch.responses[i];
@@ -141,11 +144,25 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
               salesDeployed = true;
               if (progressCallback) progressCallback('Sales contract deployed successfully!');
             }
+          } else {
+            // processedTx is null, which means table already exists
+            if (tx.suffix === 'treasury') {
+              treasuryDeployed = treasuryExists; // Keep existing state
+            } else if (tx.suffix === 'sales') {
+              salesDeployed = salesExists; // Keep existing state
+            }
           }
         } catch (error) {
           console.error(`Error processing deployment transaction for ${tx.suffix}:`, error);
-          throw error;
+          deploymentFailed = true;
+          failureReason = `${tx.suffix} deployment failed: ${error.message}`;
+          break; // Stop processing further transactions
         }
+      }
+
+      // If deployment failed, don't proceed with token distribution
+      if (deploymentFailed) {
+        throw new Error(failureReason);
       }
 
       // Wait for contracts to be available
@@ -333,29 +350,34 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
     allTransactionKeys = [...new Set(allTransactionKeys)];
 
     // Step 6: Mark project as deployed after successful distribution
-    if (progressCallback) progressCallback('Updating project status...');
-    
-    try {
-      // Import and call the backend API to mark project as deployed
-      const { markProjectAsDeployed } = await import('../../api.js');
+    // Only mark as deployed if we actually deployed contracts successfully
+    if (deploymentResults.length > 0 || (treasuryExists && salesExists)) {
+      if (progressCallback) progressCallback('Updating project status...');
       
-      const deploymentData = {
-        salesContractAddress: `${namespace}.${moduleName}-sales`,
-        treasuryContractAddress: `${namespace}.${moduleName}-treasury`,
-        deploymentTransactionKeys: allTransactionKeys,
-        deployedAt: new Date().toISOString(),
-        tokenDistribution: {
-          presalesAmount: tokenDistribution.presalesAmount,
-          liquidityAmount: tokenDistribution.liquidityAmount,
-          treasuryAmount: tokenDistribution.treasuryAmount
-        }
-      };
+      try {
+        // Import and call the backend API to mark project as deployed
+        const { markProjectAsDeployed } = await import('../../api.js');
+        
+        const deploymentData = {
+          salesContractAddress: `${namespace}.${moduleName}-sales`,
+          treasuryContractAddress: `${namespace}.${moduleName}-treasury`,
+          deploymentTransactionKeys: allTransactionKeys,
+          deployedAt: new Date().toISOString(),
+          tokenDistribution: {
+            presalesAmount: tokenDistribution.presalesAmount,
+            liquidityAmount: tokenDistribution.liquidityAmount,
+            treasuryAmount: tokenDistribution.treasuryAmount
+          }
+        };
 
-      await markProjectAsDeployed(namespace, moduleName, deploymentData);
-      console.log('Project marked as deployed successfully');
-    } catch (error) {
-      console.warn('Failed to update project status on backend:', error.message);
-      // Don't fail the whole deployment for this
+        await markProjectAsDeployed(namespace, moduleName, deploymentData);
+        console.log('Project marked as deployed successfully');
+      } catch (error) {
+        console.warn('Failed to update project status on backend:', error.message);
+        // Don't fail the whole deployment for this
+      }
+    } else {
+      console.warn('Not marking project as deployed because no contracts were successfully deployed');
     }
 
     if (progressCallback) progressCallback('✅ Complete deployment and distribution successful!');

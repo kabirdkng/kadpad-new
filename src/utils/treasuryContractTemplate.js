@@ -132,6 +132,10 @@ ${keys}
     @doc "Token balance of the liquidity account"
     (${moduleName}.get-balance LIQUIDITY-ACCOUNT))
 
+  (defun ${moduleName}-t-balance:decimal ()
+    @doc "Token balance of the treasury account"
+    (${moduleName}.get-balance TREASURY-ACCOUNT))
+
   ;-----------------------------------------------------------------------------
   ; Private functions
   ;-----------------------------------------------------------------------------
