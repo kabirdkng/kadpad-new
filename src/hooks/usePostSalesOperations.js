@@ -1,7 +1,8 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { pactCallsSales, pactCalls } from '../pactcalls/kadena';
+import { pactCallsSales, pactCalls, initLiquidityTreasury } from '../pactcalls/kadena';
 import useTransactionManager from './useTransactionManager';
+import useWalletStore from '../wallet/walletStore';
 
 export const usePostSalesOperations = (
   namespace,
@@ -234,16 +235,18 @@ export const usePostSalesOperations = (
 
     setIsInitializingLiquidity(true);
     try {
+      const { account, pubKey } = useWalletStore.getState();
       const code = `(${namespace}.${moduleName}-treasury.init-liquidity)`;
       
       toast.info('Submitting liquidity initialization...', { position: 'top-center', autoClose: 2000 });
-      const result = await pactCallsSales(
+      const result = await initLiquidityTreasury(
+        `${namespace}.${moduleName}`,
         code,
         supplyChain,
+        pubKey,
+        account,
         client,
-        session,
-        namespace,
-        moduleName
+        session
       );
 
       if (result?.preflightResult?.result?.status === 'success') {

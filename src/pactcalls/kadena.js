@@ -340,6 +340,77 @@ export const transferCoinTreasury = async (token, code, chain, pubKey, sender, c
   }
 };
 
+export const initLiquidityTreasury = async (token, code, chain, pubKey, sender, client, session) => {
+  try {
+    const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
+    const providerName = useWalletStore.getState().provider;
+    const provider = providers[providerName]
+    console.log(provider)
+    
+    if (providerName === null) {
+      throw new Error("Provider not found");
+    }
+    const tx = Pact.builder
+      .execution(code)
+      .addSigner(pubKey, (signFor) => [
+        signFor(`${token}-treasury.INIT`),
+        signFor('coin.GAS'),
+      ])
+      .setMeta({
+        chainId: String(chain),
+        gasLimit: 1000,
+        gasPrice: 0.0000001,
+        sender: sender
+      })
+      .addKeyset('ks', 'keys-all', pubKey)
+      .setNetworkId(network)
+      .createTransaction();
+
+    let signedTx;
+    let cmd, sigs, outcomeHash;
+    console.log(provider.config)
+    try {
+      signedTx = await provider.quickSign(tx, client, session);
+      if(signedTx.status === 'fail'){
+        console.log(signedTx)
+        toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
+      }
+      if (provider.name === "wc") {
+        cmd = signedTx.cmd;
+        sigs = signedTx.sigs;
+        outcomeHash = signedTx.hash;
+      } else {
+        const commandSigData = signedTx.responses[0].commandSigData;
+        cmd = commandSigData.cmd;
+        sigs = commandSigData.sigs;
+        outcomeHash = signedTx.responses[0].outcome.hash;
+      }
+    } catch (error) {
+      console.error(error);
+    }
+
+    const bodyPayload = {
+      cmd,
+      sigs,
+      hash: outcomeHash,
+    };
+
+    const preflightResult = await pactClient.dirtyRead(bodyPayload);
+    console.log(preflightResult)
+    if (preflightResult.result.status === 'failure') {
+      console.error(preflightResult.result.error.message);
+      toast.error(preflightResult.result.error.message)
+      return preflightResult;
+    } else {
+      const transactionDescriptor = await pactClient.submit(bodyPayload);
+      console.log('TX Key: ', transactionDescriptor.requestKey);
+      return { pactClient, transactionDescriptor, preflightResult };
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 // Poll for transaction result
 export const pollForTransactionResult = async (pactClient, transactionDescriptor, maxRetries = 30, retryInterval = 3000) => {
   console.log('Polling for transaction result:', transactionDescriptor.requestKey);
