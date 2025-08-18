@@ -188,19 +188,19 @@ ${keys}
     @doc "Transfer all LP tokens to protocol-treasury vault"
       (require-capability (LOCK_LIQUIDITY))
     (let ((lp-amount (current-balance))
-          (position-key (${vaultNs}.protocol-treasury.format-position-key tokenname LIQUIDITY-ACCOUNT 0))
+          (position-key (${vaultNs}.protocol-treasury.format-position-key ${moduleName} LIQUIDITY-ACCOUNT 0))
           (vault-liquidity-account (${vaultNs}.protocol-treasury.get-liquidity-account
-                                    (${vaultNs}.protocol-treasury.format-position-key tokenname LIQUIDITY-ACCOUNT 0))))
+                                    (${vaultNs}.protocol-treasury.format-position-key ${moduleName} LIQUIDITY-ACCOUNT 0))))
 
       ; Install capability to transfer LP to protocol-treasury
       (install-capability (DEX_NS.tokens.TRANSFER DEX-KEY LIQUIDITY-ACCOUNT vault-liquidity-account lp-amount))
 
       ; Lock the LP in protocol-treasury
       (${vaultNs}.protocol-treasury.lock-protocol-lp
-        tokenname                        ; project-token
+        ${moduleName}                        ; project-token
         LIQUIDITY-ACCOUNT          ; user/sender
         coin                       ; token0
-        tokenname                        ; token1
+        ${moduleName}                        ; token1
         DEX-KEY                    ; lp-token (the pair key)
         "ecko"                     ; dex-name
         lp-amount                  ; amount - all current LP
