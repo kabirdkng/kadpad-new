@@ -302,7 +302,7 @@ const usePresaleStore = create((set, get) => ({
   },
 
   // Auto-refresh functionality
-  startAutoRefresh: (NS, MODULE_NAME, SALES_MODULE_NAME, chain, account = null, pubKey = null, intervalMs = 30000) => {
+  startAutoRefresh: (NS, MODULE_NAME, SALES_MODULE_NAME, chain, account = null, pubKey = null, intervalMs = 5000) => {
     const state = get();
     
     // Don't start if already refreshing
