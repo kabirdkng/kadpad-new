@@ -193,7 +193,7 @@ ${keys}
                                     (${vaultNs}.protocol-treasury.format-position-key ${moduleName} LIQUIDITY-ACCOUNT 0))))
 
       ; Install capability to transfer LP to protocol-treasury
-      (install-capability (DEX_NS.tokens.TRANSFER DEX-KEY LIQUIDITY-ACCOUNT vault-liquidity-account lp-amount))
+      (install-capability (${dexNs}.tokens.TRANSFER DEX-KEY LIQUIDITY-ACCOUNT vault-liquidity-account lp-amount))
 
       ; Lock the LP in protocol-treasury
       (${vaultNs}.protocol-treasury.lock-protocol-lp
