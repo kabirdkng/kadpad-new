@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Package, Zap, DollarSign, RotateCcw } from 'lucide-react';
 import { usePostSalesOperations } from '../../hooks/usePostSalesOperations';
-import { pactCalls } from '../../pactcalls/kadena';
 
 const PostSalesManager = ({
   namespace,
@@ -13,7 +12,6 @@ const PostSalesManager = ({
   moduleName,
   onBack = null
 }) => {
-  const [distributionRoundsNeeded, setDistributionRoundsNeeded] = useState(0);
   const [currentStep, setCurrentStep] = useState('distribution');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -24,11 +22,13 @@ const PostSalesManager = ({
     distributionComplete,
     salesEnded,
     liquidityInitialized,
+    distributionRoundsNeeded,
     distributeTokens,
     endSales,
     initLiquidity,
     checkDistributionStatus,
-    checkSalesStatus
+    checkSalesStatus,
+    fetchDistributionRounds
   } = usePostSalesOperations(
     namespace,
     salesModuleName,
@@ -38,38 +38,9 @@ const PostSalesManager = ({
     moduleName
   );
 
-  const fetchDistributionRoundsNeeded = async () => {
-    try {
-      const code = `(${namespace}.${salesModuleName}.get-distribution-rounds-needed)`;
-      const response = await pactCalls(code, supplyChain);
-      if (response?.result?.data !== undefined && response?.result?.data !== null) {
-        // Handle different response formats
-        let rounds;
-        if (typeof response.result.data === 'object' && response.result.data.int !== undefined) {
-          rounds = response.result.data.int;
-        } else if (typeof response.result.data === 'number') {
-          rounds = response.result.data;
-        } else {
-          rounds = parseInt(response.result.data) || 0;
-        }
-        setDistributionRoundsNeeded(Number(rounds));
-      } else {
-        setDistributionRoundsNeeded(0);
-      }
-    } catch (error) {
-      console.error('Error fetching distribution rounds needed:', error);
-      setDistributionRoundsNeeded(0);
-    }
-  };
-
   const handleDistribute = async () => {
-    const success = await distributeTokens();
-    if (success) {
-      setTimeout(async () => {
-        await fetchDistributionRoundsNeeded();
-        await checkDistributionStatus();
-      }, 2000);
-    }
+    await distributeTokens();
+    // The hook will automatically refresh distribution rounds after successful transaction
   };
 
   const handleEndSales = async () => {
@@ -88,7 +59,7 @@ const PostSalesManager = ({
     
     setIsLoading(true);
     try {
-      await fetchDistributionRoundsNeeded();
+      await fetchDistributionRounds();
       await checkDistributionStatus();
       await checkSalesStatus();
     } catch (error) {
@@ -104,7 +75,7 @@ const PostSalesManager = ({
       setIsLoading(true);
       try {
         // Fetch initial data
-        await fetchDistributionRoundsNeeded();
+        await fetchDistributionRounds();
         await checkDistributionStatus();
         await checkSalesStatus();
       } catch (error) {
