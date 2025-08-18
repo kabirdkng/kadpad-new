@@ -43,7 +43,7 @@ const PostSalesManager = ({
       const code = `(${namespace}.${salesModuleName}.get-distribution-rounds-needed)`;
       const response = await pactCalls(code, supplyChain);
       if (response?.result?.data !== undefined) {
-        const rounds = response.result.data?.int || response.result.data?.decimal || response.result.data;
+        const rounds = response.result.data.int || response.result.data;
         setDistributionRoundsNeeded(Number(rounds));
       }
     } catch (error) {

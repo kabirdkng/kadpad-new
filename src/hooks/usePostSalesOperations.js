@@ -22,7 +22,7 @@ export const usePostSalesOperations = (
       const code = `(${namespace}.${salesModuleName}.get-distribution-rounds-needed)`;
       const response = await pactCalls(code, supplyChain);
       if (response?.result?.data !== undefined) {
-        const rounds = response.result.data?.int || response.result.data?.decimal || response.result.data;
+        const rounds = response.result.data.int || response.result.data;
         const isComplete = Number(rounds) === 0;
         setDistributionComplete(isComplete);
         return isComplete;
@@ -67,11 +67,6 @@ export const usePostSalesOperations = (
   }, [namespace, moduleName, supplyChain]);
 
   const distributeTokens = useCallback(async () => {
-    if (!client || !session) {
-      toast.error('Please connect your wallet first');
-      return false;
-    }
-
     setIsDistributing(true);
     try {
       const code = `(${namespace}.${salesModuleName}.distribute-tokens)`;
@@ -103,11 +98,6 @@ export const usePostSalesOperations = (
   }, [namespace, salesModuleName, supplyChain, client, session, moduleName]);
 
   const endSales = useCallback(async () => {
-    if (!client || !session) {
-      toast.error('Please connect your wallet first');
-      return false;
-    }
-
     if (!distributionComplete) {
       toast.error('Please complete token distribution first');
       return false;
@@ -145,11 +135,6 @@ export const usePostSalesOperations = (
   }, [namespace, salesModuleName, supplyChain, client, session, moduleName, distributionComplete]);
 
   const initLiquidity = useCallback(async () => {
-    if (!client || !session) {
-      toast.error('Please connect your wallet first');
-      return false;
-    }
-
     if (!salesEnded) {
       toast.error('Please end the sales contract first');
       return false;
