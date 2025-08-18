@@ -331,7 +331,7 @@ ${keys}
           (update fees (current-phase) {'count:(+ count to-buy)}))
 
         ; Create the token account if it doesn't exist
-        (if (not (account-exist) account)
+        (if (not (account-exist account))
             (${moduleName}.create-account account guard) ;;Variable
             "")
 
