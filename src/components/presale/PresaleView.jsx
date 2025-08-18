@@ -69,6 +69,8 @@ const PresaleView = ({ namespace, moduleName }) => {
     fetchP0Price,
     fetchP1Price,
     fetchAllSalesData,
+    startAutoRefresh,
+    stopAutoRefresh,
     setBatchCount,
     setKdaInput,
     resetState
@@ -82,7 +84,7 @@ const PresaleView = ({ namespace, moduleName }) => {
   const [isDeployerLoading, setIsDeployerLoading] = useState(false);
   const [showDeployerPanel, setShowDeployerPanel] = useState(false);
 
-  // Initialize data on component mount
+  // Initialize data on component mount and start auto-refresh
   useEffect(() => {
     if (!namespace || !moduleName) {
       console.log('Missing namespace or moduleName:', { namespace, moduleName });
@@ -98,12 +100,27 @@ const PresaleView = ({ namespace, moduleName }) => {
       pubKey 
     });
 
-    // Fetch basic public data using consolidated approach
-    const fetchBasicData = async () => {
+    // Initial data fetch using consolidated approach
+    const initializeData = async () => {
       try {
         // Use the new consolidated function to get all data in one call
         await fetchAllSalesData(namespace, moduleName, SALES_MODULE_NAME, supplyChain);
         console.log('All sales data fetched successfully using consolidated approach');
+        
+        // Fetch account-specific data if account and pubKey are available
+        if (account && pubKey) {
+          await Promise.all([
+            fetchBalance(account, supplyChain),
+            fetchWlStatus(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey),
+            fetchAvailableBatches(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey)
+          ]);
+          console.log('Account data fetched successfully');
+        }
+
+        // Start auto-refresh after initial data is loaded
+        // Refresh every 30 seconds (30000ms) - you can adjust this interval
+        startAutoRefresh(namespace, moduleName, SALES_MODULE_NAME, supplyChain, account, pubKey, 30000);
+        
       } catch (error) {
         console.error('Error fetching consolidated sales data:', error);
         // Fallback to individual calls if consolidated approach fails
@@ -119,6 +136,16 @@ const PresaleView = ({ namespace, moduleName }) => {
           await fetchP0Price(namespace, SALES_MODULE_NAME, supplyChain);
           await fetchP1Price(namespace, SALES_MODULE_NAME, supplyChain);
           await fetchTotalSales(namespace, SALES_MODULE_NAME, supplyChain);
+          
+          // Fetch account-specific data if available
+          if (account && pubKey) {
+            await fetchBalance(account, supplyChain);
+            await fetchWlStatus(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey);
+            await fetchAvailableBatches(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey);
+          }
+          
+          // Start auto-refresh even with fallback
+          startAutoRefresh(namespace, moduleName, SALES_MODULE_NAME, supplyChain, account, pubKey, 30000);
           console.log('Fallback data fetched successfully');
         } catch (fallbackError) {
           console.error('Error fetching basic data with fallback:', fallbackError);
@@ -126,32 +153,18 @@ const PresaleView = ({ namespace, moduleName }) => {
       }
     };
 
-    // Fetch account-specific data only if account and pubKey are available
-    const fetchAccountData = async () => {
-      if (account && pubKey) {
-        try {
-          await fetchBalance(account, supplyChain);
-          await fetchWlStatus(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey);
-          await fetchAvailableBatches(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey);
-          
-          console.log('Account data fetched successfully');
-        } catch (error) {
-          console.error('Error fetching account data:', error);
-        }
-      }
-    };
-
-    fetchBasicData();
-    fetchAccountData();
+    initializeData();
 
     return () => {
+      // Stop auto-refresh and reset state when component unmounts
+      stopAutoRefresh();
       resetState();
     };
   }, [account, namespace, moduleName, pubKey, supplyChain, SALES_MODULE_NAME,
       fetchAmountPerBatch, fetchAvailableBatches, fetchBalance, fetchCurrentPrice, 
       fetchP0Price, fetchP1Price, fetchPhase0StartTime, fetchPhase1StartTime, 
       fetchSalesAccount, fetchSalesEndTime, fetchTokenSymbol, fetchTotalSales, 
-      fetchWlStatus, fetchAllSalesData, resetState, setBatchCount]);
+      fetchWlStatus, fetchAllSalesData, startAutoRefresh, stopAutoRefresh, resetState, setBatchCount]);
 
   // Calculate phase status (needs to be before useEffects that depend on it)
   const now = new Date();
@@ -286,12 +299,8 @@ const PresaleView = ({ namespace, moduleName }) => {
           });
 
           if (finalResult?.result?.status === 'success') {
-            // Refresh data after successful transaction
-            await Promise.all([
-              fetchBalance(account, supplyChain),
-              fetchAvailableBatches(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey),
-              fetchTotalSales(namespace, SALES_MODULE_NAME, supplyChain)
-            ]);
+            // The auto-refresh will pick up the updated data automatically
+            // No need for manual refresh after transaction
           }
         } catch (pollError) {
           console.error('Transaction polling error:', pollError);

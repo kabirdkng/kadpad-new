@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { pactCalls, fetchBalance, pactCallsSig } from '../pactcalls/kadena';
 
-const usePresaleStore = create((set) => ({
+const usePresaleStore = create((set, get) => ({
   balance: 0,
   phase0startTime: null,
   phase1startTime: null,
@@ -31,6 +31,10 @@ const usePresaleStore = create((set) => ({
   currentPhase: 'pre-sale',
   totalBatches: 0,
   remainingBatches: 0,
+  // Auto-refresh properties
+  isAutoRefreshing: false,
+  refreshInterval: null,
+  lastRefreshTime: null,
   
   setKdaInput: (input) => set({kdaInput: input}) ,
   setBatchCount: (input) => set({batchCount: input}),
@@ -296,7 +300,100 @@ const usePresaleStore = create((set) => ({
       throw err;
     }
   },
+
+  // Auto-refresh functionality
+  startAutoRefresh: (NS, MODULE_NAME, SALES_MODULE_NAME, chain, account = null, pubKey = null, intervalMs = 30000) => {
+    const state = get();
+    
+    // Don't start if already refreshing
+    if (state.isAutoRefreshing) {
+      return;
+    }
+
+    console.log('Starting auto-refresh for presale data every', intervalMs / 1000, 'seconds');
+    
+    const refreshData = async () => {
+      try {
+        console.log('Auto-refreshing presale data...');
+        
+        // Fetch consolidated sales data
+        await get().fetchAllSalesData(NS, MODULE_NAME, SALES_MODULE_NAME, chain);
+        
+        // Fetch account-specific data if account is available
+        if (account && pubKey) {
+          await Promise.all([
+            get().fetchBalance(account, chain),
+            get().fetchWlStatus(NS, SALES_MODULE_NAME, account, chain, pubKey),
+            get().fetchAvailableBatches(NS, SALES_MODULE_NAME, account, chain, pubKey)
+          ]);
+        }
+        
+        set({ lastRefreshTime: new Date() });
+        console.log('Auto-refresh completed successfully');
+      } catch (error) {
+        console.error('Auto-refresh failed:', error);
+      }
+    };
+
+    // Set up interval
+    const intervalId = setInterval(refreshData, intervalMs);
+    
+    set({ 
+      isAutoRefreshing: true,
+      refreshInterval: intervalId 
+    });
+
+    // Do initial refresh
+    refreshData();
+  },
+
+  stopAutoRefresh: () => {
+    const state = get();
+    
+    if (state.refreshInterval) {
+      clearInterval(state.refreshInterval);
+      console.log('Auto-refresh stopped');
+    }
+    
+    set({ 
+      isAutoRefreshing: false,
+      refreshInterval: null 
+    });
+  },
+
+  // Manual refresh function
+  refreshPresaleData: async (NS, MODULE_NAME, SALES_MODULE_NAME, chain, account = null, pubKey = null) => {
+    try {
+      console.log('Manual refresh triggered...');
+      
+      // Fetch consolidated sales data
+      await get().fetchAllSalesData(NS, MODULE_NAME, SALES_MODULE_NAME, chain);
+      
+      // Fetch account-specific data if account is available
+      if (account && pubKey) {
+        await Promise.all([
+          get().fetchBalance(account, chain),
+          get().fetchWlStatus(NS, SALES_MODULE_NAME, account, chain, pubKey),
+          get().fetchAvailableBatches(NS, SALES_MODULE_NAME, account, chain, pubKey)
+        ]);
+      }
+      
+      set({ lastRefreshTime: new Date() });
+      console.log('Manual refresh completed successfully');
+      return true;
+    } catch (error) {
+      console.error('Manual refresh failed:', error);
+      return false;
+    }
+  },
+
   resetState: () => {
+    // Stop auto refresh when resetting state
+    const state = get();
+    if (state.refreshInterval) {
+      clearInterval(state.refreshInterval);
+    }
+
     set({
       balance: 0,
       phase0startTime: null,
@@ -321,6 +418,10 @@ const usePresaleStore = create((set) => ({
       currentPhase: 'pre-sale',
       totalBatches: 0,
       remainingBatches: 0,
+      // Reset auto-refresh properties
+      isAutoRefreshing: false,
+      refreshInterval: null,
+      lastRefreshTime: null,
     });
   },
 }));
