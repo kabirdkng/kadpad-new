@@ -160,13 +160,6 @@ const TransactionTracker = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Message - Only show if not too long */}
-        {transaction.message && transaction.message.length < 100 && (
-          <p className="text-xs md:text-sm text-secondary break-words">
-            {transaction.message}
-          </p>
-        )}
-
         {/* Timestamps - Mobile friendly */}
         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-xs text-secondary">
           <span className="break-words">
