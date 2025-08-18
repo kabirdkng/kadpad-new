@@ -42,12 +42,23 @@ const PostSalesManager = ({
     try {
       const code = `(${namespace}.${salesModuleName}.get-distribution-rounds-needed)`;
       const response = await pactCalls(code, supplyChain);
-      if (response?.result?.data !== undefined) {
-        const rounds = response.result.data.int || response.result.data;
+      if (response?.result?.data !== undefined && response?.result?.data !== null) {
+        // Handle different response formats
+        let rounds;
+        if (typeof response.result.data === 'object' && response.result.data.int !== undefined) {
+          rounds = response.result.data.int;
+        } else if (typeof response.result.data === 'number') {
+          rounds = response.result.data;
+        } else {
+          rounds = parseInt(response.result.data) || 0;
+        }
         setDistributionRoundsNeeded(Number(rounds));
+      } else {
+        setDistributionRoundsNeeded(0);
       }
     } catch (error) {
       console.error('Error fetching distribution rounds needed:', error);
+      setDistributionRoundsNeeded(0);
     }
   };
 

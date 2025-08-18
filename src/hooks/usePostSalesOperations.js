@@ -21,8 +21,16 @@ export const usePostSalesOperations = (
     try {
       const code = `(${namespace}.${salesModuleName}.get-distribution-rounds-needed)`;
       const response = await pactCalls(code, supplyChain);
-      if (response?.result?.data !== undefined) {
-        const rounds = response.result.data.int || response.result.data;
+      if (response?.result?.data !== undefined && response?.result?.data !== null) {
+        // Handle different response formats
+        let rounds;
+        if (typeof response.result.data === 'object' && response.result.data.int !== undefined) {
+          rounds = response.result.data.int;
+        } else if (typeof response.result.data === 'number') {
+          rounds = response.result.data;
+        } else {
+          rounds = parseInt(response.result.data) || 0;
+        }
         const isComplete = Number(rounds) === 0;
         setDistributionComplete(isComplete);
         return isComplete;
@@ -35,33 +43,42 @@ export const usePostSalesOperations = (
 
   const checkSalesStatus = useCallback(async () => {
     try {
-      // Check if the tail is HEAD, which means distribution is complete
-      const code = `(${namespace}.${salesModuleName}.read tail-table "")`;
+      // Try to read the tail-table, but handle the case where it might not exist
+      const code = `(use ${namespace}.${salesModuleName}) (read tail-table "")`;
       const response = await pactCalls(code, supplyChain);
-      if (response?.result?.data) {
+      if (response?.result?.data && response.result.data !== "") {
         const tailAccount = response.result.data['tail-account'];
         const isEnded = tailAccount === 'HEAD';
         setSalesEnded(isEnded);
         return isEnded;
       }
+      // If no tail-table data or empty, sales are not ended yet
+      setSalesEnded(false);
+      return false;
     } catch (error) {
-      // If table doesn't exist or error, sales might be ended
+      // If table doesn't exist or error, sales are not ended yet
       console.error('Error checking sales status:', error);
+      setSalesEnded(false);
     }
     return false;
   }, [namespace, salesModuleName, supplyChain]);
 
   const checkLiquidityStatus = useCallback(async () => {
     try {
-      const code = `(${namespace}.${moduleName}-treasury.read liquidity-management "")`;
+      // Try to read the liquidity-management table, handle case where it might not exist
+      const code = `(use ${namespace}.${moduleName}-treasury) (read liquidity-management "")`;
       const response = await pactCalls(code, supplyChain);
-      if (response?.result?.data) {
+      if (response?.result?.data && response.result.data !== "") {
         const isInitialized = response.result.data.init === true;
         setLiquidityInitialized(isInitialized);
         return isInitialized;
       }
+      // If no data, liquidity is not initialized yet
+      setLiquidityInitialized(false);
+      return false;
     } catch (error) {
       console.error('Error checking liquidity status:', error);
+      setLiquidityInitialized(false);
     }
     return false;
   }, [namespace, moduleName, supplyChain]);
