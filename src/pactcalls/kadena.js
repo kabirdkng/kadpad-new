@@ -358,7 +358,7 @@ export const initLiquidityTreasury = async (token, code, chain, pubKey, sender, 
       ])
       .setMeta({
         chainId: String(chain),
-        gasLimit: 2000,
+        gasLimit: 10000,
         gasPrice: 0.0000001,
         sender: sender
       })
