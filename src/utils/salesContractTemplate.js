@@ -298,7 +298,7 @@ ${keys}
         (enforce (or (in-phase-1) (<= (+ bought amount) reserved)) "Cannot buy more than Available")
         
       ; Calculate available batches
-      (let* (
+      (let (
         (available-global (with-read global-counters "" {'sold:=sold} (- TOTAL-BATCHES sold)))
         (to-buy (if (in-phase-0) 
                   (min-int amount (- reserved bought))

@@ -11,6 +11,7 @@ import WhitelistForm from './WhitelistForm';
 import ReservationsList from './ReservationsList';
 import StatsDisplay from './StatsDisplay';
 import PhaseIndicator from './PhaseIndicator';
+import PostSalesManager from './PostSalesManager';
 
 const ManageSales = ({ 
   tokenSymbol, 
@@ -33,6 +34,7 @@ const ManageSales = ({
 
   const [whitelistForm, setWhitelistForm] = useState(false);
   const [reservationList, setReservationList] = useState(false);
+  const [showPostSales, setShowPostSales] = useState(false);
 
   // Use custom hook for presale data
   const {
@@ -49,19 +51,34 @@ const ManageSales = ({
   const isPreWl = now < phase0startTime;
   const isPhase0 = now >= phase0startTime && now < phase1startTime;
   const isPhase1 = now >= phase1startTime && now < salesEndTime;
+  const isPostSales = now > salesEndTime;
 
   const showWhiteListForm = () => {
     setWhitelistForm(true);
     setReservationList(false);
+    setShowPostSales(false);
   };
 
   const showReservationList = () => {
     setReservationList(true);
     setWhitelistForm(false);
+    setShowPostSales(false);
+  };
+
+  const showPostSalesManager = () => {
+    setShowPostSales(true);
+    setWhitelistForm(false);
+    setReservationList(false);
   };
 
   const handleWhitelistSuccess = async () => {
     await getCounters();
+  };
+
+  const handleBackToOptions = () => {
+    setWhitelistForm(false);
+    setReservationList(false);
+    setShowPostSales(false);
   };
 
   useEffect(() => {
@@ -103,7 +120,7 @@ const ManageSales = ({
         {isPreWl && (
           <div className="space-y-4">
             <PhaseIndicator title="Pre-Whitelist" className="text-yellow-400" />
-                        <PriceUpdateSection
+            <PriceUpdateSection
               tokenSymbol={tokenSymbol}
               namespace={namespace}
               salesModuleName={SALES_MODULE_NAME}
@@ -161,7 +178,7 @@ const ManageSales = ({
                 client={client}
                 session={session}
                 moduleName={moduleName}
-                onBack={() => setWhitelistForm(false)}
+                onBack={handleBackToOptions}
                 onSuccess={handleWhitelistSuccess}
               />
             )}
@@ -169,7 +186,7 @@ const ManageSales = ({
             {reservationList && (
               <ReservationsList
                 reservations={reservations}
-                onBack={() => setReservationList(false)}
+                onBack={handleBackToOptions}
                 onRefresh={getReservations}
               />
             )}
@@ -180,8 +197,38 @@ const ManageSales = ({
           <PhaseIndicator title="Phase 1 (Public Sale)" className="text-green-400" />
         )}
         
-        {now > salesEndTime && (
-          <PhaseIndicator title="Sales Ended" className="text-red-400" />
+        {isPostSales && (
+          <div className="space-y-6">
+            <PhaseIndicator title="Sales Ended - Post-Sales Management" className="text-orange-400" />
+            
+            {!showPostSales && (
+              <div className="space-y-4">
+                <div className="p-4 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+                  <p className="text-orange-400 mb-3">
+                    Sales have ended. You need to complete post-sales operations.
+                  </p>
+                  <button 
+                    className="btn btn-primary"
+                    onClick={showPostSalesManager}
+                  >
+                    Manage Post-Sales Operations
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {showPostSales && (
+              <PostSalesManager
+                namespace={namespace}
+                salesModuleName={SALES_MODULE_NAME}
+                supplyChain={supplyChain}
+                client={client}
+                session={session}
+                moduleName={moduleName}
+                onBack={handleBackToOptions}
+              />
+            )}
+          </div>
         )}
       </div>
     </div>
