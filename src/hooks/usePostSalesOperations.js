@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { pactCallsSales, pactCalls } from '../pactcalls/kadena';
+import { pactCallsSales, pactCalls, initLiquidityTreasury } from '../pactcalls/kadena';
+import useTransactionManager from './useTransactionManager';
+import useWalletStore from '../wallet/walletStore';
 
 export const usePostSalesOperations = (
   namespace,
@@ -17,7 +19,15 @@ export const usePostSalesOperations = (
   const [salesEnded, setSalesEnded] = useState(false);
   const [liquidityInitialized, setLiquidityInitialized] = useState(false);
 
-  const checkDistributionStatus = useCallback(async () => {
+  const [distributionRoundsNeeded, setDistributionRoundsNeeded] = useState(0);
+
+  const { 
+    submitTransaction, 
+    createTransactionMetadata, 
+    transactionTypes 
+  } = useTransactionManager();
+
+  const fetchDistributionRounds = useCallback(async () => {
     try {
       const code = `(${namespace}.${salesModuleName}.get-distribution-rounds-needed)`;
       const response = await pactCalls(code, supplyChain);
@@ -31,37 +41,60 @@ export const usePostSalesOperations = (
         } else {
           rounds = parseInt(response.result.data) || 0;
         }
-        const isComplete = Number(rounds) === 0;
-        setDistributionComplete(isComplete);
-        return isComplete;
+        const roundsNumber = Number(rounds);
+        setDistributionRoundsNeeded(roundsNumber);
+        return roundsNumber;
       }
     } catch (error) {
-      console.error('Error checking distribution status:', error);
+      console.error('Error fetching distribution rounds:', error);
     }
-    return false;
+    return 0;
   }, [namespace, salesModuleName, supplyChain]);
 
-  const checkSalesStatus = useCallback(async () => {
+  const checkDistributionStatus = useCallback(async () => {
     try {
-      // Try to read the tail-table, but handle the case where it might not exist
+      // Check if distribution is complete by reading the tail-table
+      // When tail-account is "HEAD", it means distribution is complete
       const code = `(use ${namespace}.${salesModuleName}) (read tail-table "")`;
       const response = await pactCalls(code, supplyChain);
       if (response?.result?.data && response.result.data !== "") {
         const tailAccount = response.result.data['tail-account'];
-        const isEnded = tailAccount === 'HEAD';
-        setSalesEnded(isEnded);
-        return isEnded;
+        const isComplete = tailAccount === 'HEAD';
+        setDistributionComplete(isComplete);
+        return isComplete;
       }
-      // If no tail-table data or empty, sales are not ended yet
+      // If no tail-table data or empty, distribution is not complete yet
+      setDistributionComplete(false);
+      return false;
+    } catch (error) {
+      console.error('Error checking distribution status:', error);
+      setDistributionComplete(false);
+      return false;
+    }
+  }, [namespace, salesModuleName, supplyChain]);
+
+  const checkSalesStatus = useCallback(async () => {
+    try {
+      // Check if the end-sales function has been called by trying to read the treasury liquidity account balance
+      // If end-sales was called, KDA should have been transferred to treasury
+      const treasuryBalanceCode = `(coin.get-balance ${namespace}.${moduleName}-treasury.LIQUIDITY-ACCOUNT)`;
+      const treasuryResponse = await pactCalls(treasuryBalanceCode, supplyChain);
+      
+      if (treasuryResponse?.result?.data !== undefined && treasuryResponse?.result?.data > 0) {
+        // If treasury has KDA balance, end-sales was likely called
+        setSalesEnded(true);
+        return true;
+      }
+
+      // If no KDA in treasury, sales contract hasn't been ended yet
       setSalesEnded(false);
       return false;
     } catch (error) {
-      // If table doesn't exist or error, sales are not ended yet
       console.error('Error checking sales status:', error);
       setSalesEnded(false);
+      return false;
     }
-    return false;
-  }, [namespace, salesModuleName, supplyChain]);
+  }, [namespace, moduleName, supplyChain]);
 
   const checkLiquidityStatus = useCallback(async () => {
     try {
@@ -88,6 +121,7 @@ export const usePostSalesOperations = (
     try {
       const code = `(${namespace}.${salesModuleName}.distribute-tokens)`;
       
+      toast.info('Submitting token distribution...', { position: 'top-center', autoClose: 2000 });
       const result = await pactCallsSales(
         code,
         supplyChain,
@@ -98,8 +132,45 @@ export const usePostSalesOperations = (
       );
 
       if (result?.preflightResult?.result?.status === 'success') {
-        toast.success('Token distribution round completed successfully!');
-        return true;
+        const txKey = result.transactionDescriptor?.requestKey;
+        
+        // Create transaction metadata
+        const metadata = createTransactionMetadata(
+          transactionTypes.OTHER,
+          'Distribute tokens to participants',
+          {
+            operation: 'distribute-tokens',
+            chainId: supplyChain,
+            namespace,
+            moduleName: salesModuleName,
+          }
+        );
+
+        // Submit transaction using the new manager
+        try {
+          const finalResult = await submitTransaction({
+            txId: txKey,
+            pactClient: result.pactClient,
+            transactionDescriptor: result.transactionDescriptor,
+            metadata,
+            pollingConfig: {
+              enableToasts: true,
+            }
+          });
+
+          if (finalResult?.result?.status === 'success') {
+            // Check distribution status after successful distribution
+            setTimeout(async () => {
+              await checkDistributionStatus();
+            }, 2000);
+            return true;
+          } else {
+            return false;
+          }
+        } catch (pollError) {
+          console.error('Transaction polling error:', pollError);
+          return false;
+        }
       } else {
         const errorMsg = result?.preflightResult?.result?.error?.message || 'Failed to distribute tokens';
         toast.error(errorMsg);
@@ -112,7 +183,7 @@ export const usePostSalesOperations = (
     } finally {
       setIsDistributing(false);
     }
-  }, [namespace, salesModuleName, supplyChain, client, session, moduleName]);
+  }, [namespace, salesModuleName, supplyChain, client, session, moduleName, submitTransaction, createTransactionMetadata, transactionTypes, checkDistributionStatus]);
 
   const endSales = useCallback(async () => {
     if (!distributionComplete) {
@@ -124,6 +195,7 @@ export const usePostSalesOperations = (
     try {
       const code = `(${namespace}.${salesModuleName}.end-sales)`;
       
+      toast.info('Submitting sales end transaction...', { position: 'top-center', autoClose: 2000 });
       const result = await pactCallsSales(
         code,
         supplyChain,
@@ -134,9 +206,42 @@ export const usePostSalesOperations = (
       );
 
       if (result?.preflightResult?.result?.status === 'success') {
-        toast.success('Sales contract ended successfully!');
-        setSalesEnded(true);
-        return true;
+        const txKey = result.transactionDescriptor?.requestKey;
+        
+        // Create transaction metadata
+        const metadata = createTransactionMetadata(
+          transactionTypes.OTHER,
+          'End sales contract',
+          {
+            operation: 'end-sales',
+            chainId: supplyChain,
+            namespace,
+            moduleName: salesModuleName,
+          }
+        );
+
+        // Submit transaction using the new manager
+        try {
+          const finalResult = await submitTransaction({
+            txId: txKey,
+            pactClient: result.pactClient,
+            transactionDescriptor: result.transactionDescriptor,
+            metadata,
+            pollingConfig: {
+              enableToasts: true,
+            }
+          });
+
+          if (finalResult?.result?.status === 'success') {
+            setSalesEnded(true);
+            return true;
+          } else {
+            return false;
+          }
+        } catch (pollError) {
+          console.error('Transaction polling error:', pollError);
+          return false;
+        }
       } else {
         const errorMsg = result?.preflightResult?.result?.error?.message || 'Failed to end sales';
         toast.error(errorMsg);
@@ -149,7 +254,7 @@ export const usePostSalesOperations = (
     } finally {
       setIsEndingSales(false);
     }
-  }, [namespace, salesModuleName, supplyChain, client, session, moduleName, distributionComplete]);
+  }, [namespace, salesModuleName, supplyChain, client, session, moduleName, distributionComplete, submitTransaction, createTransactionMetadata, transactionTypes]);
 
   const initLiquidity = useCallback(async () => {
     if (!salesEnded) {
@@ -159,21 +264,57 @@ export const usePostSalesOperations = (
 
     setIsInitializingLiquidity(true);
     try {
+      const { account, pubKey } = useWalletStore.getState();
       const code = `(${namespace}.${moduleName}-treasury.init-liquidity)`;
       
-      const result = await pactCallsSales(
+      toast.info('Submitting liquidity initialization...', { position: 'top-center', autoClose: 2000 });
+      const result = await initLiquidityTreasury(
+        `${namespace}.${moduleName}`,
         code,
         supplyChain,
+        pubKey,
+        account,
         client,
-        session,
-        namespace,
-        moduleName
+        session
       );
 
       if (result?.preflightResult?.result?.status === 'success') {
-        toast.success('DEX liquidity initialized successfully!');
-        setLiquidityInitialized(true);
-        return true;
+        const txKey = result.transactionDescriptor?.requestKey;
+        
+        // Create transaction metadata
+        const metadata = createTransactionMetadata(
+          transactionTypes.OTHER,
+          'Initialize DEX liquidity',
+          {
+            operation: 'init-liquidity',
+            chainId: supplyChain,
+            namespace,
+            moduleName: `${moduleName}-treasury`,
+          }
+        );
+
+        // Submit transaction using the new manager
+        try {
+          const finalResult = await submitTransaction({
+            txId: txKey,
+            pactClient: result.pactClient,
+            transactionDescriptor: result.transactionDescriptor,
+            metadata,
+            pollingConfig: {
+              enableToasts: true,
+            }
+          });
+
+          if (finalResult?.result?.status === 'success') {
+            setLiquidityInitialized(true);
+            return true;
+          } else {
+            return false;
+          }
+        } catch (pollError) {
+          console.error('Transaction polling error:', pollError);
+          return false;
+        }
       } else {
         const errorMsg = result?.preflightResult?.result?.error?.message || 'Failed to initialize liquidity';
         toast.error(errorMsg);
@@ -186,7 +327,7 @@ export const usePostSalesOperations = (
     } finally {
       setIsInitializingLiquidity(false);
     }
-  }, [namespace, moduleName, supplyChain, client, session, salesEnded]);
+  }, [namespace, moduleName, supplyChain, client, session, salesEnded, submitTransaction, createTransactionMetadata, transactionTypes]);
 
   return {
     isDistributing,
@@ -195,11 +336,13 @@ export const usePostSalesOperations = (
     distributionComplete,
     salesEnded,
     liquidityInitialized,
+    distributionRoundsNeeded,
     distributeTokens,
     endSales,
     initLiquidity,
     checkDistributionStatus,
     checkSalesStatus,
-    checkLiquidityStatus
+    checkLiquidityStatus,
+    fetchDistributionRounds
   };
 };
