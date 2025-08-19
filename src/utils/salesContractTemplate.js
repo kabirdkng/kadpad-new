@@ -1,3 +1,5 @@
+import config from '../wallet/config.js';
+
 /**
  * Sales Contract Template
  * Generates complete Pact smart contract for token sales with phases, reservations, and distribution
@@ -5,6 +7,8 @@
 export const generateSalesContract = (moduleName, namespace, salesDetails) => {
   const keys = `(define-keyset "${namespace}.sales-operator" (read-keyset "ks"))`;
   
+  // Determine burn namespace based on network environment from config
+  const burnNamespace = config.name === 'mainnet' ? 'user' : 'n_e309f0fa7cf3a13f93a8da5325cdad32790d2070';
   
   const formatDecimal = (value) => `${parseFloat(value || 0).toFixed(1)}`;
   const formatDateTime = (dateTime) => {
@@ -364,11 +368,11 @@ ${keys}
     (with-capability (SALES-OPERATOR)
       
       (with-read global-counters "" {'sold:=sold}
-        ; Transfer remaining to treasury (if not all sold)
+        ; burn tokens (if not all sold)
         (if (< sold TOTAL-BATCHES)
             (with-capability (RESERVE)
-              (install-capability (${moduleName}.TRANSFER RESERVE-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT (to-token-amount (- TOTAL-BATCHES sold)))) ;; Variable
-              (${moduleName}.transfer-create RESERVE-ACCOUNT ${moduleName}-treasury.LIQUIDITY-ACCOUNT ${moduleName}-treasury.LIQUIDITY-GUARD (to-token-amount (- TOTAL-BATCHES sold)))) ;; Variable
+              (install-capability (${moduleName}.TRANSFER RESERVE-ACCOUNT ${burnNamespace}.burn.BURN-ACCOUNT (to-token-amount (- TOTAL-BATCHES sold)))) ;; Variable
+              (${moduleName}.transfer-create RESERVE-ACCOUNT ${burnNamespace}.burn.BURN-ACCOUNT ${burnNamespace}.burn.BURN-GUARD (to-token-amount (- TOTAL-BATCHES sold)))) ;; Variable
             "")
 
       ; Transfer the income (in KDA) to treasury (for DEX liquidity)
