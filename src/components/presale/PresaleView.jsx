@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Rocket, Shield, Clock, TrendingUp, Users, DollarSign, Info, Database, Link, Layers, Settings } from 'lucide-react';
+import { Rocket, Shield, Clock, TrendingUp, Users, DollarSign, Info, Database, Link, Layers, Settings, History } from 'lucide-react';
 import usePresaleStore from '../../store/usePresaleStore';
 import useWalletStore from '../../wallet/walletStore';
 import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 import { addComma } from '../../utils/numberUtils';
 import WalletConnectButton from '../WalletConnectButton';
 import DeployerPanel from './DeployerPanel';
+import SalesProgressBar from '../SalesProgressBar';
 
 const PresaleView = ({ namespace, moduleName }) => {
   const SALES_MODULE_NAME = `${moduleName}-sales`;
@@ -55,6 +56,7 @@ const PresaleView = ({ namespace, moduleName }) => {
     totalSupply,
     tokenName,
     contractNamespace,
+    totalBatches,
     fetchBalance,
     fetchPhase0StartTime,
     fetchPhase1StartTime,
@@ -73,7 +75,12 @@ const PresaleView = ({ namespace, moduleName }) => {
     stopAutoRefresh,
     setBatchCount,
     setKdaInput,
-    resetState
+    resetState,
+    fetchUserPurchaseData,
+    userPurchaseData,
+    userBoughtBatches,
+    userBoughtTokens,
+    setUserBoughtTokens
   } = usePresaleStore();
 
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -112,7 +119,8 @@ const PresaleView = ({ namespace, moduleName }) => {
           await Promise.all([
             fetchBalance(account, supplyChain),
             fetchWlStatus(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey),
-            fetchAvailableBatches(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey)
+            fetchAvailableBatches(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey),
+            fetchUserPurchaseData(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey)
           ]);
           console.log('Account data fetched successfully');
         }
@@ -142,6 +150,7 @@ const PresaleView = ({ namespace, moduleName }) => {
             await fetchBalance(account, supplyChain);
             await fetchWlStatus(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey);
             await fetchAvailableBatches(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey);
+            await fetchUserPurchaseData(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey);
           }
           
           // Start auto-refresh even with fallback
@@ -164,7 +173,7 @@ const PresaleView = ({ namespace, moduleName }) => {
       fetchAmountPerBatch, fetchAvailableBatches, fetchBalance, fetchCurrentPrice, 
       fetchP0Price, fetchP1Price, fetchPhase0StartTime, fetchPhase1StartTime, 
       fetchSalesAccount, fetchSalesEndTime, fetchTokenSymbol, fetchTotalSales, 
-      fetchWlStatus, fetchAllSalesData, startAutoRefresh, stopAutoRefresh, resetState, setBatchCount]);
+      fetchWlStatus, fetchAllSalesData, startAutoRefresh, stopAutoRefresh, resetState, setBatchCount, fetchUserPurchaseData]);
 
   // Check deployer status when wallet connects
   useEffect(() => {
@@ -214,6 +223,13 @@ const PresaleView = ({ namespace, moduleName }) => {
     // Round to 6 decimal places to avoid floating point precision issues
     setKdaInput(Math.round(calculatedAmount * 1000000) / 1000000);
   }, [batchCount, currentPrice, setKdaInput]);
+
+  // Recalculate user bought tokens when amountPerBatch changes
+  useEffect(() => {
+    if (userBoughtBatches > 0 && amountPerBatch) {
+      setUserBoughtTokens(userBoughtBatches * amountPerBatch);
+    }
+  }, [userBoughtBatches, amountPerBatch, setUserBoughtTokens]);
 
 
   // Update current price based on phase
@@ -334,8 +350,18 @@ const PresaleView = ({ namespace, moduleName }) => {
           });
 
           if (finalResult?.result?.status === 'success') {
-            // The auto-refresh will pick up the updated data automatically
-            // No need for manual refresh after transaction
+            // Manually refresh user purchase data and balance for immediate UI update
+            try {
+              await Promise.all([
+                fetchUserPurchaseData(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey),
+                fetchBalance(account, supplyChain),
+                fetchAvailableBatches(namespace, SALES_MODULE_NAME, account, supplyChain, pubKey)
+              ]);
+            } catch (refreshError) {
+              console.error('Error refreshing data after purchase:', refreshError);
+              // Don't show error to user as auto-refresh will handle it
+            }
+            // The auto-refresh will continue to keep data updated
           }
         } catch (pollError) {
           console.error('Transaction polling error:', pollError);
@@ -526,6 +552,28 @@ const PresaleView = ({ namespace, moduleName }) => {
               </div>
             </div>
 
+            {/* Sales Progress */}
+            <div className="card">
+              <h3 className="text-xl font-semibold text-primary-text mb-6">Sales Progress</h3>
+              
+              {/* Tokens Progress */}
+              {amountPerBatch && totalBatches > 0 && (
+                <SalesProgressBar 
+                  soldTokens={(totalSales || 0) * amountPerBatch}
+                  totalTokens={totalBatches * amountPerBatch}
+                  size="large"
+                  title="Tokens Sold"
+                />
+              )}
+              
+              {/* Fallback message if no data */}
+              {(!totalBatches || totalBatches <= 0 || !amountPerBatch) && (
+                <div className="text-center py-8">
+                  <p className="text-secondary">Sales progress data will appear here once the presale begins.</p>
+                </div>
+              )}
+            </div>
+
             {/* Phase Pricing */}
             <div className="card">
               <h3 className="text-xl font-semibold text-primary-text mb-6">Phase Pricing</h3>
@@ -655,6 +703,54 @@ const PresaleView = ({ namespace, moduleName }) => {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Purchase History Card */}
+            {account && (
+              <div className="card">
+                <div className="flex items-center gap-3 mb-4">
+                  <History className="w-6 h-6 text-blue-400" />
+                  <h3 className="text-xl font-semibold text-primary-text">Your Purchases</h3>
+                </div>
+                
+                {userBoughtBatches > 0 ? (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="text-center">
+                          <p className="text-sm text-secondary mb-1">Batches Bought</p>
+                          <p className="text-xl font-bold text-blue-400">
+                            {addComma(safeRender(userBoughtBatches))}
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm text-secondary mb-1">Tokens Purchased</p>
+                          <p className="text-xl font-bold text-primary-text">
+                            {addComma(safeRender(userBoughtTokens))} {tokenSymbol}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                      <Info className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-sm text-green-400">
+                        Tokens will be distributed after presale ends.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gray-500/10 border border-gray-500/20 rounded-lg text-center">
+                    <p className="text-secondary mb-2">No purchases yet</p>
+                    <p className="text-sm text-secondary">
+                      {(isPhase0 || isPhase1) && !isSaleEnded 
+                        ? 'Purchase tokens to see history here.'
+                        : 'Presale not currently active.'
+                      }
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

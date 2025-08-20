@@ -35,6 +35,10 @@ const usePresaleStore = create((set, get) => ({
   isAutoRefreshing: false,
   refreshInterval: null,
   lastRefreshTime: null,
+  // User purchase data
+  userPurchaseData: null,
+  userBoughtBatches: 0,
+  userBoughtTokens: 0,
   
   setKdaInput: (input) => set({kdaInput: input}) ,
   setBatchCount: (input) => set({batchCount: input}),
@@ -43,6 +47,7 @@ const usePresaleStore = create((set, get) => ({
   setP0Price: (input) => set({p0Price: input}),
   setP1Price: (input) => set({p1Price: input}),
   settotalSales: (input) => set({totalSales: input}),
+  setUserBoughtTokens: (input) => set({userBoughtTokens: input}),
   
   fetchBalance: async (account, chain) => {
     try {
@@ -225,6 +230,45 @@ const usePresaleStore = create((set, get) => ({
       console.error('Error fetching P1 price:', err);
     }
   },
+
+  fetchUserPurchaseData: async (NS, SALES_MODULE_NAME, account, chain, pubKey) => {
+    try {
+      const code = `(use ${NS}.${SALES_MODULE_NAME}) (read accounts-table "${account}")`;
+      const res = await pactCalls(code, chain, pubKey);
+      console.log('fetchUserPurchaseData response:', res.result.data);
+      
+      if (res.result && res.result.data) {
+        const purchaseData = res.result.data;
+        const boughtBatches = purchaseData.bought?.int || purchaseData.bought?.decimal || purchaseData.bought || 0;
+        
+        // Calculate tokens bought (batches * amount per batch)
+        const state = get();
+        const tokensPerBatch = state.amountPerBatch || 0;
+        const totalTokensBought = boughtBatches * tokensPerBatch;
+        
+        set({ 
+          userPurchaseData: purchaseData,
+          userBoughtBatches: boughtBatches,
+          userBoughtTokens: totalTokensBought
+        });
+      } else {
+        // User hasn't made any purchases yet
+        set({ 
+          userPurchaseData: null,
+          userBoughtBatches: 0,
+          userBoughtTokens: 0
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching user purchase data:', err);
+      // If account doesn't exist in table, set to 0
+      set({ 
+        userPurchaseData: null,
+        userBoughtBatches: 0,
+        userBoughtTokens: 0
+      });
+    }
+  },
   
   // NEW: Consolidated fetch function that gets all sales data in one call
   fetchAllSalesData: async (NS, MODULE_NAME, SALES_MODULE_NAME, chain) => {
@@ -324,7 +368,8 @@ const usePresaleStore = create((set, get) => ({
           await Promise.all([
             get().fetchBalance(account, chain),
             get().fetchWlStatus(NS, SALES_MODULE_NAME, account, chain, pubKey),
-            get().fetchAvailableBatches(NS, SALES_MODULE_NAME, account, chain, pubKey)
+            get().fetchAvailableBatches(NS, SALES_MODULE_NAME, account, chain, pubKey),
+            get().fetchUserPurchaseData(NS, SALES_MODULE_NAME, account, chain, pubKey)
           ]);
         }
         
@@ -374,7 +419,8 @@ const usePresaleStore = create((set, get) => ({
         await Promise.all([
           get().fetchBalance(account, chain),
           get().fetchWlStatus(NS, SALES_MODULE_NAME, account, chain, pubKey),
-          get().fetchAvailableBatches(NS, SALES_MODULE_NAME, account, chain, pubKey)
+          get().fetchAvailableBatches(NS, SALES_MODULE_NAME, account, chain, pubKey),
+          get().fetchUserPurchaseData(NS, SALES_MODULE_NAME, account, chain, pubKey)
         ]);
       }
       
@@ -422,6 +468,10 @@ const usePresaleStore = create((set, get) => ({
       isAutoRefreshing: false,
       refreshInterval: null,
       lastRefreshTime: null,
+      // Reset user purchase data
+      userPurchaseData: null,
+      userBoughtBatches: 0,
+      userBoughtTokens: 0,
     });
   },
 }));

@@ -9,6 +9,7 @@ import {
   Sparkles,
   Flame
 } from 'lucide-react';
+import SalesProgressBar from './SalesProgressBar';
 
 const SaleCard = ({ sale, index }) => {
   // Extract data from consistent backend structure
@@ -193,22 +194,12 @@ const SaleCard = ({ sale, index }) => {
           
           {/* Progress Bar - Only show for current and past sales (not upcoming) */}
           {!isUpcoming && totalTokens && totalTokens > 0 && (
-            <div className="space-y-2">
-              <div className="flex justify-between text-xs text-secondary">
-                <span>{formatNumber(soldTokens)} sold</span>
-                <span>{progressBarPercent.toFixed(1)}%</span>
-              </div>
-              <div className="progress-bar h-2">
-                <div 
-                  className={`progress-fill transition-all duration-500 ease-out ${
-                    isHot ? 'bg-gradient-to-r from-orange-500 to-red-500' : ''
-                  }`}
-                  style={{ 
-                    width: `${progressBarPercent}%`
-                  }}
-                ></div>
-              </div>
-            </div>
+            <SalesProgressBar 
+              soldTokens={soldTokens}
+              totalTokens={totalTokens}
+              size="small"
+              isHot={isHot}
+            />
           )}
           
           {/* Simple countdown for compact view */}
@@ -349,22 +340,13 @@ const SaleCard = ({ sale, index }) => {
 
         {/* Progress Section - Only show if we have valid data */}
         {totalTokens && totalTokens > 0 && (
-          <div className="mb-4">
-            <div className="flex justify-between text-sm font-medium text-secondary mb-3">
-              <span className="transition-colors duration-200">{formatNumber(soldTokens)} sold</span>
-              <span className="transition-colors duration-200">{progressBarPercent.toFixed(1)}%</span>
-            </div>
-            <div className="progress-bar">
-              <div 
-                className={`progress-fill transition-all duration-500 ease-out ${
-                  isHot ? 'bg-gradient-to-r from-orange-500 to-red-500' : ''
-                }`}
-                style={{ 
-                  width: `${progressBarPercent}%`
-                }}
-              ></div>
-            </div>
-          </div>
+          <SalesProgressBar 
+            soldTokens={soldTokens}
+            totalTokens={totalTokens}
+            size="medium"
+            isHot={isHot}
+            className="mb-4"
+          />
         )}
 
         {/* Price Info - Only show if available */}
