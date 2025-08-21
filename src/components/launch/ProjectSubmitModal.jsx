@@ -258,7 +258,7 @@ const ProjectSubmitModal = ({ tokenDetails, onClose, onSubmit }) => {
                         <textarea
                           value={member.about}
                           onChange={(e) => handleTeamMemberChange(index, 'about', e.target.value)}
-                          placeholder="Brief bio/background (optional)"
+                          placeholder="Brief bio/background"
                           className="w-full bg-primary-bg text-primary-text p-3 rounded-lg border border-border-color focus:border-accent-primary focus:outline-none resize-none"
                           rows="2"
                           maxLength="500"
