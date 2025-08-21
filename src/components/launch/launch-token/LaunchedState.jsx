@@ -237,7 +237,7 @@ const LaunchedState = ({ tokenDetails, project }) => {
         </Link>
         <button
           onClick={() => {
-            const tweetText = `🚀 Just launched my token on @kadpad_official! Join our presale and be part of the future. #Kadena #DeFi #TokenLaunch`;
+            const tweetText = `🚀 Just launched my token on @kadpad_official! Join our presale and be part of the future. #KDA #Kadena #DeFi #TokenLaunch`;
             const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(window.location.origin + `/presale/${tokenDetails.contractAddress.split('.')[0]}/${tokenDetails.contractAddress.split('.')[1]}`)}`;
             window.open(tweetUrl, '_blank');
           }}
