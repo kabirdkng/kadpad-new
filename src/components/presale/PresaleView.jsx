@@ -661,7 +661,7 @@ const PresaleView = ({ namespace, moduleName }) => {
                           }
                         }
                       }}
-                      className="w-full px-3 py-2 bg-secondary-bg border border-border-color rounded-lg text-primary-text focus:outline-none focus:border-accent-primary"
+                      className="w-full px-3 py-2 bg-secondary-bg border border-accent-dark rounded-lg text-primary-text focus:outline-none focus:border-accent-primary"
                     />
                   </div>
 
