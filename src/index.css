@@ -180,7 +180,7 @@ body {
 /* Form Elements */
 input, textarea, select {
   background: rgba(26, 26, 26, 0.8);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--accent-dark);
   border-radius: 0.75rem;
   padding: 0.875rem 1rem;
   color: var(--primary-text);
