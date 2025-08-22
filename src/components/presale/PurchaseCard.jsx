@@ -102,7 +102,7 @@ const PurchaseCard = ({
         {isPhase0 && (
           <>
             {/* User has bought all their whitelist allocation */}
-            {!isWhitelisted && userBoughtBatches > 0 && availableBatches === 0 && (
+            {!isWhitelisted && safeRender(userBoughtBatches) > 0 && safeRender(availableBatches) <= 0 && (
               <div className="flex items-start gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
                 <Info className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
                 <div>
@@ -117,7 +117,7 @@ const PurchaseCard = ({
             )}
             
             {/* User is not whitelisted and hasn't bought any tokens */}
-            {!isWhitelisted && userBoughtBatches === 0 && (
+            {!isWhitelisted && safeRender(userBoughtBatches) === 0 && (
               <div className="flex items-start gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
                 <Info className="w-4 h-4 text-yellow-400 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-yellow-400">
