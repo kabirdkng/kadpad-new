@@ -130,6 +130,7 @@ const PresaleView = ({ namespace, moduleName }) => {
                 userBoughtBatches={userBoughtBatches}
                 availableBatches={availableBatches}
                 safeRender={safeRender}
+                isPhase0={isPhase0}
               />
             )}
           </div>

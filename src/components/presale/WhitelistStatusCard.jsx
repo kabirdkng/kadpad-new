@@ -1,9 +1,21 @@
 import PropTypes from 'prop-types';
 import { Shield } from 'lucide-react';
 
-const WhitelistStatusCard = ({ isWhitelisted, userBoughtBatches, availableBatches, safeRender }) => {
+const WhitelistStatusCard = ({ isWhitelisted, userBoughtBatches, availableBatches, safeRender, isPhase0 }) => {
+  // Debug logging to understand the values
+  console.log('WhitelistStatusCard debug:', {
+    isWhitelisted,
+    userBoughtBatches: safeRender(userBoughtBatches),
+    availableBatches: safeRender(availableBatches),
+    isPhase0,
+    userBoughtBatchesType: typeof userBoughtBatches,
+    availableBatchesType: typeof availableBatches
+  });
+
   // Check if user has bought all their whitelist allocation
-  const hasCompletedWhitelistAllocation = userBoughtBatches > 0 && availableBatches === 0;
+  const hasCompletedWhitelistAllocation = safeRender(userBoughtBatches) > 0 && safeRender(availableBatches) <= 0 && isPhase0;
+  
+  console.log('hasCompletedWhitelistAllocation:', hasCompletedWhitelistAllocation);
   
   // Determine the display state
   let statusColor, statusText, statusDescription;
@@ -42,14 +54,14 @@ const WhitelistStatusCard = ({ isWhitelisted, userBoughtBatches, availableBatche
         </p>
         
         {/* Show additional info if user has bought some tokens */}
-        {userBoughtBatches > 0 && (
+        {safeRender(userBoughtBatches) > 0 && (
           <div className="mt-3 pt-3 border-t border-border-color">
             <p className="text-sm text-secondary">
               <span className="text-primary-text font-medium">
                 Whitelist batches purchased: {safeRender(userBoughtBatches)}
               </span>
             </p>
-            {availableBatches > 0 && (
+            {safeRender(availableBatches) > 0 && (
               <p className="text-sm text-secondary">
                 <span className="text-primary-text font-medium">
                   Remaining allocation: {safeRender(availableBatches)} batches
@@ -68,6 +80,7 @@ WhitelistStatusCard.propTypes = {
   userBoughtBatches: PropTypes.oneOfType([PropTypes.number, PropTypes.object]),
   availableBatches: PropTypes.oneOfType([PropTypes.number, PropTypes.object]),
   safeRender: PropTypes.func.isRequired,
+  isPhase0: PropTypes.bool.isRequired,
 };
 
 export default WhitelistStatusCard;
