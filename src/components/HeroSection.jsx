@@ -9,8 +9,6 @@ const HeroSection = ({
   setSortBy, 
   filterStatus, 
   setFilterStatus, 
-  showFilters, 
-  setShowFilters,
   sortedProjects 
 }) => {
   return (
@@ -38,8 +36,6 @@ const HeroSection = ({
         setSortBy={setSortBy}
         filterStatus={filterStatus}
         setFilterStatus={setFilterStatus}
-        showFilters={showFilters}
-        setShowFilters={setShowFilters}
         sortedProjects={sortedProjects}
       />
     </div>
@@ -53,8 +49,6 @@ HeroSection.propTypes = {
   setSortBy: PropTypes.func.isRequired,
   filterStatus: PropTypes.string.isRequired,
   setFilterStatus: PropTypes.func.isRequired,
-  showFilters: PropTypes.bool.isRequired,
-  setShowFilters: PropTypes.func.isRequired,
   sortedProjects: PropTypes.array.isRequired
 };
 

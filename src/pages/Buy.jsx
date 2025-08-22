@@ -11,7 +11,9 @@ import { toast } from 'react-toastify';
 import { useProjectSalesData } from '../hooks/useProjectSalesData';
 import HeroSection from '../components/HeroSection';
 import StatsOverview from '../components/StatsOverview';
+import StatsOverviewSkeleton from '../components/StatsOverviewSkeleton';
 import SaleSection from '../components/SaleSection';
+import SkeletonSection from '../components/SkeletonSection';
 import EmptyState from '../components/EmptyState';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -21,7 +23,6 @@ const Buy = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [showFilters, setShowFilters] = useState(false);
   
 
   // Use the hook to get projects with real-time sales data
@@ -147,10 +148,6 @@ const Buy = () => {
     return !isNaN(endDate.getTime()) && endDate < currentDate;
   });
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
   return (
     <div className="min-h-screen bg-primary-bg text-primary-text py-8 lg:py-12">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -162,70 +159,82 @@ const Buy = () => {
           setSortBy={setSortBy}
           filterStatus={filterStatus}
           setFilterStatus={setFilterStatus}
-          showFilters={showFilters}
-          setShowFilters={setShowFilters}
-          sortedProjects={sortedProjects}
+          sortedProjects={isLoading ? [] : sortedProjects}
         />
 
-        {/* Stats Overview */}
-        <StatsOverview 
-          projects={projects}
-          ongoingSales={ongoingSales}
-          upcomingSales={upcomingSales}
-        />
-
-        {/* Sales Sections */}
-        {filterStatus === 'all' || filterStatus === 'live' ? (
-          <>
-            <SaleSection 
-              title="🔥 Whitelist Sales" 
-              sales={whitelistSales} 
-              icon={Users}
-              gradient={true}
-            />
-            <SaleSection 
-              title="🌍 Public Sales" 
-              sales={publicSales} 
-              icon={Globe}
-              gradient={true}
-            />
-          </>
-        ) : null}
-        
-        {filterStatus === 'all' || filterStatus === 'upcoming' ? (
-          <SaleSection 
-            title="🚀 Upcoming Sales" 
-            sales={upcomingSales} 
-            icon={Clock}
-          />
-        ) : null}
-        
-        {filterStatus === 'all' || filterStatus === 'ended' ? (
-          <SaleSection 
-            title="📈 Past Sales" 
-            sales={pastSales} 
-            icon={DollarSign}
-          />
-        ) : null}
-
-        {/* Show all filtered results when using specific filters */}
-        {filterStatus !== 'all' && (
-          <SaleSection 
-            title={`${filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)} Sales`}
-            sales={sortedProjects}
-            icon={Filter}
+        {/* Stats Overview with Skeleton */}
+        {isLoading ? (
+          <StatsOverviewSkeleton />
+        ) : (
+          <StatsOverview 
+            projects={projects}
+            ongoingSales={ongoingSales}
+            upcomingSales={upcomingSales}
           />
         )}
 
-        {/* Empty State */}
-        <EmptyState 
-          projects={projects}
-          sortedProjects={sortedProjects}
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          setFilterStatus={setFilterStatus}
-          setSortBy={setSortBy}
-        />
+        {/* Sales Sections with Skeletons */}
+        {isLoading ? (
+          <>
+            <SkeletonSection title="🔥 Whitelist Sales" count={3} />
+            <SkeletonSection title="🌍 Public Sales" count={3} />
+            <SkeletonSection title="🚀 Upcoming Sales" count={4} />
+          </>
+        ) : (
+          <>
+            {filterStatus === 'all' || filterStatus === 'live' ? (
+              <>
+                <SaleSection 
+                  title="🔥 Whitelist Sales" 
+                  sales={whitelistSales} 
+                  icon={Users}
+                  gradient={true}
+                />
+                <SaleSection 
+                  title="🌍 Public Sales" 
+                  sales={publicSales} 
+                  icon={Globe}
+                  gradient={true}
+                />
+              </>
+            ) : null}
+            
+            {filterStatus === 'all' || filterStatus === 'upcoming' ? (
+              <SaleSection 
+                title="🚀 Upcoming Sales" 
+                sales={upcomingSales} 
+                icon={Clock}
+              />
+            ) : null}
+            
+            {filterStatus === 'all' || filterStatus === 'ended' ? (
+              <SaleSection 
+                title="📈 Past Sales" 
+                sales={pastSales} 
+                icon={DollarSign}
+              />
+            ) : null}
+
+            {/* Show all filtered results when using specific filters */}
+            {filterStatus !== 'all' && (
+              <SaleSection 
+                title={`${filterStatus.charAt(0).toUpperCase() + filterStatus.slice(1)} Sales`}
+                sales={sortedProjects}
+                icon={Filter}
+              />
+            )}
+
+            {/* Empty State */}
+            <EmptyState 
+              projects={projects}
+              sortedProjects={sortedProjects}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              setFilterStatus={setFilterStatus}
+              setSortBy={setSortBy}
+            />
+          </>
+        )}
       </div>
     </div>
   );

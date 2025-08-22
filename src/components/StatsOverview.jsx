@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 
 const StatsOverview = ({ projects, ongoingSales, upcomingSales }) => {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-12 lg:mb-16">
+    <div className="grid grid-cols-3 gap-4 lg:gap-6 mb-12 lg:mb-16">
       <div className="card text-center">
         <div className="text-xl lg:text-2xl font-bold text-accent-primary mb-1">{projects.length}</div>
         <div className="text-sm text-secondary">Total Projects</div>
@@ -14,10 +14,6 @@ const StatsOverview = ({ projects, ongoingSales, upcomingSales }) => {
       <div className="card text-center">
         <div className="text-xl lg:text-2xl font-bold text-accent-primary mb-1">{upcomingSales.length}</div>
         <div className="text-sm text-secondary">Upcoming</div>
-      </div>
-      <div className="card text-center">
-        <div className="text-xl lg:text-2xl font-bold text-accent-primary mb-1">0</div>
-        <div className="text-sm text-secondary">Total Raised</div>
       </div>
     </div>
   );
