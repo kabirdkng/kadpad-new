@@ -125,7 +125,12 @@ const PresaleView = ({ namespace, moduleName }) => {
 
             {/* Whitelist Status */}
             {isPhase0 && (
-              <WhitelistStatusCard isWhitelisted={isWhitelisted} />
+              <WhitelistStatusCard 
+                isWhitelisted={isWhitelisted} 
+                userBoughtBatches={userBoughtBatches}
+                availableBatches={availableBatches}
+                safeRender={safeRender}
+              />
             )}
           </div>
 
