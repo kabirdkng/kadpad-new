@@ -1,6 +1,5 @@
 // walletStore.jsx
 import { create } from "zustand";
-import providers from "./providers/providers";
 import walletConnectStore from "./providers/connectWalletModalSlice";
 import { toast } from "react-toastify";
 import config from "./config";
@@ -65,12 +64,15 @@ const useWalletStore = create((set) => ({
       if (providerId === "WC") {
         console.log("Connecting with WalletConnect...");
         // Handles our Wallet Connect specific logic
-        // set({ isConnected: true });
         connectResult = await connectWithWalletConnect();
-        // console.log("connectResult", connectResult);
+        console.log("WalletConnect connectResult", connectResult);
+        
+        // Hide the modal after successful connection
+        sethideConnectWalletModal();
         return;
       } else {
-        // Handles all other providers
+        // Dynamically import providers to avoid circular dependency
+        const { default: providers } = await import("./providers/providers");
         const provider = providers[providerId];
         connectResult = await provider.connect();
       }
@@ -114,9 +116,10 @@ const useWalletStore = create((set) => ({
       return;
     }
 
-    const provider = providers[providerName];
-
     try {
+      // Dynamically import providers to avoid circular dependency
+      const { default: providers } = await import("./providers/providers");
+      const provider = providers[providerName];
       await provider.disconnect(); // Attempt to disconnect from wallet
     } catch (error) {
       console.error("Error during disconnection:", error);

@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import { Users, DollarSign } from 'lucide-react';
 import usePresaleStore from '../../store/usePresaleStore';
 import useWalletStore from '../../wallet/walletStore';
-import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
 import { usePresaleData } from '../../hooks/usePresaleData';
 import { safeRender } from '../../utils/valueUtils';
 import PriceUpdateSection from './PriceUpdateSection';
@@ -21,7 +20,6 @@ const ManageSales = ({
 }) => {
   const SALES_MODULE_NAME = `${moduleName}-sales`;
   const { pubKey } = useWalletStore();
-  const { client, session } = useWalletConnectClient();
   const { 
     salesEndTime, 
     phase0startTime, 
@@ -115,8 +113,6 @@ const ManageSales = ({
               namespace={namespace}
               salesModuleName={SALES_MODULE_NAME}
               supplyChain={supplyChain}
-              client={client}
-              session={session}
               moduleName={moduleName}
               p0Price={p0Price}
               p1Price={p1Price}
@@ -165,8 +161,6 @@ const ManageSales = ({
                 namespace={namespace}
                 salesModuleName={SALES_MODULE_NAME}
                 supplyChain={supplyChain}
-                client={client}
-                session={session}
                 moduleName={moduleName}
                 onBack={handleBackToOptions}
                 onSuccess={handleWhitelistSuccess}

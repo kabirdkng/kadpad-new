@@ -7,8 +7,6 @@ export const useWhitelistOperations = (
   namespace, 
   salesModuleName, 
   supplyChain,
-  client,
-  session,
   moduleName
 ) => {
   const [isWhitelisting, setIsWhitelisting] = useState(false);
@@ -28,7 +26,7 @@ export const useWhitelistOperations = (
       
       toast.info('Submitting whitelist transaction...', { position: 'top-center', autoClose: 2000 });
       const code = `(use ${namespace}.${salesModuleName}) ${walletList.join(' ')}`;
-      const res = await pactCallsSales(code, supplyChain, client, session, namespace, moduleName);
+      const res = await pactCallsSales(code, supplyChain, namespace, moduleName);
       
       if (res?.preflightResult?.result?.status === 'success') {
         const txKey = res.transactionDescriptor?.requestKey;

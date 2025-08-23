@@ -9,8 +9,6 @@ const WhitelistForm = ({
   namespace,
   salesModuleName,
   supplyChain,
-  client,
-  session,
   moduleName,
   onBack,
   onSuccess
@@ -25,8 +23,6 @@ const WhitelistForm = ({
     namespace,
     salesModuleName,
     supplyChain,
-    client,
-    session,
     moduleName
   );
 
@@ -291,8 +287,6 @@ WhitelistForm.propTypes = {
   namespace: PropTypes.string.isRequired,
   salesModuleName: PropTypes.string.isRequired,
   supplyChain: PropTypes.string.isRequired,
-  client: PropTypes.object,
-  session: PropTypes.object,
   moduleName: PropTypes.string.isRequired,
   onBack: PropTypes.func.isRequired,
   onSuccess: PropTypes.func

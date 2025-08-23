@@ -16,7 +16,6 @@ import BackgroundEffect from './components/BackgroundEffect';
 import GlobalTransactionIndicator from './components/GlobalTransactionIndicator';
 
 // Wallet Components
-import ClientContextProvider from './wallet/providers/ClientContextProvider';
 import ConnectWalletModal from './wallet/providers/ConnectWalletModal';
 import walletConnectStore from './wallet/providers/connectWalletModalSlice';
 import useWalletStore from './wallet/walletStore';
@@ -108,44 +107,42 @@ const App = () => {
     <div className="App min-h-screen">
       <BackgroundEffect />
       
-      <ClientContextProvider>
-        <BrowserRouter>
-          <div className="relative z-10 flex flex-col min-h-screen bg-primary-bg/95 backdrop-blur-[1px]">
-            <Header />
-            
-            <main className="flex-1">
-              <Routes>
-                <Route path='/' element={<LandingPage />} />
-                <Route path='/launch' element={<LaunchPage />} />
-                <Route path='/sales' element={<Buy />} />
-                <Route path='/staking' element={<Stake />} />
-                <Route path='/presale/:namespace/:moduleName' element={<Presale />} />
-              </Routes>
-            </main>
-            
-            <Footer />
-          </div>
+      <BrowserRouter>
+        <div className="relative z-10 flex flex-col min-h-screen bg-primary-bg/95 backdrop-blur-[1px]">
+          <Header />
           
-          {showModal && <ConnectWalletModal />}
+          <main className="flex-1">
+            <Routes>
+              <Route path='/' element={<LandingPage />} />
+              <Route path='/launch' element={<LaunchPage />} />
+              <Route path='/sales' element={<Buy />} />
+              <Route path='/staking' element={<Stake />} />
+              <Route path='/presale/:namespace/:moduleName' element={<Presale />} />
+            </Routes>
+          </main>
           
-          {/* Global Transaction Indicator */}
-          <GlobalTransactionIndicator />
-        </BrowserRouter>
+          <Footer />
+        </div>
         
-        <ToastContainer
-          position="bottom-right"
-          autoClose={5000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-          toastClassName="!bg-card !border !border-border-color !text-primary-text"
-        />
-      </ClientContextProvider>
+        {showModal && <ConnectWalletModal />}
+        
+        {/* Global Transaction Indicator */}
+        <GlobalTransactionIndicator />
+      </BrowserRouter>
+      
+      <ToastContainer
+        position="bottom-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+        toastClassName="!bg-card !border !border-border-color !text-primary-text"
+      />
     </div>
   );
 };
