@@ -2,20 +2,10 @@ import PropTypes from 'prop-types';
 import { Shield } from 'lucide-react';
 
 const WhitelistStatusCard = ({ isWhitelisted, userBoughtBatches, availableBatches, safeRender, isPhase0 }) => {
-  // Debug logging to understand the values
-  console.log('WhitelistStatusCard debug:', {
-    isWhitelisted,
-    userBoughtBatches: safeRender(userBoughtBatches),
-    availableBatches: safeRender(availableBatches),
-    isPhase0,
-    userBoughtBatchesType: typeof userBoughtBatches,
-    availableBatchesType: typeof availableBatches
-  });
 
   // Check if user has bought all their whitelist allocation
   const hasCompletedWhitelistAllocation = safeRender(userBoughtBatches) > 0 && safeRender(availableBatches) <= 0 && isPhase0;
   
-  console.log('hasCompletedWhitelistAllocation:', hasCompletedWhitelistAllocation);
   
   // Determine the display state
   let statusColor, statusText, statusDescription;
