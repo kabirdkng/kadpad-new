@@ -45,8 +45,8 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
 
   const handleWalletConnect = async () => {
     try {
-      closeModal();
       await connectWithWalletConnect();
+      closeModal();
     } catch (error) {
       console.error('Error connecting to WalletConnect:', error);
       toast.error("Failed to connect to WalletConnect");
