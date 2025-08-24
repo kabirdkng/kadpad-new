@@ -1,7 +1,7 @@
 // ConnectWalletModal.jsx
 import { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
-import { X_WALLET, WC, KOALA } from "./providers";
+import { X_WALLET, WC, KOALA, METAMASK } from "./providers";
 import useWalletStore from "../walletStore";
 import walletConnectStore from "./connectWalletModalSlice";
 import "./wallet.css";
@@ -23,6 +23,25 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
   const handleClickOutside = (event) => {
     if (modalRef.current && !modalRef.current.contains(event.target)) {
       closeModal();
+    }
+  };
+
+  const connectMetaMaskClicked = async () => {
+    // Check specifically for MetaMask Snap availability
+    try {
+      const { detectSnapProvider } = await import('@kadena/wallet-adapter-metamask-snap');
+      const provider = await detectSnapProvider({ silent: true });
+      
+      if (!provider) {
+        toast.error("MetaMask Snap not available. Please install MetaMask and enable the Kadena Snap.");
+        return;
+      }
+      
+      connectWallet(METAMASK);
+      closeModal();
+    } catch (error) {
+      toast.error("Failed to detect MetaMask Snap. Please ensure MetaMask is installed.");
+      console.error("MetaMask Snap detection error:", error);
     }
   };
 
@@ -67,6 +86,7 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
       <div className="wallet-modal" ref={modalRef}>
             <button onClick={connectXWalletClicked} className='btn provider-button' ><img src={Ecko} /> Ecko Wallet </button>
             <button onClick={handleWalletConnect} className='btn provider-button' ><img src={wc} /> Wallet Connect </button>
+            <button onClick={connectMetaMaskClicked} className='btn provider-button' >🦊 MetaMask </button>
       </div>
     </div>
   );

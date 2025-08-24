@@ -10,6 +10,68 @@ import {
   isWalletStorageAvailable 
 } from "./walletPersistence";
 
+// MetaMask connection function using adapter
+const connectMetaMaskWithAdapter = async () => {
+  try {
+    const { detectSnapProvider, SnapAdapter } = await import('@kadena/wallet-adapter-metamask-snap');
+    
+    // Detect if MetaMask Snap is available (this will check for both MetaMask and the Snap)
+    const provider = await detectSnapProvider({ silent: false });
+    if (!provider) {
+      return {
+        status: "error",
+        message: "MetaMask Snap not available. Please install MetaMask and enable the Kadena Snap."
+      };
+    }
+
+    // Create adapter instance
+    const adapter = new SnapAdapter({ provider });
+    
+    // Connect using the adapter
+    await adapter.connect();
+    
+    // Get account information
+    const accounts = await adapter.getAccounts();
+    if (!accounts || accounts.length === 0) {
+      return {
+        status: "error",
+        message: "No accounts found in MetaMask Snap. Please create an account in the Kadena Snap."
+      };
+    }
+
+    const account = accounts[0];
+    return {
+      status: "success",
+      account: {
+        account: account.address || account.accountName,
+        publicKey: account.publicKey || account.guard?.keys?.[0]
+      }
+    };
+  } catch (error) {
+    console.error("MetaMask Snap connection error:", error);
+    
+    // Check for specific Snap-related errors
+    if (error.message.includes('Snap') || error.message.includes('snap')) {
+      return {
+        status: "error",
+        message: "MetaMask Snap error. Please ensure the Kadena Snap is installed and enabled."
+      };
+    }
+    
+    if (error.message.includes('User rejected') || error.message.includes('denied')) {
+      return {
+        status: "error",
+        message: "Connection rejected. Please approve the MetaMask Snap connection."
+      };
+    }
+    
+    return {
+      status: "error",
+      message: error.message || "Failed to connect to MetaMask Snap"
+    };
+  }
+};
+
 // Load initial state from sessionStorage
 const getInitialState = () => {
   if (typeof window !== 'undefined' && isWalletStorageAvailable()) {
@@ -70,6 +132,44 @@ const useWalletStore = create((set) => ({
         // Hide the modal after successful connection
         sethideConnectWalletModal();
         return;
+      } else if (providerId === "METAMASK") {
+        console.log("Connecting with MetaMask...");
+        // Use the adapter system for MetaMask
+        try {
+          const result = await connectMetaMaskWithAdapter();
+          
+          if (result.status === "success") {
+            const newWalletState = {
+              provider: providerId,
+              account: result.account.account,
+              pubKey: result.account.publicKey,
+              isConnected: true,
+              messages: "Successfully connected to MetaMask.",
+            };
+            
+            set(newWalletState);
+            
+            // Save to sessionStorage
+            if (isWalletStorageAvailable()) {
+              saveWalletToStorage(newWalletState);
+            }
+            
+            sethideConnectWalletModal();
+            return;
+          } else {
+            // Show toast error message for MetaMask issues
+            toast.error(result.message);
+            console.error("MetaMask connection error:", result.message);
+            set({ messages: `MetaMask connection error: ${result.message}` });
+            return;
+          }
+        } catch (error) {
+          const errorMessage = error.message || "Failed to connect to MetaMask";
+          toast.error(errorMessage);
+          console.error("Error connecting to MetaMask:", error);
+          set({ messages: `MetaMask connection error: ${errorMessage}` });
+          return;
+        }
       } else {
         // Dynamically import providers to avoid circular dependency
         const { default: providers } = await import("./providers/providers");
@@ -117,10 +217,28 @@ const useWalletStore = create((set) => ({
     }
 
     try {
-      // Dynamically import providers to avoid circular dependency
-      const { default: providers } = await import("./providers/providers");
-      const provider = providers[providerName];
-      await provider.disconnect(); // Attempt to disconnect from wallet
+      if (providerName === "WC") {
+        // Handle WalletConnect disconnection through adapter system
+        const { disconnectWithWalletConnect } = await import("./wcStore");
+        await disconnectWithWalletConnect();
+      } else if (providerName === "METAMASK") {
+        // Handle MetaMask disconnection through adapter system
+        try {
+          const { detectSnapProvider, SnapAdapter } = await import('@kadena/wallet-adapter-metamask-snap');
+          const provider = await detectSnapProvider({ silent: true });
+          if (provider) {
+            const adapter = new SnapAdapter({ provider });
+            await adapter.disconnect();
+          }
+        } catch (error) {
+          console.error("Error disconnecting MetaMask:", error);
+        }
+      } else {
+        // Dynamically import providers to avoid circular dependency
+        const { default: providers } = await import("./providers/providers");
+        const provider = providers[providerName];
+        await provider.disconnect(); // Attempt to disconnect from wallet
+      }
     } catch (error) {
       console.error("Error during disconnection:", error);
     }
