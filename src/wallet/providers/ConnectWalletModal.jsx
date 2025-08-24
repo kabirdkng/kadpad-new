@@ -10,10 +10,6 @@ import Ecko from "../../assets/Ecko.svg?react"
 import wc from "../../assets/WC.svg?react"
 import SpireKey from "../../assets/SpireKey.svg?react"
 import { connect } from '@kadena/spirekey-sdk';
-// import Ecko from "../../assets/ecko.svg?react";
-// import WalletConnect from "../../assets/walletconnect.svg?react";
-// import Koala from "../../assets/koalalogo.svg?react";
-// import SpireKey from "../../assets/spirekey.svg?react";
 import config from "../config";
 import { toast } from "react-toastify";
 
@@ -36,6 +32,7 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
     connectWallet(X_WALLET);
     closeModal()
   };
+  
   const connectSpireKeyClicked = async () => {
     try {
       const account = await connect(config.networkId, config.chainId);
@@ -47,10 +44,13 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
   };
 
   const handleWalletConnect = async () => {
-    handleConnect();
-    connectWallet(WC, connectWithWalletConnect);
-    closeModal();
-    // connectWallet(WC);
+    try {
+      closeModal();
+      await connectWithWalletConnect();
+    } catch (error) {
+      console.error('Error connecting to WalletConnect:', error);
+      toast.error("Failed to connect to WalletConnect");
+    }
   };
 
   useEffect(() => {

@@ -52,13 +52,18 @@ export const isWalletRejectionError = (error) => {
  * Extracts signed transaction data based on provider type
  */
 export const extractSignedTransactionData = (signedTx, provider) => {
+  console.log("Extracting signed transaction data for provider:", provider.name);
+  console.log("Signed transaction:", signedTx);
+  
   if (provider.name === "wc" || provider.name === "WC") {
+    // WalletConnect returns data in the format used by kadena.js
     return {
       cmd: signedTx.cmd,
       sigs: signedTx.sigs,
       outcomeHash: signedTx.hash
     };
   } else {
+    // Other providers (Ecko, Koala, etc.) return data in commandSigData format
     const commandSigData = signedTx.commandSigData;
     return {
       cmd: commandSigData.cmd,

@@ -8,8 +8,6 @@ export const usePostSalesOperations = (
   namespace,
   salesModuleName,
   supplyChain,
-  client,
-  session,
   moduleName
 ) => {
   const [isDistributing, setIsDistributing] = useState(false);
@@ -125,8 +123,6 @@ export const usePostSalesOperations = (
       const result = await pactCallsSales(
         code,
         supplyChain,
-        client,
-        session,
         namespace,
         moduleName
       );
@@ -183,7 +179,7 @@ export const usePostSalesOperations = (
     } finally {
       setIsDistributing(false);
     }
-  }, [namespace, salesModuleName, supplyChain, client, session, moduleName, submitTransaction, createTransactionMetadata, transactionTypes, checkDistributionStatus]);
+  }, [namespace, salesModuleName, supplyChain, moduleName, submitTransaction, createTransactionMetadata, transactionTypes, checkDistributionStatus]);
 
   const endSales = useCallback(async () => {
     if (!distributionComplete) {
@@ -199,8 +195,6 @@ export const usePostSalesOperations = (
       const result = await pactCallsSales(
         code,
         supplyChain,
-        client,
-        session,
         namespace,
         moduleName
       );
@@ -254,7 +248,7 @@ export const usePostSalesOperations = (
     } finally {
       setIsEndingSales(false);
     }
-  }, [namespace, salesModuleName, supplyChain, client, session, moduleName, distributionComplete, submitTransaction, createTransactionMetadata, transactionTypes]);
+  }, [namespace, salesModuleName, supplyChain, moduleName, distributionComplete, submitTransaction, createTransactionMetadata, transactionTypes]);
 
   const initLiquidity = useCallback(async () => {
     if (!salesEnded) {
@@ -273,9 +267,7 @@ export const usePostSalesOperations = (
         code,
         supplyChain,
         pubKey,
-        account,
-        client,
-        session
+        account
       );
 
       if (result?.preflightResult?.result?.status === 'success') {
@@ -327,7 +319,7 @@ export const usePostSalesOperations = (
     } finally {
       setIsInitializingLiquidity(false);
     }
-  }, [namespace, moduleName, supplyChain, client, session, salesEnded, submitTransaction, createTransactionMetadata, transactionTypes]);
+  }, [namespace, moduleName, supplyChain, salesEnded, submitTransaction, createTransactionMetadata, transactionTypes]);
 
   return {
     isDistributing,

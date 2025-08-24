@@ -7,8 +7,6 @@ const PostSalesManager = ({
   namespace,
   salesModuleName,
   supplyChain,
-  client,
-  session,
   moduleName,
   onBack = null
 }) => {
@@ -33,8 +31,6 @@ const PostSalesManager = ({
     namespace,
     salesModuleName,
     supplyChain,
-    client,
-    session,
     moduleName
   );
 
@@ -344,8 +340,6 @@ PostSalesManager.propTypes = {
   namespace: PropTypes.string.isRequired,
   salesModuleName: PropTypes.string.isRequired,
   supplyChain: PropTypes.string.isRequired,
-  client: PropTypes.object,
-  session: PropTypes.object,
   moduleName: PropTypes.string.isRequired,
   onBack: PropTypes.func
 };

@@ -7,8 +7,6 @@ export const usePriceUpdates = (
   namespace, 
   salesModuleName, 
   supplyChain,
-  client,
-  session,
   moduleName,
   fetchP0Price,
   fetchP1Price,
@@ -35,7 +33,7 @@ export const usePriceUpdates = (
       
       toast.info('Submitting price update...', { position: 'top-center', autoClose: 2000 });
       const code = `(${namespace}.${salesModuleName}.set-price "phase-0" ${formattedP0Price}) (${namespace}.${salesModuleName}.set-price "phase-1" ${formattedP1Price})`;
-      const res = await pactCallsSales(code, supplyChain, client, session, namespace, moduleName);
+      const res = await pactCallsSales(code, supplyChain, namespace, moduleName);
       
       if (res?.preflightResult?.result?.status === 'success') {
         const txKey = res.transactionDescriptor?.requestKey;
