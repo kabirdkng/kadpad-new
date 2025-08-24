@@ -22,8 +22,6 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
   account,
   pubKey,
   providerName,
-  client,
-  session,
   tokenDistribution,
   chain = config.chainId,
   progressCallback = null
@@ -96,12 +94,18 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
 
       let deploymentSignedBatch;
       try {
+        console.log("Signing deployment transactions with provider:", providerName);
+        
+        // Debug WalletConnect client status if using WC
         if (providerName === "WC") {
-          deploymentSignedBatch = await provider.quickSignAll(deploymentCommands, client, session);
-        } else {
-          deploymentSignedBatch = await provider.quickSignAll(deploymentCommands);
+          const { getClientStatus } = await import("../../wallet/providers/wc.js");
+          const clientStatus = getClientStatus();
+          console.log("WalletConnect client status before signing:", clientStatus);
         }
+        
+        deploymentSignedBatch = await provider.quickSignAll(deploymentCommands);
       } catch (error) {
+        console.error("Deployment signing error:", error);
         if (isWalletRejectionError(error)) {
           throw new Error('Contract deployment transaction signing was rejected by user');
         }
@@ -249,12 +253,18 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
       
       let transferSignedBatch;
       try {
+        console.log("Signing transfer transactions with provider:", providerName);
+        
+        // Debug WalletConnect client status if using WC
         if (providerName === "WC") {
-          transferSignedBatch = await provider.quickSignAll(transferCommands, client, session);
-        } else {
-          transferSignedBatch = await provider.quickSignAll(transferCommands);
+          const { getClientStatus } = await import("../../wallet/providers/wc.js");
+          const clientStatus = getClientStatus();
+          console.log("WalletConnect client status before transfer signing:", clientStatus);
         }
+        
+        transferSignedBatch = await provider.quickSignAll(transferCommands);
       } catch (error) {
+        console.error("Transfer signing error:", error);
         if (isWalletRejectionError(error)) {
           throw new Error('Token transfer transaction signing was rejected by user');
         }
@@ -341,17 +351,43 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
       // Wait for all confirmations to complete in parallel
       transferResults = await Promise.all(confirmationPromises);
 
-      console.log('All token transfers completed successfully');
+      console.log(`All ${transferResults.length} token transfers completed successfully`);
+      console.log('Transfer results:', JSON.stringify(transferResults, null, 2)); // Add this before validation
+      
+      // Validate that all expected transfers were completed
+      if (transferResults.length !== transfers.length) {
+        throw new Error(`Token distribution incomplete: Expected ${transfers.length} transfers, but only ${transferResults.length} completed successfully`);
+      }
+      
+      // Validate each transfer result
+      transferResults.forEach((result, index) => {
+        // Correctly check nested status
+        const status =
+          result?.result?.result?.status || // pollForTransactionResult result.result.status
+          result?.result?.status ||         // fallback
+          result?.status;                   // fallback
+
+        if (!status || String(status).toLowerCase() !== 'success') {
+          console.error('Transfer result structure:', result); // Log for debugging
+          throw new Error(`Transfer ${index + 1} (${result?.transfer?.transferType || 'unknown'}) did not complete successfully`);
+        }
+      });
+      
+      console.log('✅ All token distribution transfers validated successfully');
     } else if (transfers.length > 0) {
       console.warn('Skipping token transfers because contracts are not properly deployed');
+      throw new Error('Cannot distribute tokens because contracts are not properly deployed');
     }
 
     // Remove duplicates from all transaction keys
     allTransactionKeys = [...new Set(allTransactionKeys)];
 
-    // Step 6: Mark project as deployed after successful distribution
-    // Only mark as deployed if we actually deployed contracts successfully
-    if (deploymentResults.length > 0 || (treasuryExists && salesExists)) {
+    // Step 6: Mark project as deployed ONLY after successful distribution
+    // Only mark as deployed if we actually deployed contracts AND completed token distribution successfully
+    const contractsDeployed = deploymentResults.length > 0 || (treasuryExists && salesExists);
+    const tokenDistributionCompleted = transfers.length === 0 || transferResults.length === transfers.length;
+    
+    if (contractsDeployed && tokenDistributionCompleted) {
       if (progressCallback) progressCallback('Updating project status...');
       
       try {
@@ -366,18 +402,33 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
           tokenDistribution: {
             presalesAmount: tokenDistribution.presalesAmount,
             liquidityAmount: tokenDistribution.liquidityAmount,
-            treasuryAmount: tokenDistribution.treasuryAmount
+            treasuryAmount: tokenDistribution.treasuryAmount,
+            distributionCompleted: true,
+            transferCount: transferResults.length
           }
         };
 
         await markProjectAsDeployed(namespace, moduleName, deploymentData);
-        console.log('Project marked as deployed successfully');
+        console.log('Project marked as deployed successfully after confirming both contract deployment and token distribution');
       } catch (error) {
         console.warn('Failed to update project status on backend:', error.message);
         // Don't fail the whole deployment for this
       }
     } else {
-      console.warn('Not marking project as deployed because no contracts were successfully deployed');
+      if (!contractsDeployed) {
+        console.warn('Not marking project as deployed because contracts were not successfully deployed');
+      }
+      if (!tokenDistributionCompleted) {
+        console.warn(`Not marking project as deployed because token distribution is incomplete. Expected ${transfers.length} transfers, completed ${transferResults.length}`);
+      }
+      
+      // If either contracts or distribution failed, throw an error
+      if (!contractsDeployed) {
+        throw new Error('Contract deployment was not completed successfully');
+      }
+      if (!tokenDistributionCompleted) {
+        throw new Error(`Token distribution was not completed successfully. Expected ${transfers.length} transfers, completed ${transferResults.length}`);
+      }
     }
 
     if (progressCallback) progressCallback('✅ Complete deployment and distribution successful!');

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { Vault, Send, RefreshCw } from 'lucide-react';
 import { fetchBalance, pactCalls, transferCoinTreasury } from '../../pactcalls/kadena';
-import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
 import useWalletStore from '../../wallet/walletStore';
 import useTransactionManager from '../../hooks/useTransactionManager';
 import { addComma } from '../../utils/numberUtils';
@@ -16,7 +15,6 @@ const AccessTreasury = ({
 }) => {
   const TREASURY_MODULE_NAME = `${moduleName}-treasury`;
   const { pubKey, account } = useWalletStore();
-  const { client, session } = useWalletConnectClient();
   const { 
     submitTransaction, 
     createTransactionMetadata, 
@@ -40,7 +38,7 @@ const AccessTreasury = ({
     }
   }, [namespace, TREASURY_MODULE_NAME, supplyChain, pubKey]);
 
-const getTreasuryTokenBalance = useCallback(async () => {
+  const getTreasuryTokenBalance = useCallback(async () => {
     try {
         if (!treasuryContractAccount) return;
         const code = `(${namespace}.${moduleName}.get-balance "${treasuryContractAccount}")`;
@@ -50,7 +48,7 @@ const getTreasuryTokenBalance = useCallback(async () => {
         console.error('Error fetching treasury balance:', error);
         toast.error('Failed to fetch treasury balance');
     }
-}, [namespace, moduleName, supplyChain, treasuryContractAccount]);
+  }, [namespace, moduleName, supplyChain, treasuryContractAccount]);
 
   const transferTokens = async () => {
     if (!transferAccount || !transferAmount) {
@@ -59,12 +57,12 @@ const getTreasuryTokenBalance = useCallback(async () => {
     }
 
     // Format amount for Pact (same as price formatting)
-  const formatAmountForPact = (amount) => {
-    const numAmount = parseFloat(amount);
-    return numAmount % 1 === 0 ? `${numAmount}.0` : numAmount.toString();
-  };
+    const formatAmountForPact = (amount) => {
+      const numAmount = parseFloat(amount);
+      return numAmount % 1 === 0 ? `${numAmount}.0` : numAmount.toString();
+    };
 
-  const formattedAmount = formatAmountForPact(transferAmount);
+    const formattedAmount = formatAmountForPact(transferAmount);
 
     // Validate account format (should be k:account or account name)
     const isValidAccount = transferAccount.startsWith('k:') ? 
@@ -88,9 +86,7 @@ const getTreasuryTokenBalance = useCallback(async () => {
         code, 
         supplyChain, 
         pubKey, 
-        account, 
-        client, 
-        session
+        account
       );
       
       if (res?.preflightResult?.result?.status === 'success') {

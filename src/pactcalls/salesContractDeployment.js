@@ -1,7 +1,6 @@
 import { Pact, createClient } from '@kadena/client';
 import config from '../wallet/config';
 import useWalletStore from "../wallet/walletStore";
-import providers from "../wallet/providers/providers";
 import { toast } from "react-toastify";
 
 const network = config.networkId;
@@ -10,16 +9,18 @@ const api = config.apiUrl;
 /**
  * Deploy sales contract with proper capabilities
  */
-export const deploySalesContract = async (contractCode, namespace, moduleName, client, session) => {
+export const deploySalesContract = async (contractCode, namespace, moduleName) => {
   try {
     const { account, pubKey } = useWalletStore.getState();
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${config.chainId}/pact`);
     const providerName = useWalletStore.getState().provider;
-    const provider = providers[providerName];
     
     if (providerName === null) {
-      throw new Error("Wallet not connected");
+      throw new Error("Provider not found");
     }
+
+    const { default: providers } = await import("../wallet/providers/providers");
+    const provider = providers[providerName];
 
     const tx = Pact.builder
       .execution(contractCode)
@@ -41,14 +42,11 @@ export const deploySalesContract = async (contractCode, namespace, moduleName, c
     let cmd, sigs, outcomeHash;
 
     try {
-      signedTx = await provider.quickSign(tx, client, session);
-      
-      if (signedTx.status === 'fail') {
-        console.log(signedTx);
-        toast.error(`Error: ${signedTx.message}`, { position: 'top-center' });
-        throw new Error(signedTx.message);
+      signedTx = await provider.quickSign(tx);
+      if(signedTx.status === 'fail'){
+        console.log(signedTx)
+        toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
       }
-
       if (provider.name === "wc") {
         cmd = signedTx.cmd;
         sigs = signedTx.sigs;
@@ -60,8 +58,8 @@ export const deploySalesContract = async (contractCode, namespace, moduleName, c
         outcomeHash = signedTx.responses[0].outcome.hash;
       }
     } catch (error) {
-      console.error('Error signing transaction:', error);
-      throw new Error(`Failed to sign transaction: ${error.message}`);
+      console.error("Error signing transaction:", error);
+      throw error;
     }
 
     const bodyPayload = {
@@ -76,8 +74,8 @@ export const deploySalesContract = async (contractCode, namespace, moduleName, c
     
     if (preflightResult.result.status === 'failure') {
       console.error('Sales contract deployment failed:', preflightResult.result.error.message);
-      toast.error(`Deployment failed: ${preflightResult.result.error.message}`);
-      throw new Error(preflightResult.result.error.message);
+      toast.error(preflightResult.result.error.message);
+      return preflightResult;
     }
 
     // Submit transaction
@@ -101,16 +99,18 @@ export const deploySalesContract = async (contractCode, namespace, moduleName, c
 /**
  * Deploy treasury contract with proper capabilities
  */
-export const deployTreasuryContract = async (contractCode, namespace, moduleName, client, session, tokenSupply = 0) => {
+export const deployTreasuryContract = async (contractCode, namespace, moduleName, tokenSupply = 0) => {
   try {
     const { account, pubKey } = useWalletStore.getState();
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${config.chainId}/pact`);
     const providerName = useWalletStore.getState().provider;
-    const provider = providers[providerName];
     
     if (providerName === null) {
-      throw new Error("Wallet not connected");
+      throw new Error("Provider not found");
     }
+
+    const { default: providers } = await import("../wallet/providers/providers");
+    const provider = providers[providerName];
 
     const tx = Pact.builder
       .execution(contractCode)
@@ -132,14 +132,11 @@ export const deployTreasuryContract = async (contractCode, namespace, moduleName
     let cmd, sigs, outcomeHash;
 
     try {
-      signedTx = await provider.quickSign(tx, client, session);
-      
-      if (signedTx.status === 'fail') {
-        console.log(signedTx);
-        toast.error(`Error: ${signedTx.message}`, { position: 'top-center' });
-        throw new Error(signedTx.message);
+      signedTx = await provider.quickSign(tx);
+      if(signedTx.status === 'fail'){
+        console.log(signedTx)
+        toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
       }
-
       if (provider.name === "wc") {
         cmd = signedTx.cmd;
         sigs = signedTx.sigs;
@@ -151,8 +148,8 @@ export const deployTreasuryContract = async (contractCode, namespace, moduleName
         outcomeHash = signedTx.responses[0].outcome.hash;
       }
     } catch (error) {
-      console.error('Error signing transaction:', error);
-      throw new Error(`Failed to sign transaction: ${error.message}`);
+      console.error("Error signing transaction:", error);
+      throw error;
     }
 
     const bodyPayload = {
@@ -167,8 +164,8 @@ export const deployTreasuryContract = async (contractCode, namespace, moduleName
     
     if (preflightResult.result.status === 'failure') {
       console.error('Treasury contract deployment failed:', preflightResult.result.error.message);
-      toast.error(`Deployment failed: ${preflightResult.result.error.message}`);
-      throw new Error(preflightResult.result.error.message);
+      toast.error(preflightResult.result.error.message);
+      return preflightResult;
     }
 
     // Submit transaction
@@ -192,16 +189,18 @@ export const deployTreasuryContract = async (contractCode, namespace, moduleName
 /**
  * Initialize sales contract after deployment
  */
-export const initializeSalesContract = async (namespace, moduleName, client, session) => {
+export const initializeSalesContract = async (namespace, moduleName) => {
   try {
     const { account, pubKey } = useWalletStore.getState();
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${config.chainId}/pact`);
     const providerName = useWalletStore.getState().provider;
-    const provider = providers[providerName];
     
     if (providerName === null) {
-      throw new Error("Wallet not connected");
+      throw new Error("Provider not found");
     }
+
+    const { default: providers } = await import("../wallet/providers/providers");
+    const provider = providers[providerName];
 
     const code = `(${namespace}.${moduleName}-sales.init)`;
 
@@ -225,14 +224,11 @@ export const initializeSalesContract = async (namespace, moduleName, client, ses
     let cmd, sigs, outcomeHash;
 
     try {
-      signedTx = await provider.quickSign(tx, client, session);
-      
-      if (signedTx.status === 'fail') {
-        console.log(signedTx);
-        toast.error(`Error: ${signedTx.message}`, { position: 'top-center' });
-        throw new Error(signedTx.message);
+      signedTx = await provider.quickSign(tx);
+      if(signedTx.status === 'fail'){
+        console.log(signedTx)
+        toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
       }
-
       if (provider.name === "wc") {
         cmd = signedTx.cmd;
         sigs = signedTx.sigs;
@@ -244,8 +240,8 @@ export const initializeSalesContract = async (namespace, moduleName, client, ses
         outcomeHash = signedTx.responses[0].outcome.hash;
       }
     } catch (error) {
-      console.error('Error signing transaction:', error);
-      throw new Error(`Failed to sign transaction: ${error.message}`);
+      console.error("Error signing transaction:", error);
+      throw error;
     }
 
     const bodyPayload = {
@@ -260,8 +256,8 @@ export const initializeSalesContract = async (namespace, moduleName, client, ses
     
     if (preflightResult.result.status === 'failure') {
       console.error('Sales contract initialization failed:', preflightResult.result.error.message);
-      toast.error(`Initialization failed: ${preflightResult.result.error.message}`);
-      throw new Error(preflightResult.result.error.message);
+      toast.error(preflightResult.result.error.message);
+      return preflightResult;
     }
 
     // Submit transaction
@@ -284,16 +280,18 @@ export const initializeSalesContract = async (namespace, moduleName, client, ses
 /**
  * Initialize treasury contract after deployment
  */
-export const initializeTreasuryContract = async (namespace, moduleName, client, session) => {
+export const initializeTreasuryContract = async (namespace, moduleName) => {
   try {
     const { account, pubKey } = useWalletStore.getState();
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${config.chainId}/pact`);
     const providerName = useWalletStore.getState().provider;
-    const provider = providers[providerName];
     
     if (providerName === null) {
-      throw new Error("Wallet not connected");
+      throw new Error("Provider not found");
     }
+
+    const { default: providers } = await import("../wallet/providers/providers");
+    const provider = providers[providerName];
 
     const code = `(${namespace}.${moduleName}-treasury.init)`;
 
@@ -301,8 +299,7 @@ export const initializeTreasuryContract = async (namespace, moduleName, client, 
       .execution(code)
       .addSigner(pubKey, (signFor) => [
         signFor(`coin.GAS`),
-        signFor(`${namespace}.${moduleName}-treasury.GOVERNANCE`),
-        signFor(`${namespace}.${moduleName}.TRANSFER`, account, `${namespace}.${moduleName}-treasury`, 0.0)
+        signFor(`${namespace}.${moduleName}-treasury.GOVERNANCE`)
       ])
       .setMeta({
         chainId: String(config.chainId),
@@ -318,14 +315,11 @@ export const initializeTreasuryContract = async (namespace, moduleName, client, 
     let cmd, sigs, outcomeHash;
 
     try {
-      signedTx = await provider.quickSign(tx, client, session);
-      
-      if (signedTx.status === 'fail') {
-        console.log(signedTx);
-        toast.error(`Error: ${signedTx.message}`, { position: 'top-center' });
-        throw new Error(signedTx.message);
+      signedTx = await provider.quickSign(tx);
+      if(signedTx.status === 'fail'){
+        console.log(signedTx)
+        toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
       }
-
       if (provider.name === "wc") {
         cmd = signedTx.cmd;
         sigs = signedTx.sigs;
@@ -337,8 +331,8 @@ export const initializeTreasuryContract = async (namespace, moduleName, client, 
         outcomeHash = signedTx.responses[0].outcome.hash;
       }
     } catch (error) {
-      console.error('Error signing transaction:', error);
-      throw new Error(`Failed to sign transaction: ${error.message}`);
+      console.error("Error signing transaction:", error);
+      throw error;
     }
 
     const bodyPayload = {
@@ -353,8 +347,8 @@ export const initializeTreasuryContract = async (namespace, moduleName, client, 
     
     if (preflightResult.result.status === 'failure') {
       console.error('Treasury contract initialization failed:', preflightResult.result.error.message);
-      toast.error(`Initialization failed: ${preflightResult.result.error.message}`);
-      throw new Error(preflightResult.result.error.message);
+      toast.error(preflightResult.result.error.message);
+      return preflightResult;
     }
 
     // Submit transaction
@@ -377,25 +371,26 @@ export const initializeTreasuryContract = async (namespace, moduleName, client, 
 /**
  * Transfer tokens from main contract to sales contract
  */
-export const transferTokensToSales = async (namespace, moduleName, amount, client, session) => {
+export const transferTokensToSales = async (namespace, moduleName, amount) => {
   try {
     const { account, pubKey } = useWalletStore.getState();
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${config.chainId}/pact`);
     const providerName = useWalletStore.getState().provider;
-    const provider = providers[providerName];
     
     if (providerName === null) {
-      throw new Error("Wallet not connected");
+      throw new Error("Provider not found");
     }
 
-    const code = `(${namespace}.${moduleName}-treasury.transfer-tokens-to-sales ${amount})`;
+    const { default: providers } = await import("../wallet/providers/providers");
+    const provider = providers[providerName];
+
+    const code = `(${namespace}.${moduleName}.transfer "${account}" "${namespace}.${moduleName}-sales" ${amount})`;
 
     const tx = Pact.builder
       .execution(code)
       .addSigner(pubKey, (signFor) => [
         signFor(`coin.GAS`),
-        signFor(`${namespace}.${moduleName}-treasury.GOVERNANCE`),
-        signFor(`${namespace}.${moduleName}.TRANSFER`, `${namespace}.${moduleName}-treasury`, `${namespace}.${moduleName}-sales`, amount)
+        signFor(`${namespace}.${moduleName}.TRANSFER`, account, `${namespace}.${moduleName}-sales`, amount)
       ])
       .setMeta({
         chainId: String(config.chainId),
@@ -411,14 +406,11 @@ export const transferTokensToSales = async (namespace, moduleName, amount, clien
     let cmd, sigs, outcomeHash;
 
     try {
-      signedTx = await provider.quickSign(tx, client, session);
-      
-      if (signedTx.status === 'fail') {
-        console.log(signedTx);
-        toast.error(`Error: ${signedTx.message}`, { position: 'top-center' });
-        throw new Error(signedTx.message);
+      signedTx = await provider.quickSign(tx);
+      if(signedTx.status === 'fail'){
+        console.log(signedTx)
+        toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
       }
-
       if (provider.name === "wc") {
         cmd = signedTx.cmd;
         sigs = signedTx.sigs;
@@ -430,8 +422,8 @@ export const transferTokensToSales = async (namespace, moduleName, amount, clien
         outcomeHash = signedTx.responses[0].outcome.hash;
       }
     } catch (error) {
-      console.error('Error signing transaction:', error);
-      throw new Error(`Failed to sign transaction: ${error.message}`);
+      console.error("Error signing transaction:", error);
+      throw error;
     }
 
     const bodyPayload = {
@@ -446,8 +438,8 @@ export const transferTokensToSales = async (namespace, moduleName, amount, clien
     
     if (preflightResult.result.status === 'failure') {
       console.error('Token transfer failed:', preflightResult.result.error.message);
-      toast.error(`Transfer failed: ${preflightResult.result.error.message}`);
-      throw new Error(preflightResult.result.error.message);
+      toast.error(preflightResult.result.error.message);
+      return preflightResult;
     }
 
     // Submit transaction
@@ -462,7 +454,7 @@ export const transferTokensToSales = async (namespace, moduleName, amount, clien
     };
 
   } catch (error) {
-    console.error('Error transferring tokens:', error);
+    console.error('Error transferring tokens to sales contract:', error);
     throw error;
   }
 };

@@ -2,13 +2,11 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import usePresaleStore from '../store/usePresaleStore';
 import useWalletStore from '../wallet/walletStore';
-import { useWalletConnectClient } from '../wallet/providers/ClientContextProvider';
 import { buyTokensSale, pactCalls } from '../pactcalls/kadena';
 import useTransactionManager from '../hooks/useTransactionManager';
 
 const usePresaleLogic = (namespace, moduleName) => {
   const SALES_MODULE_NAME = `${moduleName}-sales`;
-  const { client, session } = useWalletConnectClient();
   const { account, pubKey } = useWalletStore();
   const { 
     submitTransaction, 
@@ -293,7 +291,7 @@ const usePresaleLogic = (namespace, moduleName) => {
 
       toast.info('Submitting transaction...', { position: 'top-center', autoClose: 2000 });
       const code = `(${namespace}.${SALES_MODULE_NAME}.buy "${account}" (read-keyset 'ks) ${batchCount})`;
-      const result = await buyTokensSale(code, supplyChain, salesAccount, amount, client, session, namespace, moduleName);
+      const result = await buyTokensSale(code, supplyChain, salesAccount, amount);
       
       if (result?.preflightResult?.result?.status === 'success') {
         const txKey = result.transactionDescriptor?.requestKey;
