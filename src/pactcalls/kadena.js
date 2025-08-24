@@ -1,24 +1,22 @@
 import { Pact, createClient } from '@kadena/client';
 import config from '../wallet/config';
 import useWalletStore from "../wallet/walletStore";
+import providers from "../wallet/providers/providers";
 import { toast } from "react-toastify";
 
 const network = config.networkId;
 const api = config.apiUrl;
 
-export const pactCallsSig = async(code, chain) => {
+export const pactCallsSig = async(code, chain, client, session) => {
   try  {
     const { account, pubKey } = useWalletStore.getState()
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`)
     const providerName = useWalletStore.getState().provider;
+    const provider = providers[providerName]
     
     if (providerName === null) {
       throw new Error("Provider not found");
     }
-    
-    // Dynamically import providers to avoid circular dependency
-    const { default: providers } = await import("../wallet/providers/providers");
-    const provider = providers[providerName];
     const tx = Pact.builder
       .execution(code)
       .addSigner(pubKey, (signFor) => [
@@ -38,7 +36,7 @@ export const pactCallsSig = async(code, chain) => {
     let cmd, sigs, outcomeHash;
     console.log(provider.config)
     try {
-      signedTx = await provider.quickSign(tx);
+      signedTx = await provider.quickSign(tx, client, session);
       if(signedTx.status === 'fail'){
         console.log(signedTx)
         toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
@@ -79,20 +77,16 @@ export const pactCallsSig = async(code, chain) => {
   }
 }
 
-export const pactCallsSales = async(code, chain, namespace, moduleName) => {
+export const pactCallsSales = async(code, chain, client, session, namespace, moduleName) => {
   try  {
     const { account, pubKey } = useWalletStore.getState()
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`)
     const providerName = useWalletStore.getState().provider;
+    const provider = providers[providerName]
     
     if (providerName === null) {
       throw new Error("Provider not found");
     }
-    
-    // Dynamically import providers to avoid circular dependency
-    const { default: providers } = await import("../wallet/providers/providers");
-    const provider = providers[providerName];
-    
     const tx = Pact.builder
       .execution(code)
       .addSigner(pubKey, (signFor) => [
@@ -113,7 +107,7 @@ export const pactCallsSales = async(code, chain, namespace, moduleName) => {
     let cmd, sigs, outcomeHash;
     console.log(provider.config)
     try {
-      signedTx = await provider.quickSign(tx);
+      signedTx = await provider.quickSign(tx, client, session);
       if(signedTx.status === 'fail'){
         console.log(signedTx)
         toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
@@ -199,19 +193,17 @@ export const fetchBalance = async(code, chain) => {
   }
 }
 
-export const buyTokensSale = async(code, chain, salesAccount, amount) => {
+export const buyTokensSale = async(code, chain, salesAccount, amount, client, session) => {
   try {
     const { account, pubKey } = useWalletStore.getState();
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`)
     const providerName = useWalletStore.getState().provider;
+    const provider = providers[providerName]
+    console.log(provider)
     
     if (providerName === null) {
       throw new Error("Provider not found");
     }
-
-    const { default: providers } = await import('../wallet/providers/providers');
-    const provider = providers[providerName];
-    console.log(provider)
 
     const receiver = salesAccount
     console.log(receiver)
@@ -236,7 +228,7 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
     let cmd, sigs, outcomeHash;
     console.log(provider.config)
     try {
-      signedTx = await provider.quickSign(tx);
+      signedTx = await provider.quickSign(tx, client, session);
       if(signedTx.status === 'fail'){
         console.log(signedTx)
         toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
@@ -277,18 +269,16 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
   }
 }
 
-export const transferCoinTreasury = async (token, code, chain, pubKey, sender) => {
+export const transferCoinTreasury = async (token, code, chain, pubKey, sender, client, session) => {
   try {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
     const providerName = useWalletStore.getState().provider;
+    const provider = providers[providerName]
+    console.log(provider)
     
     if (providerName === null) {
       throw new Error("Provider not found");
     }
-
-    const { default: providers } = await import('../wallet/providers/providers');
-    const provider = providers[providerName];
-    console.log(provider)
     const tx = Pact.builder
       .execution(code)
       .addSigner(pubKey, (signFor) => [
@@ -309,7 +299,7 @@ export const transferCoinTreasury = async (token, code, chain, pubKey, sender) =
     let cmd, sigs, outcomeHash;
     console.log(provider.config)
     try {
-      signedTx = await provider.quickSign(tx);
+      signedTx = await provider.quickSign(tx, client, session);
       if(signedTx.status === 'fail'){
         console.log(signedTx)
         toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
@@ -350,18 +340,16 @@ export const transferCoinTreasury = async (token, code, chain, pubKey, sender) =
   }
 };
 
-export const initLiquidityTreasury = async (token, code, chain, pubKey, sender) => {
+export const initLiquidityTreasury = async (token, code, chain, pubKey, sender, client, session) => {
   try {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
     const providerName = useWalletStore.getState().provider;
+    const provider = providers[providerName]
+    console.log(provider)
     
     if (providerName === null) {
       throw new Error("Provider not found");
     }
-
-    const { default: providers } = await import('../wallet/providers/providers');
-    const provider = providers[providerName];
-    console.log(provider)
     const tx = Pact.builder
       .execution(code)
       .addSigner(pubKey, (signFor) => [
@@ -382,7 +370,7 @@ export const initLiquidityTreasury = async (token, code, chain, pubKey, sender) 
     let cmd, sigs, outcomeHash;
     console.log(provider.config)
     try {
-      signedTx = await provider.quickSign(tx);
+      signedTx = await provider.quickSign(tx, client, session);
       if(signedTx.status === 'fail'){
         console.log(signedTx)
         toast.error(`Error :${signedTx.message}`, { position: 'top-center' })

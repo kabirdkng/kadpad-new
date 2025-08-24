@@ -1,13 +1,13 @@
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { 
   Coins, ExternalLink, Shield, 
   CheckCircle, AlertCircle, Copy, Wallet 
 } from 'lucide-react';
 import useWalletStore from '../../wallet/walletStore';
 import config from '../../wallet/config';
-import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
 import { toast } from 'react-toastify';
-import { pactCalls, pactCallsSig } from '../../pactcalls/kadena';
+import { pactCalls } from '../../pactcalls/kadena';
 import WalletConnectButton from '../WalletConnectButton';
 import tokenGoLogo from '../../assets/tokengo-logo.png';
 
@@ -298,6 +298,12 @@ const CreateVerifyStep = ({ isVerified, setIsVerified, setTokenDetails }) => {
       </div>
     </div>
   );
+};
+
+CreateVerifyStep.propTypes = {
+  isVerified: PropTypes.bool.isRequired,
+  setIsVerified: PropTypes.func.isRequired,
+  setTokenDetails: PropTypes.func.isRequired
 };
 
 export default CreateVerifyStep;
