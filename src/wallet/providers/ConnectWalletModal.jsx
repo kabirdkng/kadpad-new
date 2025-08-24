@@ -8,7 +8,6 @@ import "./wallet.css";
 import { useWalletConnect, useWalletConnection } from "../wcStore";
 import Ecko from "../../assets/Ecko.svg?react"
 import wc from "../../assets/WC.svg?react"
-import SpireKey from "../../assets/SpireKey.svg?react"
 import { connect } from '@kadena/spirekey-sdk';
 import config from "../config";
 import { toast } from "react-toastify";
@@ -31,16 +30,6 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
     !window.kadena && toast.error("eckoWallet not installed")
     connectWallet(X_WALLET);
     closeModal()
-  };
-  
-  const connectSpireKeyClicked = async () => {
-    try {
-      const account = await connect(config.networkId, config.chainId);
-      console.log('spire account', account);
-      useWalletStore.getState().connectWallet('SPIREKEY');
-    } catch (error) {
-      console.error('Error connecting to SpireKey:', error);
-    }
   };
 
   const handleWalletConnect = async () => {
@@ -78,7 +67,6 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
       <div className="wallet-modal" ref={modalRef}>
             <button onClick={connectXWalletClicked} className='btn provider-button' ><img src={Ecko} /> Ecko Wallet </button>
             <button onClick={handleWalletConnect} className='btn provider-button' ><img src={wc} /> Wallet Connect </button>
-            <button onClick={connectSpireKeyClicked} className='btn provider-button' ><img src={SpireKey} /> Spire Key </button>
       </div>
     </div>
   );
