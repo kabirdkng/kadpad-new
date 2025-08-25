@@ -44,9 +44,42 @@ const metamask = {
   
   sign: async function(signingCommand) {
     try {
-      // Signing will be handled through the adapter system
-      console.log("MetaMask sign - to be implemented with adapter");
-      return null;
+      const { detectSnapProvider, SnapAdapter } = await import('@kadena/wallet-adapter-metamask-snap');
+      const provider = await detectSnapProvider({ silent: true });
+      
+      if (!provider) {
+        throw new Error("MetaMask Snap not available");
+      }
+
+      const adapter = new SnapAdapter({ provider });
+
+      // Parse the 'cmd' field to an object
+      const cmdParsed = JSON.parse(signingCommand.cmd);
+ 
+      const caps = cmdParsed.signers[0].clist.map(cap => ({
+        role: "", 
+        description: "", 
+        cap: {
+          name: cap.name,
+          args: cap.args || [] 
+        },
+      }));
+
+      const signingCmd = {
+        pactCode: cmdParsed.payload.exec.code, 
+        envData: {},
+        sender: cmdParsed.meta.sender,     
+        chainId: cmdParsed.meta.chainId,
+        gasLimit: cmdParsed.meta.gasLimit,
+        gasPrice: cmdParsed.meta.gasPrice,
+        signingPubKey: cmdParsed.signers[0].pubKey,
+        ttl: cmdParsed.meta.ttl,
+        caps: caps
+      };
+
+      // Use the adapter's sign method
+      const response = await adapter.sign(signingCmd);
+      return response;
     } catch (error) {
       console.error("Error in MetaMask sign function:", error);
       return null;
@@ -55,9 +88,33 @@ const metamask = {
   
   quickSign: async function(signingCommand) {
     try {
-      console.log("MetaMask quickSign - to be implemented with adapter");
-      return null;
-    } catch (error) {
+      const { detectSnapProvider, SnapAdapter } = await import('@kadena/wallet-adapter-metamask-snap');
+      const provider = await detectSnapProvider({ silent: true });
+      
+      if (!provider) {
+        throw new Error("MetaMask Snap not available");
+      }
+
+      const adapter = new SnapAdapter({ provider });
+
+      const commandObj = JSON.parse(signingCommand.cmd);
+      const signers = commandObj.payload.exec.data.ks.keys.map(pubKey => {
+        return {
+          pubKey: pubKey,
+          sig: null, // Initial signature is null
+          clist: commandObj.signers[0].clist, 
+        };
+      });
+
+      const commandSigData = {
+        cmd: JSON.stringify(commandObj),
+        sigs: signers,
+      };
+
+      // Use the adapter's quickSign method
+      const cmd = await adapter.quickSign([commandSigData]);
+      return cmd;
+    } catch (error) { 
       console.error("Error in MetaMask quickSign function:", error);
       return null;
     }
@@ -65,8 +122,34 @@ const metamask = {
   
   quickSignAll: async function(signingCommands) {
     try {
-      console.log("MetaMask quickSignAll - to be implemented with adapter");
-      return null;
+      const { detectSnapProvider, SnapAdapter } = await import('@kadena/wallet-adapter-metamask-snap');
+      const provider = await detectSnapProvider({ silent: true });
+      
+      if (!provider) {
+        throw new Error("MetaMask Snap not available");
+      }
+
+      const adapter = new SnapAdapter({ provider });
+
+      const commandSigDatas = signingCommands.map(command => {
+        const commandObj = JSON.parse(command.cmd);
+        const signers = commandObj.payload.exec.data.ks.keys.map(pubKey => {
+          return {
+            pubKey: pubKey,
+            sig: null, 
+            clist: commandObj.signers[0].clist,
+          };
+        });
+
+        return {
+          cmd: JSON.stringify(commandObj),
+          sigs: signers,
+        };
+      });
+
+      // Use the adapter's quickSign method for multiple commands
+      const signedCmds = await adapter.quickSign(commandSigDatas);
+      return signedCmds;
     } catch (error) {
       console.error("Error in MetaMask quickSignAll function:", error);
       throw error;
@@ -75,9 +158,33 @@ const metamask = {
   
   quickSignCont: async function(signingCommand) {
     try {
-      console.log("MetaMask quickSignCont - to be implemented with adapter");
-      return null;
-    } catch (error) {
+      const { detectSnapProvider, SnapAdapter } = await import('@kadena/wallet-adapter-metamask-snap');
+      const provider = await detectSnapProvider({ silent: true });
+      
+      if (!provider) {
+        throw new Error("MetaMask Snap not available");
+      }
+
+      const adapter = new SnapAdapter({ provider });
+
+      const commandObj = JSON.parse(signingCommand.cmd);
+      const signers = commandObj.payload.cont.data.ks.keys.map(pubKey => {
+        return {
+          pubKey: pubKey,
+          sig: null, // Initial signature is null
+          clist: commandObj.signers[0].clist, 
+        };
+      });
+
+      const commandSigData = {
+        cmd: JSON.stringify(commandObj),
+        sigs: signers,
+      };
+
+      // Use the adapter's quickSign method
+      const cmd = await adapter.quickSign([commandSigData]);
+      return cmd;
+    } catch (error) { 
       console.error("Error in MetaMask quickSignCont function:", error);
       return null;
     }
