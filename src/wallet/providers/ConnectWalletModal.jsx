@@ -27,22 +27,9 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
   };
 
   const connectMetaMaskClicked = async () => {
-    // Check specifically for MetaMask Snap availability
-    try {
-      const { detectSnapProvider } = await import('@kadena/wallet-adapter-metamask-snap');
-      const provider = await detectSnapProvider({ silent: true });
-      
-      if (!provider) {
-        toast.error("MetaMask Snap not available. Please install MetaMask and enable the Kadena Snap.");
-        return;
-      }
-      
-      connectWallet(METAMASK);
-      closeModal();
-    } catch (error) {
-      toast.error("Failed to detect MetaMask Snap. Please ensure MetaMask is installed.");
-      console.error("MetaMask Snap detection error:", error);
-    }
+    // Use the metamask provider directly
+    connectWallet(METAMASK);
+    closeModal();
   };
 
   const connectXWalletClicked = () => {

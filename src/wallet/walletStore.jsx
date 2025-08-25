@@ -10,68 +10,6 @@ import {
   isWalletStorageAvailable 
 } from "./walletPersistence";
 
-// MetaMask connection function using adapter
-const connectMetaMaskWithAdapter = async () => {
-  try {
-    const { detectSnapProvider, SnapAdapter } = await import('@kadena/wallet-adapter-metamask-snap');
-    
-    // Detect if MetaMask Snap is available (this will check for both MetaMask and the Snap)
-    const provider = await detectSnapProvider({ silent: false });
-    if (!provider) {
-      return {
-        status: "error",
-        message: "MetaMask Snap not available. Please install MetaMask and enable the Kadena Snap."
-      };
-    }
-
-    // Create adapter instance
-    const adapter = new SnapAdapter({ provider });
-    
-    // Connect using the adapter
-    await adapter.connect();
-    
-    // Get account information
-    const accounts = await adapter.getAccounts();
-    if (!accounts || accounts.length === 0) {
-      return {
-        status: "error",
-        message: "No accounts found in MetaMask Snap. Please create an account in the Kadena Snap."
-      };
-    }
-
-    const account = accounts[0];
-    return {
-      status: "success",
-      account: {
-        account: account.address || account.accountName,
-        publicKey: account.publicKey || account.guard?.keys?.[0]
-      }
-    };
-  } catch (error) {
-    console.error("MetaMask Snap connection error:", error);
-    
-    // Check for specific Snap-related errors
-    if (error.message.includes('Snap') || error.message.includes('snap')) {
-      return {
-        status: "error",
-        message: "MetaMask Snap error. Please ensure the Kadena Snap is installed and enabled."
-      };
-    }
-    
-    if (error.message.includes('User rejected') || error.message.includes('denied')) {
-      return {
-        status: "error",
-        message: "Connection rejected. Please approve the MetaMask Snap connection."
-      };
-    }
-    
-    return {
-      status: "error",
-      message: error.message || "Failed to connect to MetaMask Snap"
-    };
-  }
-};
-
 // Load initial state from sessionStorage
 const getInitialState = () => {
   if (typeof window !== 'undefined' && isWalletStorageAvailable()) {
@@ -134,15 +72,17 @@ const useWalletStore = create((set) => ({
         return;
       } else if (providerId === "METAMASK") {
         console.log("Connecting with MetaMask...");
-        // Use the adapter system for MetaMask
+        // Use the metamask provider directly instead of adapter
         try {
-          const result = await connectMetaMaskWithAdapter();
+          const { default: providers } = await import("./providers/providers");
+          const provider = providers[providerId];
+          connectResult = await provider.connect();
           
-          if (result.status === "success") {
+          if (connectResult.status === "success") {
             const newWalletState = {
               provider: providerId,
-              account: result.account.account,
-              pubKey: result.account.publicKey,
+              account: connectResult.account.account,
+              pubKey: connectResult.account.publicKey,
               isConnected: true,
               messages: "Successfully connected to MetaMask.",
             };
@@ -158,9 +98,9 @@ const useWalletStore = create((set) => ({
             return;
           } else {
             // Show toast error message for MetaMask issues
-            toast.error(result.message);
-            console.error("MetaMask connection error:", result.message);
-            set({ messages: `MetaMask connection error: ${result.message}` });
+            toast.error(connectResult.message);
+            console.error("MetaMask connection error:", connectResult.message);
+            set({ messages: `MetaMask connection error: ${connectResult.message}` });
             return;
           }
         } catch (error) {
