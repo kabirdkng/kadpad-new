@@ -1,6 +1,7 @@
 import PropTypes from 'prop-types';
 import { Info } from 'lucide-react';
 import { addComma } from '../../utils/numberUtils';
+import { preciseMultiply } from '../../utils/decimalUtils';
 import WalletConnectButton from '../WalletConnectButton';
 
 const PurchaseCard = ({ 
@@ -79,7 +80,7 @@ const PurchaseCard = ({
           <div className="flex justify-between text-sm">
             <span className="text-secondary">You&apos;ll receive:</span>
             <span className="text-accent-primary font-semibold">
-              {addComma(safeRender(amountPerBatch) * batchCount)} {tokenSymbol}
+              {addComma(preciseMultiply(safeRender(amountPerBatch), batchCount))} {tokenSymbol}
             </span>
           </div>
         </div>

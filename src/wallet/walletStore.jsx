@@ -70,6 +70,46 @@ const useWalletStore = create((set) => ({
         // Hide the modal after successful connection
         sethideConnectWalletModal();
         return;
+      } else if (providerId === "METAMASK") {
+        console.log("Connecting with MetaMask...");
+        // Use the metamask provider directly instead of adapter
+        try {
+          const { default: providers } = await import("./providers/providers");
+          const provider = providers[providerId];
+          connectResult = await provider.connect();
+          
+          if (connectResult.status === "success") {
+            const newWalletState = {
+              provider: providerId,
+              account: connectResult.account.account,
+              pubKey: connectResult.account.publicKey,
+              isConnected: true,
+              messages: "Successfully connected to MetaMask.",
+            };
+            
+            set(newWalletState);
+            
+            // Save to sessionStorage
+            if (isWalletStorageAvailable()) {
+              saveWalletToStorage(newWalletState);
+            }
+            
+            sethideConnectWalletModal();
+            return;
+          } else {
+            // Show toast error message for MetaMask issues
+            toast.error(connectResult.message);
+            console.error("MetaMask connection error:", connectResult.message);
+            set({ messages: `MetaMask connection error: ${connectResult.message}` });
+            return;
+          }
+        } catch (error) {
+          const errorMessage = error.message || "Failed to connect to MetaMask";
+          toast.error(errorMessage);
+          console.error("Error connecting to MetaMask:", error);
+          set({ messages: `MetaMask connection error: ${errorMessage}` });
+          return;
+        }
       } else {
         // Dynamically import providers to avoid circular dependency
         const { default: providers } = await import("./providers/providers");
@@ -117,10 +157,28 @@ const useWalletStore = create((set) => ({
     }
 
     try {
-      // Dynamically import providers to avoid circular dependency
-      const { default: providers } = await import("./providers/providers");
-      const provider = providers[providerName];
-      await provider.disconnect(); // Attempt to disconnect from wallet
+      if (providerName === "WC") {
+        // Handle WalletConnect disconnection through adapter system
+        const { disconnectWithWalletConnect } = await import("./wcStore");
+        await disconnectWithWalletConnect();
+      } else if (providerName === "METAMASK") {
+        // Handle MetaMask disconnection through adapter system
+        try {
+          const { detectSnapProvider, SnapAdapter } = await import('@kadena/wallet-adapter-metamask-snap');
+          const provider = await detectSnapProvider({ silent: true });
+          if (provider) {
+            const adapter = new SnapAdapter({ provider });
+            await adapter.disconnect();
+          }
+        } catch (error) {
+          console.error("Error disconnecting MetaMask:", error);
+        }
+      } else {
+        // Dynamically import providers to avoid circular dependency
+        const { default: providers } = await import("./providers/providers");
+        const provider = providers[providerName];
+        await provider.disconnect(); // Attempt to disconnect from wallet
+      }
     } catch (error) {
       console.error("Error during disconnection:", error);
     }

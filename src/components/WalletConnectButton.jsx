@@ -54,6 +54,8 @@ const WalletConnectButton = () => {
         return 'WalletConnect';
       case 'SPIREKEY':
         return 'SpireKey';
+      case 'METAMASK':
+        return 'MetaMask';
       default:
         return 'Wallet';
     }
