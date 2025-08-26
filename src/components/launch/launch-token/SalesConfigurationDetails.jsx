@@ -31,7 +31,7 @@ const SalesConfigurationDetails = ({ salesDetails, project }) => {
             <div>
               <label className="block text-sm font-medium text-secondary mb-1">Tokens per Batch</label>
               <p className="text-xl font-bold text-primary-text">
-                {(salesDetails.amountPerBatch || salesDetails.tokensPerBatch || 0).toLocaleString()}
+                {salesDetails.amountPerBatch}
               </p>
             </div>
             <div>

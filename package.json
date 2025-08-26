@@ -21,6 +21,7 @@
     "@kadena/wallet-adapter-react": "^0.0.3",
     "@kadena/wallet-adapter-walletconnect": "^0.0.3",
     "axios": "^1.10.0",
+    "decimal.js": "^10.6.0",
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

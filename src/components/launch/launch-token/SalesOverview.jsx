@@ -25,7 +25,7 @@ const SalesOverview = ({ salesDetails }) => {
           <h4 className="font-semibold text-purple-400">Batch Size</h4>
         </div>
         <p className="text-2xl font-bold text-primary-text">
-          {(salesDetails.amountPerBatch || salesDetails.tokensPerBatch) ? (salesDetails.amountPerBatch || salesDetails.tokensPerBatch).toLocaleString() : 'Not set'}
+          {salesDetails.amountPerBatch}
         </p>
         <p className="text-sm text-secondary mt-1">Tokens per batch</p>
       </div>
