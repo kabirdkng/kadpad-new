@@ -1,7 +1,6 @@
 import React from 'react';
 import { FileText, Globe } from 'lucide-react';
 import { getStatusInfo } from './statusConfig';
-import FeeDisplay from './FeeDisplay';
 
 const ProjectDetailsDisplay = ({ existingProject }) => {
   if (!existingProject) return null;
@@ -89,7 +88,6 @@ const ProjectDetailsDisplay = ({ existingProject }) => {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-secondary mb-1">Amount:</label>
-                <FeeDisplay usdAmount={existingProject.feeDetails.amount} />
               </div>
               {existingProject.feeDetails.dueDate && (
                 <div>

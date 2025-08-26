@@ -1,4 +1,5 @@
 import config from '../wallet/config.js';
+import { formatDecimal } from './decimalUtils.js';
 
 /**
  * Sales Contract Template
@@ -9,8 +10,6 @@ export const generateSalesContract = (moduleName, namespace, salesDetails) => {
   
   // Determine burn namespace based on network environment from config
   const burnNamespace = config.name === 'mainnet' ? 'user' : 'n_e309f0fa7cf3a13f93a8da5325cdad32790d2070';
-  
-  const formatDecimal = (value) => `${parseFloat(value || 0).toFixed(1)}`;
   const formatDateTime = (dateTime) => {
     if (!dateTime) return new Date().toISOString().split('.')[0] + 'Z';
     try {

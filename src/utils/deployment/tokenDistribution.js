@@ -1,6 +1,7 @@
 import { createClient } from "@kadena/client";
 import { Pact } from "@kadena/client";
 import providers from "../../wallet/providers/providers";
+import { formatAmountForPact } from "../decimalUtils.js";
 import { 
   createTx, 
   isWalletRejectionError, 
@@ -96,12 +97,7 @@ export const createTokenTransferTransaction = async (
   let transferCode;
   let toAccount;
   
-  // Format amount for Pact (same as price formatting)
-  const formatAmountForPact = (amount) => {
-    const numAmount = parseFloat(amount);
-    return numAmount % 1 === 0 ? `${numAmount}.0` : numAmount.toString();
-  };
-  
+  // Format amount for Pact using Decimal.js utility
   const formattedAmount = formatAmountForPact(amount);
   
   // Use the actual contract account addresses fetched from the blockchain
