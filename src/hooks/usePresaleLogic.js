@@ -4,6 +4,7 @@ import usePresaleStore from '../store/usePresaleStore';
 import useWalletStore from '../wallet/walletStore';
 import { buyTokensSale, pactCalls } from '../pactcalls/kadena';
 import useTransactionManager from '../hooks/useTransactionManager';
+import { preciseMultiply, formatDecimal } from '../utils/decimalUtils';
 
 const usePresaleLogic = (namespace, moduleName) => {
   const SALES_MODULE_NAME = `${moduleName}-sales`;
@@ -214,16 +215,23 @@ const usePresaleLogic = (namespace, moduleName) => {
 
   // Calculate kdaInput based on batchCount and currentPrice
   useEffect(() => {
-    const calculatedAmount = (batchCount || 0) * (currentPrice || 0);
-    setKdaInput(Math.round(calculatedAmount * 1000000) / 1000000);
+    const calculatedAmount = preciseMultiply(batchCount || 0, currentPrice || 0);
+    setKdaInput(formatDecimal(calculatedAmount));
   }, [batchCount, currentPrice, setKdaInput]);
 
   // Recalculate user bought tokens when amountPerBatch changes
   useEffect(() => {
     if (userBoughtBatches > 0 && amountPerBatch) {
-      setUserBoughtTokens(userBoughtBatches * amountPerBatch);
+      const calculatedTokens = preciseMultiply(userBoughtBatches, amountPerBatch);
+      const formatted = formatDecimal(calculatedTokens);
+      setUserBoughtTokens(formatted);
     }
   }, [userBoughtBatches, amountPerBatch, setUserBoughtTokens]);
+
+  // Computed value for display - always calculate fresh to avoid precision issues
+  const userBoughtTokensDisplay = userBoughtBatches > 0 && amountPerBatch 
+    ? formatDecimal(preciseMultiply(userBoughtBatches, amountPerBatch))
+    : userBoughtTokens;
 
   // Update current price based on phase
   useEffect(() => {
@@ -388,6 +396,7 @@ const usePresaleLogic = (namespace, moduleName) => {
     userPurchaseData,
     userBoughtBatches,
     userBoughtTokens,
+    userBoughtTokensDisplay,
     
     // Local state
     countdown,

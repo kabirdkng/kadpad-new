@@ -40,6 +40,7 @@ const PresaleView = ({ namespace, moduleName }) => {
     userPurchaseData,
     userBoughtBatches,
     userBoughtTokens,
+    userBoughtTokensDisplay,
     
     // Local state
     countdown,
@@ -172,7 +173,7 @@ const PresaleView = ({ namespace, moduleName }) => {
             <PurchaseHistoryCard 
               account={account}
               userBoughtBatches={userBoughtBatches}
-              userBoughtTokens={userBoughtTokens}
+              userBoughtTokens={userBoughtTokensDisplay}
               tokenSymbol={tokenSymbol}
               isPhase0={isPhase0}
               isPhase1={isPhase1}
