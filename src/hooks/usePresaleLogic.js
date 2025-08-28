@@ -230,7 +230,12 @@ const usePresaleLogic = (namespace, moduleName) => {
 
   // Computed value for display - always calculate fresh to avoid precision issues
   const userBoughtTokensDisplay = userBoughtBatches > 0 && amountPerBatch 
-    ? formatDecimal(preciseMultiply(userBoughtBatches, amountPerBatch))
+    ? (() => {
+        const calculated = preciseMultiply(userBoughtBatches, amountPerBatch);
+        const formatted = formatDecimal(calculated);
+        // Remove .0 for whole numbers for display
+        return formatted.endsWith('.0') ? formatted.slice(0, -2) : formatted;
+      })()
     : userBoughtTokens;
 
   // Update current price based on phase
