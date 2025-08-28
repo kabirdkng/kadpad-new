@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { pactCallsSales, pactCalls, initLiquidityTreasury } from '../pactcalls/kadena';
 import useTransactionManager from './useTransactionManager';
 import useWalletStore from '../wallet/walletStore';
+import { markSalesEnded, markInitLiquidityDone, incrementDistributionRound, getLaunchedProject } from '../api';
 
 export const usePostSalesOperations = (
   namespace,
@@ -16,6 +17,7 @@ export const usePostSalesOperations = (
   const [distributionComplete, setDistributionComplete] = useState(false);
   const [salesEnded, setSalesEnded] = useState(false);
   const [liquidityInitialized, setLiquidityInitialized] = useState(false);
+  const [distributionRoundCompleted, setDistributionRoundCompleted] = useState(0);
 
   const [distributionRoundsNeeded, setDistributionRoundsNeeded] = useState(0);
 
@@ -70,6 +72,49 @@ export const usePostSalesOperations = (
       return false;
     }
   }, [namespace, salesModuleName, supplyChain]);
+
+  // Check backend project status from database
+  const checkBackendStatus = useCallback(async () => {
+    try {
+      const response = await getLaunchedProject(namespace, moduleName);
+      if (response?.data?.data?.project) {
+        const project = response.data.data.project;
+        
+        // Update states based on backend data
+        if (project.isSalesEnded !== undefined) {
+          setSalesEnded(project.isSalesEnded);
+        }
+        if (project.isInitLiquidity !== undefined) {
+          setLiquidityInitialized(project.isInitLiquidity);
+        }
+        if (project.distributionRoundCompleted !== undefined) {
+          setDistributionRoundCompleted(project.distributionRoundCompleted);
+        }
+        
+        return {
+          isSalesEnded: project.isSalesEnded,
+          isInitLiquidity: project.isInitLiquidity,
+          distributionRoundCompleted: project.distributionRoundCompleted
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error checking backend project status:', error);
+      return null;
+    }
+  }, [namespace, moduleName]);
+
+  // Initialize status checks when the hook is first used
+  useEffect(() => {
+    if (namespace && salesModuleName && supplyChain) {
+      // Check distribution status on mount
+      checkDistributionStatus();
+      // Also fetch distribution rounds needed
+      fetchDistributionRounds();
+      // Check backend status for sales ended and liquidity status
+      checkBackendStatus();
+    }
+  }, [namespace, salesModuleName, supplyChain, checkDistributionStatus, fetchDistributionRounds, checkBackendStatus]);
 
   const checkSalesStatus = useCallback(async () => {
     try {
@@ -159,6 +204,16 @@ export const usePostSalesOperations = (
             setTimeout(async () => {
               await checkDistributionStatus();
             }, 2000);
+            
+            // Increment distribution round in the backend
+            try {
+              await incrementDistributionRound(namespace, moduleName, { transactionKey: txKey });
+              console.log('Distribution round incremented in backend');
+            } catch (backendError) {
+              console.error('Failed to increment distribution round in backend:', backendError);
+              // Don't fail the whole operation for backend sync issues
+            }
+            
             return true;
           } else {
             return false;
@@ -228,6 +283,16 @@ export const usePostSalesOperations = (
 
           if (finalResult?.result?.status === 'success') {
             setSalesEnded(true);
+            
+            // Mark sales as ended in the backend
+            try {
+              await markSalesEnded(namespace, moduleName, { transactionKey: txKey });
+              console.log('Sales ended status updated in backend');
+            } catch (backendError) {
+              console.error('Failed to update backend sales status:', backendError);
+              // Don't fail the whole operation for backend sync issues
+            }
+            
             return true;
           } else {
             return false;
@@ -299,6 +364,16 @@ export const usePostSalesOperations = (
 
           if (finalResult?.result?.status === 'success') {
             setLiquidityInitialized(true);
+            
+            // Mark liquidity initialization as done in the backend
+            try {
+              await markInitLiquidityDone(namespace, moduleName, { transactionKey: txKey });
+              console.log('Liquidity initialization status updated in backend');
+            } catch (backendError) {
+              console.error('Failed to update backend liquidity status:', backendError);
+              // Don't fail the whole operation for backend sync issues
+            }
+            
             return true;
           } else {
             return false;
@@ -329,12 +404,14 @@ export const usePostSalesOperations = (
     salesEnded,
     liquidityInitialized,
     distributionRoundsNeeded,
+    distributionRoundCompleted,
     distributeTokens,
     endSales,
     initLiquidity,
     checkDistributionStatus,
     checkSalesStatus,
     checkLiquidityStatus,
-    fetchDistributionRounds
+    fetchDistributionRounds,
+    checkBackendStatus
   };
 };

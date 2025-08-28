@@ -80,4 +80,19 @@ export const markProjectAsDeployed = (namespace, moduleName, deploymentData = {}
   return api.patch(`/projects/deployed/${namespace}/${moduleName}`, deploymentData);
 };
 
+export const markSalesEnded = (namespace, moduleName, transactionData = {}) => {
+  console.log('API: markSalesEnded called with:', { namespace, moduleName, transactionData });
+  return api.patch(`/projects/sales-ended/${namespace}/${moduleName}`, transactionData);
+};
+
+export const markInitLiquidityDone = (namespace, moduleName, liquidityData = {}) => {
+  console.log('API: markInitLiquidityDone called with:', { namespace, moduleName, liquidityData });
+  return api.patch(`/projects/init-liquidity/${namespace}/${moduleName}`, liquidityData);
+};
+
+export const incrementDistributionRound = (namespace, moduleName, transactionData = {}) => {
+  console.log('API: incrementDistributionRound called with:', { namespace, moduleName, transactionData });
+  return api.patch(`/projects/increment-distribution/${namespace}/${moduleName}`, transactionData);
+};
+
 export default api;

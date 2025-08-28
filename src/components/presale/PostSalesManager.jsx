@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Package, Zap, DollarSign, RotateCcw } from 'lucide-react';
 import { usePostSalesOperations } from '../../hooks/usePostSalesOperations';
+import PostSalesStatusCard from './PostSalesStatusCard';
 
 const PostSalesManager = ({
   namespace,
@@ -21,12 +22,14 @@ const PostSalesManager = ({
     salesEnded,
     liquidityInitialized,
     distributionRoundsNeeded,
+    distributionRoundCompleted,
     distributeTokens,
     endSales,
     initLiquidity,
     checkDistributionStatus,
     checkSalesStatus,
-    fetchDistributionRounds
+    fetchDistributionRounds,
+    checkBackendStatus
   } = usePostSalesOperations(
     namespace,
     salesModuleName,
@@ -58,6 +61,7 @@ const PostSalesManager = ({
       await fetchDistributionRounds();
       await checkDistributionStatus();
       await checkSalesStatus();
+      await checkBackendStatus();
     } catch (error) {
       console.error('Error refreshing status:', error);
     }
@@ -74,6 +78,7 @@ const PostSalesManager = ({
         await fetchDistributionRounds();
         await checkDistributionStatus();
         await checkSalesStatus();
+        await checkBackendStatus();
       } catch (error) {
         console.error('Error initializing post-sales data:', error);
       }
@@ -180,6 +185,14 @@ const PostSalesManager = ({
         </ol>
       </div>
 
+      {/* Current Status Card */}
+      <PostSalesStatusCard
+        tokenSymbol={moduleName.toUpperCase()}
+        namespace={namespace}
+        moduleName={moduleName}
+        supplyChain={supplyChain}
+      />
+
       {/* Step 1: Token Distribution */}
       <div className={`p-6 border rounded-lg transition-all ${
         currentStep === 'distribution' 
@@ -200,19 +213,37 @@ const PostSalesManager = ({
         
         <div className="space-y-3">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-secondary">Distribution rounds needed:</span>
+            <span className="text-secondary">Total rounds needed:</span>
             <span className="text-primary-text font-medium">{distributionRoundsNeeded}</span>
           </div>
           
-          {distributionRoundsNeeded > 0 && (
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-secondary">Rounds completed:</span>
+            <span className="text-primary-text font-medium">{distributionRoundCompleted}</span>
+          </div>
+          
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-secondary">Remaining rounds:</span>
+            <span className="text-primary-text font-medium font-bold">
+              {Math.max(0, distributionRoundsNeeded - distributionRoundCompleted)}
+            </span>
+          </div>
+          
+          {(distributionRoundsNeeded - distributionRoundCompleted) > 0 && (
             <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded text-sm text-yellow-400">
-              This operation may need to be called {distributionRoundsNeeded} times due to gas limits.
+              This operation needs to be called {distributionRoundsNeeded - distributionRoundCompleted} more time(s) due to gas limits.
+            </div>
+          )}
+          
+          {distributionRoundCompleted > 0 && !distributionComplete && (
+            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded text-sm text-blue-400">
+              Progress: {distributionRoundCompleted} of {distributionRoundsNeeded} rounds completed
             </div>
           )}
           
           <button
             onClick={handleDistribute}
-            disabled={isDistributing || distributionComplete || distributionRoundsNeeded === 0}
+            disabled={isDistributing || distributionComplete || (distributionRoundsNeeded - distributionRoundCompleted) === 0}
             className="btn btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isDistributing ? (
@@ -222,10 +253,10 @@ const PostSalesManager = ({
               </>
             ) : distributionComplete ? (
               'Distribution Complete'
-            ) : distributionRoundsNeeded === 0 ? (
+            ) : (distributionRoundsNeeded - distributionRoundCompleted) === 0 ? (
               'No Distribution Needed'
             ) : (
-              'Distribute Tokens'
+              `Distribute Tokens (${distributionRoundsNeeded - distributionRoundCompleted} remaining)`
             )}
           </button>
         </div>
