@@ -208,11 +208,19 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
     const receiver = salesAccount
     console.log(receiver)
     console.log(amount)
-    const tx = Pact.builder
+
+    let signer;
+    if (providerName === 'magic') {
+      signer = { pubKey: pubKey, scheme: 'WebAuthn' };
+    } else {
+      signer = pubKey;
+    }
+
+    let txBuilder = Pact.builder
       .execution(code)
-      .addSigner(pubKey, (signFor) => [
+      .addSigner(signer, (signFor) => [
         signFor(`coin.TRANSFER`, account, receiver, Number(amount)),
-        signFor('coin.GAS'),
+        signFor('coin.GAS')
       ])
       .setMeta({
         chainId: String(chain),
@@ -220,11 +228,15 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
         gasPrice: 0.0000001,
         sender: account
       })
-      .addKeyset('ks', 'keys-all', pubKey)
-      .setNetworkId(network)
-      .createTransaction();
+      .setNetworkId(network);
+
+    if (providerName !== 'magic') {
+      txBuilder = txBuilder.addKeyset('ks', 'keys-all', pubKey);
+    }
+
+    const tx = txBuilder.createTransaction();
     
-    let signedTx;
+    let signedTx;  
     let cmd, sigs, outcomeHash;
     console.log(provider.config)
     try {
@@ -246,6 +258,8 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
     } catch (error) {
       console.error(error);
     }
+
+    console.log("Signed Tx: ", signedTx)
 
     const bodyPayload = {
       cmd,

@@ -3,7 +3,7 @@ import config from '../config';
 export const MAGIC = 'MAGIC';
 
 const magic = {
-  name: 'Magic Wallet',
+  name: 'magic',
   connect: async function() {
     try {
       if (!import.meta.env.VITE_APP_MAGIC_API_KEY) {
@@ -40,11 +40,32 @@ const magic = {
 
         const account = response.result;
         
+        // Get account info
+        const accountInfo = await adapter.getActiveAccount();
+
+        console.log(accountInfo)
+
+        // Extract public key from keyset or guard
+        let publicKey = null;
+        if (accountInfo?.keyset?.keys?.[0]) {
+          // Use first key from keyset if available
+          publicKey = accountInfo.keyset.keys[0];
+        } else if (accountInfo?.guard?.keysetref) {
+          // For keysetref, we need to use the account name as the reference
+          // since the actual keys are stored on-chain
+          publicKey = `keysetref:${accountInfo.guard.keysetref.ns}:${accountInfo.guard.keysetref.ksn}`;
+        } else if (accountInfo?.publicKey) {
+          publicKey = accountInfo.publicKey;
+        } else {
+          // Fallback to original method
+          publicKey = account.guard?.keys?.[0] || account.keyset?.keys?.[0];
+        }
+        
         return {
           status: "success",
           account: {
             account: account.accountName,
-            publicKey: account.guard?.keys?.[0] || account.keyset?.keys?.[0]
+            publicKey: publicKey
           }
         };
         
@@ -74,11 +95,30 @@ const magic = {
 
         const account = response.result;
         
+        // Get account info
+        const accountInfo = await adapter.getActiveAccount();
+
+        // Extract public key from keyset or guard
+        let publicKey = null;
+        if (accountInfo?.keyset?.keys?.[0]) {
+          // Use first key from keyset if available
+          publicKey = accountInfo.keyset.keys[0];
+        } else if (accountInfo?.guard?.keysetref) {
+          // For keysetref, we need to use the account name as the reference
+          // since the actual keys are stored on-chain
+          publicKey = `keysetref:${accountInfo.guard.keysetref.ns}:${accountInfo.guard.keysetref.ksn}`;
+        } else if (accountInfo?.publicKey) {
+          publicKey = accountInfo.publicKey;
+        } else {
+          // Fallback to original method
+          publicKey = account.guard?.keys?.[0] || account.keyset?.keys?.[0];
+        }
+        
         return {
           status: "success",
           account: {
             account: account.accountName,
-            publicKey: account.guard?.keys?.[0] || account.keyset?.keys?.[0]
+            publicKey: publicKey
           }
         };
       }
@@ -154,9 +194,16 @@ const magic = {
         }
       });
 
-      return response.result;
+      // Return consistent structure with X Wallet
+      return {
+        status: "success",
+        ...response.result
+      };
     } catch (error) {
-      return null;
+      return {
+        status: "fail",
+        message: error.message || "Signing failed"
+      };
     }
   },
   
@@ -199,9 +246,16 @@ const magic = {
         }
       });
 
-      return response.result;
+      // Return consistent structure with X Wallet
+      return {
+        status: "success",
+        ...response.result
+      };
     } catch (error) { 
-      return null;
+      return {
+        status: "fail",
+        message: error.message || "Quick signing failed"
+      };
     }
   },
   
@@ -246,9 +300,16 @@ const magic = {
         }
       });
 
-      return response.result;
+      // Return consistent structure with X Wallet
+      return {
+        status: "success",
+        ...response.result
+      };
     } catch (error) {
-      throw error;
+      return {
+        status: "fail",
+        message: error.message || "Quick sign all failed"
+      };
     }
   },
   
@@ -291,9 +352,16 @@ const magic = {
         }
       });
 
-      return response.result;
+      // Return consistent structure with X Wallet
+      return {
+        status: "success",
+        ...response.result
+      };
     } catch (error) { 
-      return null;
+      return {
+        status: "fail",
+        message: error.message || "Quick sign continuation failed"
+      };
     }
   }
 };
