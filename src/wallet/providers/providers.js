@@ -4,8 +4,9 @@ import koala, { KOALA } from "./koala"
 import spirekey, { SPIREKEY } from "./spireKey"
 import wc, {WC} from "./wc"
 import metamask, { METAMASK } from "./metamask"
+import magic, { MAGIC } from "./magic"
 
-export { X_WALLET, ZELCORE, KOALA, WC, SPIREKEY, METAMASK }
+export { X_WALLET, ZELCORE, KOALA, WC, SPIREKEY, METAMASK, MAGIC }
 const providers = {
   X_WALLET: xwallet,
   ZELCORE: zelcore,
@@ -13,5 +14,6 @@ const providers = {
   WC: wc,
   SPIREKEY: spirekey,
   METAMASK: metamask,
+  MAGIC: magic,
 }
 export default providers;

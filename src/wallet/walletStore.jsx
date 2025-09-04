@@ -110,6 +110,45 @@ const useWalletStore = create((set) => ({
           set({ messages: `MetaMask connection error: ${errorMessage}` });
           return;
         }
+      } else if (providerId === "MAGIC") {
+        console.log("Connecting with Magic Wallet...");
+        try {
+          const { default: providers } = await import("./providers/providers");
+          const provider = providers[providerId];
+          connectResult = await provider.connect();
+          
+          if (connectResult.status === "success") {
+            const newWalletState = {
+              provider: providerId,
+              account: connectResult.account.account,
+              pubKey: connectResult.account.publicKey,
+              isConnected: true,
+              messages: "Successfully connected to Magic Wallet.",
+            };
+            
+            set(newWalletState);
+            
+            // Save to sessionStorage
+            if (isWalletStorageAvailable()) {
+              saveWalletToStorage(newWalletState);
+            }
+            
+            sethideConnectWalletModal();
+            return;
+          } else {
+            // Show toast error message for Magic wallet issues
+            toast.error(connectResult.message);
+            console.error("Magic Wallet connection error:", connectResult.message);
+            set({ messages: `Magic Wallet connection error: ${connectResult.message}` });
+            return;
+          }
+        } catch (error) {
+          const errorMessage = error.message || "Failed to connect to Magic Wallet";
+          toast.error(errorMessage);
+          console.error("Error connecting to Magic Wallet:", error);
+          set({ messages: `Magic Wallet connection error: ${errorMessage}` });
+          return;
+        }
       } else {
         // Dynamically import providers to avoid circular dependency
         const { default: providers } = await import("./providers/providers");
@@ -172,6 +211,24 @@ const useWalletStore = create((set) => ({
           }
         } catch (error) {
           console.error("Error disconnecting MetaMask:", error);
+        }
+      } else if (providerName === "MAGIC") {
+        // Handle Magic wallet disconnection through adapter system
+        try {
+          const { detectMagicProvider, MagicAdapter } = await import('@kadena/wallet-adapter-magic');
+          const provider = await detectMagicProvider();
+          if (provider) {
+            const adapter = new MagicAdapter({ 
+              provider,
+              magicApiKey: import.meta.env.VITE_APP_MAGIC_API_KEY,
+              chainId: config.chainId,
+              chainwebApiUrl: config.apiUrl,
+              networkId: config.networkId
+            });
+            await adapter.disconnect();
+          }
+        } catch (error) {
+          console.error("Error disconnecting Magic Wallet:", error);
         }
       } else {
         // Dynamically import providers to avoid circular dependency

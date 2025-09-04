@@ -21,8 +21,23 @@ export const createTx = async (code, chain, account, pubKey, providerName, netwo
       sender: account,
       ttl: 28800,
     })
-    .addKeyset("ks", "keys-all", pubKey)
     .setNetworkId(network);
+
+  if (providerName === 'magic') {
+    // Extract namespace and keyset name from account for magic wallet
+    const accountParts = account.split(':')[1].split('.');
+    const namespace = accountParts[0];
+    const keysetName = accountParts[1];
+    
+    builder = builder.addKeyset("ks", {
+      keysetref: {
+        ns: namespace,
+        ksn: keysetName
+      }
+    });
+  } else {
+    builder = builder.addKeyset("ks", "keys-all", pubKey);
+  }
 
   builder = builder.addSigner(pubKey, (signFor) => {
     return capabilities.flatMap((cap) => {

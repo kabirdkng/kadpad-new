@@ -1,15 +1,14 @@
 // ConnectWalletModal.jsx
 import { useEffect, useRef } from "react";
 import PropTypes from "prop-types";
-import { X_WALLET, WC, KOALA, METAMASK } from "./providers";
+import { X_WALLET, WC, KOALA, METAMASK, MAGIC } from "./providers";
 import useWalletStore from "../walletStore";
 import walletConnectStore from "./connectWalletModalSlice";
 import "./wallet.css";
 import { useWalletConnect, useWalletConnection } from "../wcStore";
 import Ecko from "../../assets/Ecko.svg?react"
 import wc from "../../assets/WC.svg?react"
-import { connect } from '@kadena/spirekey-sdk';
-import config from "../config";
+import magic from "../../assets/magic.svg?react"
 import { toast } from "react-toastify";
 
 const ConnectWalletModal = ({ onWalletConnected }) => {
@@ -29,6 +28,11 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
   const connectMetaMaskClicked = async () => {
     // Use the metamask provider directly
     connectWallet(METAMASK);
+    closeModal();
+  };
+
+  const connectMagicClicked = async () => {
+    connectWallet(MAGIC);
     closeModal();
   };
 
@@ -73,6 +77,7 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
       <div className="wallet-modal" ref={modalRef}>
             <button onClick={connectXWalletClicked} className='btn provider-button' ><img src={Ecko} /> Ecko Wallet </button>
             <button onClick={handleWalletConnect} className='btn provider-button' ><img src={wc} /> Wallet Connect </button>
+            <button onClick={connectMagicClicked} className='btn provider-button' ><img src={magic} /> Magic Wallet (Spirekey) </button>
             {/* <button onClick={connectMetaMaskClicked} className='btn provider-button' ><img src="https://images.ctfassets.net/clixtyxoaeas/4rnpEzy1ATWRKVBOLxZ1Fm/a74dc1eed36d23d7ea6030383a4d5163/MetaMask-icon-fox.svg" /> MetaMask </button> */}
       </div>
     </div>

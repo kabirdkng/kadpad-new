@@ -17,7 +17,8 @@ export const pactCallsSig = async(code, chain) => {
     if (providerName === null) {
       throw new Error("Provider not found");
     }
-    const tx = Pact.builder
+
+    let txBuilder = Pact.builder
       .execution(code)
       .addSigner(pubKey, (signFor) => [
         signFor(`coin.GAS`)
@@ -28,9 +29,25 @@ export const pactCallsSig = async(code, chain) => {
         gasPrice: 0.0000001,
         sender: account
       })
-      .setNetworkId(network)
-      .addKeyset('ks', 'keys-all', pubKey)
-      .createTransaction()
+      .setNetworkId(network);
+
+    if (providerName === 'magic') {
+      // Extract namespace and keyset name from account for magic wallet
+      const accountParts = account.split(':')[1].split('.');
+      const namespace = accountParts[0];
+      const keysetName = accountParts[1];
+      
+      txBuilder = txBuilder.addKeyset('ks', {
+        keysetref: {
+          ns: namespace,
+          ksn: keysetName
+        }
+      });
+    } else {
+      txBuilder = txBuilder.addKeyset('ks', 'keys-all', pubKey);
+    }
+
+    const tx = txBuilder.createTransaction()
 
     let signedTx;
     let cmd, sigs, outcomeHash;
@@ -87,7 +104,8 @@ export const pactCallsSales = async(code, chain, namespace, moduleName) => {
     if (providerName === null) {
       throw new Error("Provider not found");
     }
-    const tx = Pact.builder
+
+    let txBuilder = Pact.builder
       .execution(code)
       .addSigner(pubKey, (signFor) => [
         signFor(`${namespace}.${moduleName}-sales.SALES-OPERATOR`),
@@ -99,9 +117,25 @@ export const pactCallsSales = async(code, chain, namespace, moduleName) => {
         gasPrice: 0.0000001,
         sender: account
       })
-      .setNetworkId(network)
-      .addKeyset('ks', 'keys-all', pubKey)
-      .createTransaction()
+      .setNetworkId(network);
+
+    if (providerName === 'magic') {
+      // Extract namespace and keyset name from account for magic wallet
+      const accountParts = account.split(':')[1].split('.');
+      const namespace = accountParts[0];
+      const keysetName = accountParts[1];
+      
+      txBuilder = txBuilder.addKeyset('ks', {
+        keysetref: {
+          ns: namespace,
+          ksn: keysetName
+        }
+      });
+    } else {
+      txBuilder = txBuilder.addKeyset('ks', 'keys-all', pubKey);
+    }
+
+    const tx = txBuilder.createTransaction()
 
     let signedTx;
     let cmd, sigs, outcomeHash;
@@ -150,17 +184,35 @@ export const pactCallsSales = async(code, chain, namespace, moduleName) => {
 
 export const pactCalls = async(code, chain, pubKey) => {
   const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`)
+  const { account } = useWalletStore.getState()
+  const providerName = useWalletStore.getState().provider;
   
-  const tx = Pact.builder
+  let txBuilder = Pact.builder
     .execution(code)
     .setMeta({
       chainId: String(chain),
       gasLimit: 80000,
       gasPrice: 0.0000001,
     })
-    .setNetworkId(network)
-    .addKeyset('ks', 'keys-all', pubKey)
-    .createTransaction()     
+    .setNetworkId(network);
+
+  if (providerName === 'magic' && account) {
+    // Extract namespace and keyset name from account for magic wallet
+    const accountParts = account.split(':')[1].split('.');
+    const namespace = accountParts[0];
+    const keysetName = accountParts[1];
+    
+    txBuilder = txBuilder.addKeyset('ks', {
+      keysetref: {
+        ns: namespace,
+        ksn: keysetName
+      }
+    });
+  } else {
+    txBuilder = txBuilder.addKeyset('ks', 'keys-all', pubKey);
+  }
+
+  const tx = txBuilder.createTransaction()     
 
   try{
     const res = await pactClient.dirtyRead(tx)
@@ -208,23 +260,53 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
     const receiver = salesAccount
     console.log(receiver)
     console.log(amount)
-    const tx = Pact.builder
+
+    // let signer;
+    // if (providerName === 'magic') {
+    //   signer = { pubKey: pubKey, scheme: 'WebAuthn' };
+    // } else {
+    //   signer = pubKey;
+    // }
+
+    let txBuilder = Pact.builder
       .execution(code)
       .addSigner(pubKey, (signFor) => [
-        signFor(`coin.TRANSFER`, account, receiver, Number(amount)),
-        signFor('coin.GAS'),
+      signFor(`coin.TRANSFER`, account, receiver, Number(amount)),
+      signFor('coin.GAS')
       ])
       .setMeta({
-        chainId: String(chain),
-        gasLimit: 80000,
-        gasPrice: 0.0000001,
-        sender: account
+      chainId: String(chain),
+      gasLimit: 80000,
+      gasPrice: 0.0000001,
+      sender: account
       })
-      .addKeyset('ks', 'keys-all', pubKey)
-      .setNetworkId(network)
-      .createTransaction();
+      .setNetworkId(network);
+
+    if (providerName === 'magic') {
+      // Extract namespace and keyset name from account for magic wallet
+      const accountParts = account.split(':')[1].split('.');
+      const namespace = accountParts[0];
+      const keysetName = accountParts[1];
+      
+      txBuilder = txBuilder.addKeyset('ks', {
+      keysetref: {
+        ns: namespace,
+        ksn: keysetName
+      }
+      });
+    } else {
+      txBuilder = txBuilder.addKeyset('ks', 'keys-all', pubKey);
+    }
+
+    // if (providerName !== 'magic') {
+    //   txBuilder = txBuilder.addKeyset('ks', 'keys-all', pubKey);
+    // }
+
+    const tx = txBuilder.createTransaction();
+
+    console.log("transaction", tx)
     
-    let signedTx;
+    let signedTx;  
     let cmd, sigs, outcomeHash;
     console.log(provider.config)
     try {
@@ -246,6 +328,8 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
     } catch (error) {
       console.error(error);
     }
+
+    console.log("Signed Tx: ", signedTx)
 
     const bodyPayload = {
       cmd,
@@ -272,6 +356,7 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
 export const transferCoinTreasury = async (token, code, chain, pubKey, sender) => {
   try {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
+    const { account } = useWalletStore.getState()
     const providerName = useWalletStore.getState().provider;
     const provider = providers[providerName]
     console.log(provider)
@@ -279,7 +364,8 @@ export const transferCoinTreasury = async (token, code, chain, pubKey, sender) =
     if (providerName === null) {
       throw new Error("Provider not found");
     }
-    const tx = Pact.builder
+
+    let txBuilder = Pact.builder
       .execution(code)
       .addSigner(pubKey, (signFor) => [
         signFor(`${token}-treasury.OPERATE-TREASURY`),
@@ -291,9 +377,25 @@ export const transferCoinTreasury = async (token, code, chain, pubKey, sender) =
         gasPrice: 0.0000001,
         sender: sender
       })
-      .addKeyset('ks', 'keys-all', pubKey)
-      .setNetworkId(network)
-      .createTransaction();
+      .setNetworkId(network);
+
+    if (providerName === 'magic') {
+      // Extract namespace and keyset name from account for magic wallet
+      const accountParts = account.split(':')[1].split('.');
+      const namespace = accountParts[0];
+      const keysetName = accountParts[1];
+      
+      txBuilder = txBuilder.addKeyset('ks', {
+        keysetref: {
+          ns: namespace,
+          ksn: keysetName
+        }
+      });
+    } else {
+      txBuilder = txBuilder.addKeyset('ks', 'keys-all', pubKey);
+    }
+
+    const tx = txBuilder.createTransaction();
 
     let signedTx;
     let cmd, sigs, outcomeHash;
@@ -343,6 +445,7 @@ export const transferCoinTreasury = async (token, code, chain, pubKey, sender) =
 export const initLiquidityTreasury = async (token, code, chain, pubKey, sender) => {
   try {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
+    const { account } = useWalletStore.getState()
     const providerName = useWalletStore.getState().provider;
     const provider = providers[providerName]
     console.log(provider)
@@ -350,7 +453,8 @@ export const initLiquidityTreasury = async (token, code, chain, pubKey, sender) 
     if (providerName === null) {
       throw new Error("Provider not found");
     }
-    const tx = Pact.builder
+
+    let txBuilder = Pact.builder
       .execution(code)
       .addSigner(pubKey, (signFor) => [
         signFor(`${token}-treasury.INIT`),
@@ -362,9 +466,25 @@ export const initLiquidityTreasury = async (token, code, chain, pubKey, sender) 
         gasPrice: 0.0000001,
         sender: sender
       })
-      .addKeyset('ks', 'keys-all', pubKey)
-      .setNetworkId(network)
-      .createTransaction();
+      .setNetworkId(network);
+
+    if (providerName === 'magic') {
+      // Extract namespace and keyset name from account for magic wallet
+      const accountParts = account.split(':')[1].split('.');
+      const namespace = accountParts[0];
+      const keysetName = accountParts[1];
+      
+      txBuilder = txBuilder.addKeyset('ks', {
+        keysetref: {
+          ns: namespace,
+          ksn: keysetName
+        }
+      });
+    } else {
+      txBuilder = txBuilder.addKeyset('ks', 'keys-all', pubKey);
+    }
+
+    const tx = txBuilder.createTransaction();
 
     let signedTx;
     let cmd, sigs, outcomeHash;

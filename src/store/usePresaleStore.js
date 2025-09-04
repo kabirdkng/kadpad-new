@@ -62,7 +62,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(use ${NS}.${SALES_MODULE_NAME}) PHASE-0-START`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ phase0startTime: new Date(res.result.data.time) });
     } catch (err) {
       console.error(err);
@@ -72,7 +71,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(use ${NS}.${SALES_MODULE_NAME}) PHASE-1-START`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ phase1startTime: new Date(res.result.data.time) });
     } catch (err) {
       console.error(err);
@@ -82,7 +80,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(use ${NS}.${SALES_MODULE_NAME}) END-OF-PRESALES`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ salesEndTime: new Date(res.result.data.time) });
     } catch (err) {
       console.error(err);
@@ -92,7 +89,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(use ${NS}.${SALES_MODULE_NAME}) P0-RESERVED`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ p0Reserved: res.result.data });
     } catch (err) {
       console.error(err);
@@ -102,7 +98,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(use ${NS}.${SALES_MODULE_NAME}) AMOUNT-PER-BATCH`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ amountPerBatch: res.result.data });
     } catch (err) {
       console.error(err);
@@ -112,7 +107,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(use ${NS}.${MODULE_NAME}) SUPPLY-CHAIN`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ supplyChain: res.result.data });
     } catch (err) {
       console.error(err);
@@ -122,7 +116,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(use ${NS}.${MODULE_NAME}) DETAILS`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ 
         tokenSymbol: res.result.data.symbol.toUpperCase(),
         imageUrl: res.result.data.imageUrl,
@@ -138,7 +131,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(use ${NS}.${MODULE_NAME}) DETAILS`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ imageUrl: res.result.data.imageUrl }); // Set imageUrl
     } catch (err) {
       console.error(err);
@@ -148,7 +140,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(use ${NS}.${SALES_MODULE_NAME}) SALES-ACCOUNT`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ salesAccount: res.result.data });
     } catch (err) {
       console.error(err);
@@ -158,7 +149,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(${NS}.${SALES_MODULE_NAME}.get-price)`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ currentPrice: res.result.data });
     } catch (err) {
       console.error(err);
@@ -168,7 +158,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(${NS}.${SALES_MODULE_NAME}.has-reservation "${account}")`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ isWhitelisted: res.result.data });
     } catch (err) {
       console.error(err);
@@ -178,7 +167,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(${NS}.${SALES_MODULE_NAME}.available-batches "${account}")`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ availableBatches: res.result.data });
     } catch (err) {
       console.error(err);
@@ -188,7 +176,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(describe-keyset "${NS}.gov")`;
       const res = await pactCallsSig(code, chain, pubKey);
-      console.log(res.result.data); // Added log
       set({ deployer: res.result.data.keys[0] });
     } catch (err) {
       console.error(err);
@@ -198,7 +185,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(${NS}.${SALES_MODULE_NAME}.get-sales)`;
       const res = await pactCalls(code, chain);
-      console.log('fetchTotalSales response:', res.result.data);
       // Extract the actual value from Pact response object
       const value = res.result.data?.int || res.result.data?.decimal || res.result.data;
       set({ totalSales: typeof value === 'string' ? parseFloat(value) : value });
@@ -210,7 +196,6 @@ const usePresaleStore = create((set, get) => ({
     try{
       const code = `(${NS}.${SALES_MODULE_NAME}.get-p0-price)`;
       const res = await pactCalls(code, chain);
-      console.log('fetchP0Price response:', res.result.data);
       // Extract the actual value from Pact response object
       const value = res.result.data?.int || res.result.data?.decimal || res.result.data;
       set({ p0Price: typeof value === 'string' ? parseFloat(value) : value });
@@ -222,7 +207,6 @@ const usePresaleStore = create((set, get) => ({
     try{
       const code = `(${NS}.${SALES_MODULE_NAME}.get-p1-price)`;
       const res = await pactCalls(code, chain);
-      console.log('fetchP1Price response:', res.result.data);
       // Extract the actual value from Pact response object
       const value = res.result.data?.int || res.result.data?.decimal || res.result.data;
       set({ p1Price: typeof value === 'string' ? parseFloat(value) : value });
@@ -235,7 +219,6 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(use ${NS}.${SALES_MODULE_NAME}) (read accounts-table "${account}")`;
       const res = await pactCalls(code, chain, pubKey);
-      console.log('fetchUserPurchaseData response:', res.result.data);
       
       if (res.result && res.result.data) {
         const purchaseData = res.result.data;
@@ -301,9 +284,6 @@ const usePresaleStore = create((set, get) => ({
       const salesData = salesDataResult.result?.data || {};
       const tokenDetails = tokenDetailsResult.result?.data || {};
 
-      console.log('Consolidated sales data response:', salesData);
-      console.log('Token details response:', tokenDetails);
-
       // Extract and set all the data at once
       const updates = {
         // Sales data
@@ -337,7 +317,6 @@ const usePresaleStore = create((set, get) => ({
 
       set(updates);
       
-      console.log('Updated presale store with consolidated data:', updates);
       return updates;
     } catch (err) {
       console.error('Error fetching consolidated sales data:', err);
@@ -353,13 +332,9 @@ const usePresaleStore = create((set, get) => ({
     if (state.isAutoRefreshing) {
       return;
     }
-
-    console.log('Starting auto-refresh for presale data every', intervalMs / 1000, 'seconds');
     
     const refreshData = async () => {
       try {
-        console.log('Auto-refreshing presale data...');
-        
         // Fetch consolidated sales data
         await get().fetchAllSalesData(NS, MODULE_NAME, SALES_MODULE_NAME, chain);
         
@@ -374,7 +349,6 @@ const usePresaleStore = create((set, get) => ({
         }
         
         set({ lastRefreshTime: new Date() });
-        console.log('Auto-refresh completed successfully');
       } catch (error) {
         console.error('Auto-refresh failed:', error);
       }
@@ -397,7 +371,6 @@ const usePresaleStore = create((set, get) => ({
     
     if (state.refreshInterval) {
       clearInterval(state.refreshInterval);
-      console.log('Auto-refresh stopped');
     }
     
     set({ 
@@ -409,8 +382,6 @@ const usePresaleStore = create((set, get) => ({
   // Manual refresh function
   refreshPresaleData: async (NS, MODULE_NAME, SALES_MODULE_NAME, chain, account = null, pubKey = null) => {
     try {
-      console.log('Manual refresh triggered...');
-      
       // Fetch consolidated sales data
       await get().fetchAllSalesData(NS, MODULE_NAME, SALES_MODULE_NAME, chain);
       
@@ -425,7 +396,6 @@ const usePresaleStore = create((set, get) => ({
       }
       
       set({ lastRefreshTime: new Date() });
-      console.log('Manual refresh completed successfully');
       return true;
     } catch (error) {
       console.error('Manual refresh failed:', error);
