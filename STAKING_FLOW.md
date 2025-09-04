@@ -75,7 +75,7 @@ graph TD
     Y -->|Yes| AA[Unlock Tokens<br/><small>No Penalty</small>]
     Z --> BB{Request Early Unstake?}
     BB -->|No| P
-    BB -->|Yes| CC[Calculate Penalty<br/>100% <br />minus 0.27397% per day]
+    BB -->|Yes| CC[Calculate Penalty<br/>100% <br />minus ~0.274% per day]
     CC --> DD[Show Receivable Amount]
     DD --> EE{Confirm Early Unstake?}
     EE -->|No| P
@@ -137,7 +137,7 @@ class J,Q,MM,FF processClass
 
 * **Initial Penalty**: 100%
 * **Daily Linear Reduction**: Penalty decreases \~0.274% per day until it reaches 0% on Day 365
-* **Precise Formula**: `Penalty% = 100% - (0.27397% × days_staked)`
+* **Precise Formula**: `Penalty% = 100% - (~0.274% × days_staked)`
 * **Token Burning**: Penalty tokens are permanently removed from circulation
 * **Immediate Effect**: Early unstaking removes user from all tier pools and IDO eligibility
 * **Real-time Updates**: Dashboard shows current penalty percentage and receivable amount
@@ -201,5 +201,6 @@ class J,Q,MM,FF processClass
 
 
 *This staking system is designed to reward long-term commitment to the Kadpad ecosystem while ensuring fair and transparent access to high-quality IDO opportunities on Kadena.*
+
 
 
