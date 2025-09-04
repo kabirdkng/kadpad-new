@@ -25,7 +25,7 @@ The penalty mechanism is based on a **linear decay model** calculated on a **dai
 The smart contract calculates the precise penalty using the following formula:
 
 
-Unstaking Penalty (%) = 100% - (0.27397% × Number of Full Days Staked)
+Unstaking Penalty (%) = 100% - (~0.274% × Number of Full Days Staked)
 
 This ensures that the penalty decreases smoothly and predictably, rewarding stakers for every 24 hours they remain committed to the protocol.
 
@@ -33,12 +33,12 @@ This ensures that the penalty decreases smoothly and predictably, rewarding stak
 
 | Days Staked | Calculation | Penalty for Early Unstaking | Example (100K Staked) |
 |-------------|-------------|-----------------------------|------------------------|
-| Day 1 | 100% - (1 × 0.274%) | 99.73% penalty | 270 tokens back |
-| Day 30 | 100% - (30 × 0.274%) | 91.78% penalty | 8,220 tokens back |
-| Day 90 | 100% - (90 × 0.274%) | 75.34% penalty | 24,660 tokens back |
-| Day 182 | 100% - (182 × 0.274%) | 50.17% penalty | 49,830 tokens back |
-| Day 270 | 100% - (270 × 0.274%) | 26.02% penalty | 73,980 tokens back |
-| Day 364 | 100% - (364 × 0.274%) | 0.27% penalty | 99,730 tokens back |
+| Day 1 | 100% - (1 × ~0.274%) | 99.73% penalty | 270 tokens back |
+| Day 30 | 100% - (30 × ~0.274%) | 91.78% penalty | 8,220 tokens back |
+| Day 90 | 100% - (90 × ~0.274%) | 75.34% penalty | 24,660 tokens back |
+| Day 182 | 100% - (182 × ~0.274%) | 50.17% penalty | 49,830 tokens back |
+| Day 270 | 100% - (270 × ~0.274%) | 26.02% penalty | 73,980 tokens back |
+| Day 364 | 100% - (364 × ~0.274%) | 0.27% penalty | 99,730 tokens back |
 | Day 365 | Full term complete | 0% penalty | 100,000 tokens back |
 
 
@@ -198,3 +198,4 @@ class J,Q,MM,FF processClass
 
 
 *This staking system is designed to reward long-term commitment to the Kadpad ecosystem while ensuring fair and transparent access to high-quality IDO opportunities on Kadena.*
+
