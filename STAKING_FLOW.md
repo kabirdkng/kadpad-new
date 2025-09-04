@@ -51,13 +51,13 @@ graph TD
     C -->|No| D[Show Insufficient Balance Error]
     C -->|Yes| E[Select Staking Tier]
     E --> F{Choose Tier}
-    F -->|Node<br/>50K $KPAD| G[Confirm ≥ 50K $KPAD<br/><small>10 Random IDO Allocations</small>]
-    F -->|Cluster<br/>150K $KPAD| H[Confirm ≥ 150K $KPAD<br/><small>25 Random IDO Allocations</small>]
-    F -->|Chainweb<br/>350K $KPAD| I[Confirm ≥ 350K $KPAD<br/><small>Guaranteed IDO Allocation</small>]
+    F -->|Node<br/>50K $KPAD| G[Confirm ≥ 50K $KPAD<br/><small>10 Random <br />IDO Allocations</small>]
+    F -->|Cluster<br/>150K $KPAD| H[Confirm ≥ 150K $KPAD<br/><small>25 Random <br />IDO Allocations</small>]
+    F -->|Chainweb<br/>350K $KPAD| I[Confirm ≥ 350K $KPAD<br/><small>Guaranteed <br />IDO Allocation</small>]
     G & H & I --> J[Execute Staking Transaction]
     J --> K{Transaction Confirmed?}
     K -->|No| L[Show Transaction Error]
-    K -->|Yes| M[Lock Tokens<br/><small>1-Year Lockup</small>]
+    K -->|Yes| M[Lock Tokens<br/><small>1-Year <br />Lockup</small>]
     M --> N[Add to Tier Pool]
     N --> O[Update Staking Dashboard]
     O --> P{IDO Launch Available?}
@@ -71,11 +71,11 @@ graph TD
     U --> W[Notify All Chainweb Stakers]
     V & W --> X[Participate in IDO]
     X --> Y{Lockup Complete?}
-    Y -->|No| Z[Tokens Locked<br/><small>Early Unstake Available</small>]
+    Y -->|No| Z[Tokens Locked<br/><small>Early Unstake <br />Available</small>]
     Y -->|Yes| AA[Unlock Tokens<br/><small>No Penalty</small>]
     Z --> BB{Request Early Unstake?}
     BB -->|No| P
-    BB -->|Yes| CC[Calculate Penalty<br/><small>100% minus 0.27397% per day staked</small>]
+    BB -->|Yes| CC[Calculate Penalty<br/>100% <br />minus 0.27397% per day]
     CC --> DD[Show Receivable Amount]
     DD --> EE{Confirm Early Unstake?}
     EE -->|No| P
@@ -83,13 +83,13 @@ graph TD
     FF --> GG[Burn Penalty Tokens]
     GG --> HH[Return Remaining $KPAD]
     HH --> II[Remove from Tier Pool<br/><small>Lose IDO Eligibility</small>]
-    II --> JJ[End Staking<br/><small>Penalty Applied</small>]
+    II --> JJ[End Staking<br/>Penalty Applied]
     AA --> KK{Unstake Tokens?}
-    KK -->|No| LL[Continue Staking<br/><small>Eligible for Next IDOs</small>]
+    KK -->|No| LL[Continue Staking<br/>Eligible for Next IDOs]
     KK -->|Yes| MM[Execute Unstake<br/><small>No Penalty</small>]
     MM --> NN[Return 100% $KPAD]
     NN --> OO[Remove from Tier Pool]
-    OO --> PP[End Staking<br/><small>No Penalty</small>]
+    OO --> PP[End Staking<br/>No Penalty]
 
 %% Styles
 style G fill:#D4A017,stroke:#A37A00,stroke-width:2px,color:#000
@@ -103,6 +103,9 @@ style CC fill:#FFCA28,stroke:#FFA000,stroke-width:2px,color:#000
 style DD fill:#FFCA28,stroke:#FFA000,stroke-width:2px,color:#000
 style EE fill:#FFCA28,stroke:#FFA000,stroke-width:2px,color:#000
 style GG fill:#FFCA28,stroke:#FFA000,stroke-width:2px,color:#000
+style JJ fill:#FFCA28,stroke:#FFA000,stroke-width:2px,color:#000
+style LL fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px,color:#000
+style PP fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px,color:#000
 
 classDef errorClass fill:#FFEBEE,stroke:#F44336,stroke-width:2px,color:#000
 classDef successClass fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px,color:#000
@@ -198,4 +201,5 @@ class J,Q,MM,FF processClass
 
 
 *This staking system is designed to reward long-term commitment to the Kadpad ecosystem while ensuring fair and transparent access to high-quality IDO opportunities on Kadena.*
+
 
