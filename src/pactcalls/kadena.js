@@ -224,6 +224,9 @@ export const pactCalls = async(code, chain, pubKey) => {
 }
 
 export const fetchBalance = async(code, chain) => {
+  console.log('🔍 fetchBalance: Starting with code:', code);
+  console.log('🔍 fetchBalance: Chain:', chain);
+  
   const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`)
   
   const tx = Pact.builder
@@ -238,9 +241,13 @@ export const fetchBalance = async(code, chain) => {
              
   try{
     const res = await pactClient.dirtyRead(tx)
+    console.log('🔍 fetchBalance: Full response from pactClient.dirtyRead:', res);
+    console.log('🔍 fetchBalance: res.result:', res.result);
+    console.log('🔍 fetchBalance: res.result.data:', res.result.data);
+    console.log('🔍 fetchBalance: Returning:', res.result.data);
     return res.result.data;
   } catch (error) {
-    console.error('Error fetching account details:', error)
+    console.error('❌ Error fetching account details:', error)
     return null;
   }
 }

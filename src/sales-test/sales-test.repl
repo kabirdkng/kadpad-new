@@ -1,0 +1,16 @@
+(load "tests/setup.repl")
+
+(load "tests/test-token-distribution.repl")
+(print "token distribution completed")
+
+(load "tests/test-price-update.repl")
+(print "Price update test successful")
+
+(load "tests/test-phase0-whitelist.repl")
+(print "Whitelist sales test successful")
+
+(load "tests/test-phase1-public.repl")
+(print "public sales test successful")
+
+(load "tests/test-distribution-liquidity.repl")
+(print "distribution and liquidity init test successful")
