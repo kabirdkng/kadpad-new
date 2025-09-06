@@ -34,35 +34,19 @@ export const useStakingPactCalls = () => {
 
   // Get user's token balance
   const getUserBalance = useCallback(async () => {
-    if (!account) {
-      console.log('🔍 getUserBalance: No account connected');
-      return;
-    }
+    if (!account) return;
     
     try {
       const code = `(${STAKING_NAMESPACE}.${TOKEN_MODULE}.get-balance "${account}")`;
-      console.log('🔍 getUserBalance: Executing Pact code:', code);
-      console.log('🔍 getUserBalance: Chain ID:', CHAIN_ID);
-      console.log('🔍 getUserBalance: Account:', account);
-      
       const result = await fetchBalance(code, CHAIN_ID);
-      
-      console.log('🔍 getUserBalance: Raw result from fetchBalance:', result);
-      console.log('🔍 getUserBalance: Result type:', typeof result);
-      console.log('🔍 getUserBalance: Result !== null:', result !== null);
-      console.log('🔍 getUserBalance: Result !== undefined:', result !== undefined);
       
       if (result !== null && result !== undefined) {
         const balance = parseFloat(result);
-        console.log('🔍 getUserBalance: Parsed balance:', balance);
-        console.log('🔍 getUserBalance: Setting balance in store:', balance);
         setUserBalance(balance);
         return balance;
-      } else {
-        console.log('🔍 getUserBalance: Result is null or undefined, not setting balance');
       }
     } catch (error) {
-      console.error('❌ Error fetching user balance:', error);
+      console.error('Error fetching user balance:', error);
       setError('Failed to fetch balance');
     }
   }, [account, setUserBalance, setError]);
