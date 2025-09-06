@@ -574,3 +574,189 @@ export const pollForTransactionResult = async (pactClient, transactionDescriptor
   
   throw new Error(`Transaction did not complete after ${maxRetries} attempts`);
 };
+
+// Staking-specific Pact calls
+export const pactCallsStakeTokens = async(code, chain, stakingNamespace, tokenModule, amount, lockerAccount) => {
+  try {
+    const { account, pubKey } = useWalletStore.getState();
+    const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`)
+    const providerName = useWalletStore.getState().provider;
+    const provider = providers[providerName]
+    
+    if (providerName === null) {
+      throw new Error("Provider not found");
+    }
+
+    let txBuilder = Pact.builder
+      .execution(code)
+      .addSigner(pubKey, (signFor) => [
+        signFor(`${stakingNamespace}.${tokenModule}.TRANSFER`, account, lockerAccount, Number(amount)),
+        signFor('coin.GAS')
+      ])
+      .setMeta({
+        chainId: String(chain),
+        gasLimit: 80000,
+        gasPrice: 0.0000001,
+        sender: account
+      })
+      .setNetworkId(network);
+
+    if (providerName === 'magic') {
+      const accountParts = account.split(':')[1].split('.');
+      const namespace = accountParts[0];
+      const keysetName = accountParts[1];
+      
+      txBuilder = txBuilder.addKeyset('ks', {
+        keysetref: {
+          ns: namespace,
+          ksn: keysetName
+        }
+      });
+    } else {
+      txBuilder = txBuilder.addKeyset('ks', 'keys-all', pubKey);
+    }
+
+    const tx = txBuilder.createTransaction()
+
+    let signedTx;
+    let cmd, sigs, outcomeHash;
+    
+    try {
+      signedTx = await provider.quickSign(tx);
+      if(signedTx.status === 'fail'){
+        console.log(signedTx)
+        toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
+        return signedTx;
+      }
+      if (provider.name === "wc") {
+        cmd = signedTx.cmd;
+        sigs = signedTx.sigs;
+        outcomeHash = signedTx.hash;
+      } else {
+        const commandSigData = signedTx.responses[0].commandSigData;
+        cmd = commandSigData.cmd;
+        sigs = commandSigData.sigs;
+        outcomeHash = signedTx.responses[0].outcome.hash;
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+
+    const bodyPayload = {
+      cmd,
+      sigs,
+      hash: outcomeHash,
+    };
+
+    const preflightResult = await pactClient.dirtyRead(bodyPayload);
+    if (preflightResult.result.status === 'failure') {
+      console.error(preflightResult.result.error.message);
+      toast.error(preflightResult.result.error.message)
+      return preflightResult;
+    } else {
+      const transactionDescriptor = await pactClient.submit(bodyPayload);
+      console.log('TX Key: ', transactionDescriptor.requestKey);
+      return { pactClient, transactionDescriptor, preflightResult };
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}
+
+export const pactCallsUnstakeTokens = async(code, chain, stakingNamespace, stakingModule, tokenModule, account, lockerAccount, amount) => {
+  try {
+    const { account: userAccount, pubKey } = useWalletStore.getState();
+    const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`)
+    const providerName = useWalletStore.getState().provider;
+    const provider = providers[providerName]
+    
+    if (providerName === null) {
+      throw new Error("Provider not found");
+    }
+
+    // Determine burn account based on network
+    const burnAccount = network === "mainnet01" 
+      ? "user.burn.BURN-ACCOUNT" 
+      : "n_e309f0fa7cf3a13f93a8da5325cdad32790d2070.burn.BURN-ACCOUNT";
+
+    let txBuilder = Pact.builder
+      .execution(code)
+      .addSigner(pubKey, (signFor) => [
+        signFor(`${stakingNamespace}.${stakingModule}.VERIFY-LOCKER`, account),
+        signFor(`${stakingNamespace}.${tokenModule}.TRANSFER`, lockerAccount, account, Number(amount)),
+        signFor(`${stakingNamespace}.${tokenModule}.TRANSFER`, lockerAccount, burnAccount, Number(amount)),
+        signFor('coin.GAS')
+      ])
+      .setMeta({
+        chainId: String(chain),
+        gasLimit: 80000,
+        gasPrice: 0.0000001,
+        sender: userAccount
+      })
+      .setNetworkId(network);
+
+    if (providerName === 'magic') {
+      const accountParts = userAccount.split(':')[1].split('.');
+      const namespace = accountParts[0];
+      const keysetName = accountParts[1];
+      
+      txBuilder = txBuilder.addKeyset('ks', {
+        keysetref: {
+          ns: namespace,
+          ksn: keysetName
+        }
+      });
+    } else {
+      txBuilder = txBuilder.addKeyset('ks', 'keys-all', pubKey);
+    }
+
+    const tx = txBuilder.createTransaction()
+
+    let signedTx;
+    let cmd, sigs, outcomeHash;
+    
+    try {
+      signedTx = await provider.quickSign(tx);
+      if(signedTx.status === 'fail'){
+        console.log(signedTx)
+        toast.error(`Error :${signedTx.message}`, { position: 'top-center' })
+        return signedTx;
+      }
+      if (provider.name === "wc") {
+        cmd = signedTx.cmd;
+        sigs = signedTx.sigs;
+        outcomeHash = signedTx.hash;
+      } else {
+        const commandSigData = signedTx.responses[0].commandSigData;
+        cmd = commandSigData.cmd;
+        sigs = commandSigData.sigs;
+        outcomeHash = signedTx.responses[0].outcome.hash;
+      }
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+
+    const bodyPayload = {
+      cmd,
+      sigs,
+      hash: outcomeHash,
+    };
+
+    const preflightResult = await pactClient.dirtyRead(bodyPayload);
+    if (preflightResult.result.status === 'failure') {
+      console.error(preflightResult.result.error.message);
+      toast.error(preflightResult.result.error.message)
+      return preflightResult;
+    } else {
+      const transactionDescriptor = await pactClient.submit(bodyPayload);
+      console.log('TX Key: ', transactionDescriptor.requestKey);
+      return { pactClient, transactionDescriptor, preflightResult };
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}

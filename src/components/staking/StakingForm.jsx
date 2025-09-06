@@ -11,11 +11,13 @@ const StakingForm = () => {
     userBalance, 
     isLoading,
     stakeTokens, 
-    getTierByAmount 
+    getTierByAmount,
+    extractNumericValue 
   } = useStakingPactCalls();
 
   const numericAmount = parseFloat(amount) || 0;
-  const tier = getTierByAmount(numericAmount);
+  const tierData = getTierByAmount(numericAmount);
+  const tier = tierData.tier;
 
   const tierInfo = {
     0: { name: 'No Tier', color: 'text-gray-400', bg: 'bg-gray-500/10', border: 'border-gray-500/20' },
@@ -25,7 +27,7 @@ const StakingForm = () => {
   };
 
   const handleMaxClick = () => {
-    setAmount(userBalance?.toString() || '0');
+    setAmount(extractNumericValue(userBalance)?.toString() || '0');
   };
 
   const handleStake = async () => {
@@ -36,13 +38,13 @@ const StakingForm = () => {
     setAmount('');
   };
 
-  const isValidAmount = numericAmount > 0 && numericAmount <= (userBalance || 0);
+  const isValidAmount = numericAmount > 0 && numericAmount <= extractNumericValue(userBalance || 0);
 
   if (!isConnected) {
     return (
-      <div className="bg-card rounded-lg p-6 border border-border-color">
+      <div className="p-4">
         <h3 className="text-lg font-semibold text-primary-text mb-4">Stake KPAD</h3>
-        <div className="text-center py-8">
+        <div className="text-center py-6">
           <div className="text-secondary">Please connect your wallet to stake tokens</div>
         </div>
       </div>
@@ -50,39 +52,17 @@ const StakingForm = () => {
   }
 
   return (
-    <div className="bg-card rounded-lg p-6 border border-border-color">
+    <div className="p-4">
       <div className="flex items-center space-x-2 mb-4">
         <Coins className="w-5 h-5 text-accent" />
         <h3 className="text-lg font-semibold text-primary-text">Stake KPAD</h3>
-      </div>
-
-      {/* Tier Information */}
-      <div className="mb-6 p-4 bg-gray-800/30 rounded-lg border border-border-color">
-        <div className="flex items-center space-x-2 mb-2">
-          <Info className="w-4 h-4 text-accent" />
-          <span className="text-sm font-medium text-primary-text">Staking Tiers</span>
-        </div>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-secondary">Tier 1 (50k+ KPAD):</span>
-            <span className="text-orange-400">Basic rewards</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-secondary">Tier 2 (150k+ KPAD):</span>
-            <span className="text-gray-400">Enhanced rewards</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-secondary">Tier 3 (350k+ KPAD):</span>
-            <span className="text-yellow-400">Premium rewards + Whitelist</span>
-          </div>
-        </div>
       </div>
 
       {/* Balance Display */}
       <div className="mb-4 p-3 bg-gray-800/50 rounded-lg">
         <div className="text-sm text-secondary mb-1">Available Balance</div>
         <div className="text-lg font-semibold text-primary-text">
-          {userBalance?.toLocaleString() || '0'} KPAD
+          {extractNumericValue(userBalance)?.toLocaleString() || '0'} KPAD
         </div>
       </div>
 
@@ -135,7 +115,7 @@ const StakingForm = () => {
         <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center space-x-2">
           <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0" />
           <span className="text-sm text-red-400">
-            {numericAmount > (userBalance || 0) 
+            {numericAmount > extractNumericValue(userBalance || 0) 
               ? 'Insufficient balance' 
               : 'Please enter a valid amount'
             }
@@ -169,7 +149,7 @@ const StakingForm = () => {
       {/* Important Note */}
       <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
         <div className="text-sm text-orange-400">
-          <strong>Important:</strong> Staked tokens are locked for 365 days. Early unstaking will result in penalties that decrease over time.
+          <strong>Note:</strong> Tokens are locked for 365 days. Early unstaking incurs penalties.
         </div>
       </div>
 

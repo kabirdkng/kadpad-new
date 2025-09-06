@@ -1,26 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowDown, AlertTriangle, Clock, TrendingDown } from 'lucide-react';
 import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
 
 const UnstakingForm = () => {
   const [amount, setAmount] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
+  const [currentPenalty, setCurrentPenalty] = useState(null);
+  const [penaltyLoading, setPenaltyLoading] = useState(false);
   
   const { 
     isConnected, 
     userStakes, 
     isLoading,
-    unstakeTokens 
+    unstakeTokens,
+    extractNumericValue,
+    calculatePenalty,
+    calculatePenaltyFallback 
   } = useStakingPactCalls();
 
   const stake = userStakes?.[0]; // Assuming single stake
   const numericAmount = parseFloat(amount) || 0;
-  const maxUnstakeAmount = stake?.amount || 0;
+  const maxUnstakeAmount = extractNumericValue(stake?.amount) || 0;
   
-  const isMatured = stake?.is_mature || false;
-  const penaltyPercent = ((stake?.penalty_percent || 0) * 100).toFixed(2);
-  const returnAmount = stake?.return_amount || numericAmount;
-  const penaltyAmount = stake?.penalty_amount || 0;
+  // Calculate current penalty when stake data is available
+  useEffect(() => {
+    const getCurrentPenalty = async () => {
+      if (stake && stake.lockDate && maxUnstakeAmount > 0) {
+        setPenaltyLoading(true);
+        try {
+          let penaltyInfo = await calculatePenalty(maxUnstakeAmount, stake.lockDate);
+          
+          if (!penaltyInfo) {
+            penaltyInfo = calculatePenaltyFallback(maxUnstakeAmount, stake.lockDate);
+          }
+          
+          setCurrentPenalty(penaltyInfo);
+        } catch (error) {
+          console.error('Error calculating current penalty:', error);
+          const fallbackPenalty = calculatePenaltyFallback(maxUnstakeAmount, stake.lockDate);
+          setCurrentPenalty(fallbackPenalty);
+        } finally {
+          setPenaltyLoading(false);
+        }
+      }
+    };
+
+    getCurrentPenalty();
+  }, [stake, maxUnstakeAmount, calculatePenalty, calculatePenaltyFallback]);
+  
+  const isMatured = extractNumericValue(currentPenalty?.['is-mature'] || stake?.['is-mature'] || stake?.isMature) === 1 || false;
+  const penaltyPercent = penaltyLoading ? 'Calculating...' : currentPenalty ? (extractNumericValue(currentPenalty?.['penalty-percent']) * 100).toFixed(2) : '0.00';
+  const actualPenaltyPercent = currentPenalty ? extractNumericValue(currentPenalty?.['penalty-percent']) : 0;
 
   const handleMaxClick = () => {
     setAmount(maxUnstakeAmount.toString());
@@ -38,9 +68,9 @@ const UnstakingForm = () => {
 
   if (!isConnected) {
     return (
-      <div className="bg-card rounded-lg p-6 border border-border-color">
+      <div className="p-4">
         <h3 className="text-lg font-semibold text-primary-text mb-4">Unstake KPAD</h3>
-        <div className="text-center py-8">
+        <div className="text-center py-6">
           <div className="text-secondary">Please connect your wallet to unstake tokens</div>
         </div>
       </div>
@@ -49,12 +79,12 @@ const UnstakingForm = () => {
 
   if (!stake || maxUnstakeAmount === 0) {
     return (
-      <div className="bg-card rounded-lg p-6 border border-border-color">
+      <div className="p-4">
         <div className="flex items-center space-x-2 mb-4">
           <TrendingDown className="w-5 h-5 text-red-400" />
           <h3 className="text-lg font-semibold text-primary-text">Unstake KPAD</h3>
         </div>
-        <div className="text-center py-8">
+        <div className="text-center py-6">
           <div className="text-secondary">No staked tokens available to unstake</div>
         </div>
       </div>
@@ -62,7 +92,7 @@ const UnstakingForm = () => {
   }
 
   return (
-    <div className="bg-card rounded-lg p-6 border border-border-color">
+    <div className="p-4">
       <div className="flex items-center space-x-2 mb-4">
         <TrendingDown className="w-5 h-5 text-red-400" />
         <h3 className="text-lg font-semibold text-primary-text">Unstake KPAD</h3>
@@ -137,12 +167,12 @@ const UnstakingForm = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-secondary">Penalty ({penaltyPercent}%):</span>
-              <span className="text-orange-400">-{((numericAmount * (stake?.penalty_percent || 0))).toLocaleString()} KPAD</span>
+              <span className="text-orange-400">-{(numericAmount * actualPenaltyPercent).toLocaleString()} KPAD</span>
             </div>
             <div className="flex justify-between border-t border-orange-500/20 pt-2">
               <span className="text-secondary font-medium">You will receive:</span>
               <span className="text-primary-text font-medium">
-                {(numericAmount * (1 - (stake?.penalty_percent || 0))).toLocaleString()} KPAD
+                {(numericAmount * (1 - actualPenaltyPercent)).toLocaleString()} KPAD
               </span>
             </div>
           </div>
@@ -211,7 +241,7 @@ const UnstakingForm = () => {
       {!isMatured && (
         <div className="mt-4 p-3 bg-orange-500/10 border border-orange-500/20 rounded-lg">
           <div className="text-sm text-orange-400">
-            <strong>Warning:</strong> Early unstaking will result in a {penaltyPercent}% penalty. Consider waiting for maturity to avoid penalties.
+            <strong>Warning:</strong> Early unstaking results in {penaltyPercent}% penalty.
           </div>
         </div>
       )}
@@ -236,7 +266,7 @@ const UnstakingForm = () => {
                   <div className="flex justify-between">
                     <span className="text-secondary">Penalty amount:</span>
                     <span className="text-red-400 font-medium">
-                      -{((numericAmount * (stake?.penalty_percent || 0))).toLocaleString()} KPAD
+                      -{(numericAmount * actualPenaltyPercent).toLocaleString()} KPAD
                     </span>
                   </div>
                 </>
@@ -246,7 +276,7 @@ const UnstakingForm = () => {
                 <span className="text-green-400 font-medium">
                   {isMatured 
                     ? numericAmount.toLocaleString()
-                    : (numericAmount * (1 - (stake?.penalty_percent || 0))).toLocaleString()
+                    : (numericAmount * (1 - actualPenaltyPercent)).toLocaleString()
                   } KPAD
                 </span>
               </div>

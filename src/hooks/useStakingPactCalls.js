@@ -1,8 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
-import { pactCallsSig, pactCalls, fetchBalance } from '../pactcalls/kadena';
+import { pactCallsSig, pactCalls, fetchBalance, pactCallsStakeTokens, pactCallsUnstakeTokens } from '../pactcalls/kadena';
 import useStakingStore from '../store/useStakingStore';
 import useWalletStore from '../wallet/walletStore';
 import { toast } from 'react-toastify';
+import { handleTokenStaking, handleTokenUnstaking } from '../utils/transactionUtils';
 
 const STAKING_NAMESPACE = 'n_b9880e372b7ec49d21ef4afe82ece29c3a536bde';
 const STAKING_MODULE = 'kadpad-staking';
@@ -27,9 +28,128 @@ export const useStakingPactCalls = () => {
     leaderboard
   } = useStakingStore();
 
+  // Helper function to extract numeric value from Pact data
+  const extractNumericValue = useCallback((value) => {
+    if (value === null || value === undefined) return 0;
+    if (typeof value === 'number') return value;
+    if (typeof value === 'string') return parseFloat(value) || 0;
+    if (typeof value === 'object') {
+      // Handle Pact integer objects like {int: 123}
+      if (value.int !== undefined) return parseFloat(value.int) || 0;
+      if (value.decimal !== undefined) return parseFloat(value.decimal) || 0;
+      // Handle direct numeric properties
+      if (value.total !== undefined) return parseFloat(value.total) || 0;
+    }
+    return parseFloat(value) || 0;
+  }, []);
+
+  // Helper function to extract date value from Pact data
+  const extractDateValue = useCallback((value) => {
+    if (!value) return null;
+    
+    // If it's already a Date object
+    if (value instanceof Date) return value;
+    
+    // If it's a Pact time object with timep property
+    if (typeof value === 'object' && value.timep) {
+      const date = new Date(value.timep);
+      return isNaN(date.getTime()) ? null : date;
+    }
+    
+    // If it's a timestamp (number or string that looks like a timestamp)
+    if (typeof value === 'number' || (typeof value === 'string' && /^\d+$/.test(value))) {
+      const timestamp = parseInt(value);
+      // Check if it's in seconds (Unix timestamp) or milliseconds
+      const date = timestamp > 1000000000000 ? new Date(timestamp) : new Date(timestamp * 1000);
+      return isNaN(date.getTime()) ? null : date;
+    }
+    
+    // If it's a Pact object with timestamp
+    if (typeof value === 'object') {
+      if (value.time !== undefined) {
+        const timestamp = parseInt(value.time);
+        const date = timestamp > 1000000000000 ? new Date(timestamp) : new Date(timestamp * 1000);
+        return isNaN(date.getTime()) ? null : date;
+      }
+      if (value.int !== undefined) {
+        const timestamp = parseInt(value.int);
+        const date = timestamp > 1000000000000 ? new Date(timestamp) : new Date(timestamp * 1000);
+        return isNaN(date.getTime()) ? null : date;
+      }
+    }
+    
+    // Try to parse as a date string
+    if (typeof value === 'string') {
+      const date = new Date(value);
+      return isNaN(date.getTime()) ? null : date;
+    }
+    
+    return null;
+  }, []);
+
   // Helper function to create Pact code
   const createPactCode = useCallback((functionCall) => {
     return `(${STAKING_NAMESPACE}.${STAKING_MODULE}.${functionCall})`;
+  }, []);
+
+  // Helper function to get locker account
+  const getLockerAccount = useCallback(async (account) => {
+    try {
+      const code = createPactCode(`get-LOCKER-account "${account}"`);
+      const result = await pactCalls(code, CHAIN_ID, pubKey);
+      
+      if (result?.result?.status === 'success') {
+        return result.result.data;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting locker account:', error);
+      return null;
+    }
+  }, [createPactCode, pubKey]);
+
+  // Get penalty calculation for an amount and lock date
+  const calculatePenalty = useCallback(async (amount, lockDate) => {
+    try {
+      const code = createPactCode(`calculate-penalty ${amount}.0 (time "${lockDate.toISOString()}")`);
+      const result = await fetchBalance(code, CHAIN_ID);
+      
+      if (result) {
+        return result;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error calculating penalty:', error);
+      return null;
+    }
+  }, [createPactCode]);
+
+  // Fallback penalty calculation (client-side) based on smart contract logic
+  const calculatePenaltyFallback = useCallback((amount, lockDate) => {
+    const now = new Date();
+    const daysStaked = Math.floor((now.getTime() - lockDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysStaked >= 365) {
+      return {
+        'days-staked': daysStaked,
+        'penalty-percent': 0.0,
+        'penalty-amount': 0.0,
+        'return-amount': amount,
+        'is-mature': true
+      };
+    }
+    
+    const penaltyPercent = Math.max(0, (365 - daysStaked) / 365);
+    const penaltyAmount = amount * penaltyPercent;
+    const returnAmount = amount - penaltyAmount;
+    
+    return {
+      'days-staked': daysStaked,
+      'penalty-percent': penaltyPercent,
+      'penalty-amount': penaltyAmount,
+      'return-amount': returnAmount,
+      'is-mature': daysStaked >= 365
+    };
   }, []);
 
   // Get user's token balance
@@ -41,7 +161,7 @@ export const useStakingPactCalls = () => {
       const result = await fetchBalance(code, CHAIN_ID);
       
       if (result !== null && result !== undefined) {
-        const balance = parseFloat(result);
+        const balance = extractNumericValue(result);
         setUserBalance(balance);
         return balance;
       }
@@ -49,7 +169,7 @@ export const useStakingPactCalls = () => {
       console.error('Error fetching user balance:', error);
       setError('Failed to fetch balance');
     }
-  }, [account, setUserBalance, setError]);
+  }, [account, setUserBalance, setError, extractNumericValue]);
 
   // Get user's lockup data
   const getUserStakes = useCallback(async () => {
@@ -62,22 +182,40 @@ export const useStakingPactCalls = () => {
       if (result?.result?.status === 'success') {
         const lockupData = result.result.data;
         
-        // Calculate penalty info
-        const penaltyCode = createPactCode(`calculate-penalty ${lockupData.total} (time "${lockupData.unlockDate}")`);
-        const penaltyResult = await pactCalls(penaltyCode, CHAIN_ID, pubKey);
+        // Extract the actual date from the Pact time object
+        let unlockDate = null;
+        if (lockupData.unlockDate && lockupData.unlockDate.timep) {
+          unlockDate = new Date(lockupData.unlockDate.timep);
+        } else if (lockupData.unlockDate) {
+          unlockDate = extractDateValue(lockupData.unlockDate);
+        }
         
-        let penaltyInfo = {};
-        if (penaltyResult?.result?.status === 'success') {
-          penaltyInfo = penaltyResult.result.data;
+        // Calculate lock date (unlock date minus 365 days)
+        let lockDate = null;
+        if (unlockDate) {
+          lockDate = new Date(unlockDate.getTime() - (365 * 24 * 60 * 60 * 1000));
+        }
+        
+        // Calculate penalty info
+        let penaltyInfo = null;
+        if (unlockDate) {
+          const calculatedLockDate = new Date(unlockDate.getTime() - (365 * 24 * 60 * 60 * 1000));
+          penaltyInfo = await calculatePenalty(extractNumericValue(lockupData.total), calculatedLockDate);
+          
+          if (!penaltyInfo) {
+            penaltyInfo = calculatePenaltyFallback(extractNumericValue(lockupData.total), calculatedLockDate);
+          }
         }
         
         const stake = {
           id: account,
           account: lockupData.account,
-          amount: parseFloat(lockupData.total),
-          unlockDate: new Date(lockupData.unlockDate),
-          lockDate: new Date(new Date(lockupData.unlockDate).getTime() - (365 * 24 * 60 * 60 * 1000)), // Subtract 1 year
-          ...penaltyInfo
+          amount: extractNumericValue(lockupData.total),
+          unlockDate: unlockDate,
+          lockDate: lockDate,
+          'unlock-date': unlockDate,
+          'lock-date': lockDate,
+          ...(penaltyInfo || {})
         };
         
         setUserStakes([stake]);
@@ -92,7 +230,7 @@ export const useStakingPactCalls = () => {
       console.error('Error fetching user stakes:', error);
       setError('Failed to fetch staking data');
     }
-  }, [account, pubKey, createPactCode, setUserStakes, setError]);
+  }, [account, pubKey, createPactCode, setUserStakes, setError, calculatePenalty, calculatePenaltyFallback, extractNumericValue]);
 
   // Get total staked amount
   const getTotalStaked = useCallback(async () => {
@@ -101,14 +239,14 @@ export const useStakingPactCalls = () => {
       const result = await pactCalls(code, CHAIN_ID, pubKey);
       
       if (result?.result?.status === 'success') {
-        const total = parseFloat(result.result.data.total);
+        const total = extractNumericValue(result.result.data.total || result.result.data);
         setTotalStaked(total);
         return total;
       }
     } catch (error) {
       console.error('Error fetching total staked:', error);
     }
-  }, [createPactCode, pubKey, setTotalStaked]);
+  }, [createPactCode, pubKey, setTotalStaked, extractNumericValue]);
 
   // Get staking statistics
   const getStakingStats = useCallback(async () => {
@@ -122,16 +260,26 @@ export const useStakingPactCalls = () => {
       let stats = {
         totalStaked: 0,
         totalStakers: 0,
-        totalRewardsDistributed: 0,
-        currentAPY: 15.5 // Mock APY
+        tier1Count: 0,
+        tier2Count: 0,
+        tier3Count: 0
       };
 
       if (totalResult?.result?.status === 'success') {
-        stats.totalStaked = parseFloat(totalResult.result.data.total);
+        stats.totalStaked = extractNumericValue(totalResult.result.data.total || totalResult.result.data);
       }
 
       if (countResult?.result?.status === 'success') {
-        stats.totalStakers = parseInt(countResult.result.data);
+        stats.totalStakers = extractNumericValue(countResult.result.data);
+      }
+
+      if (tierResult?.result?.status === 'success') {
+        const tierData = tierResult.result.data;
+        if (tierData) {
+          stats.tier1Count = tierData['tier-1'] ? tierData['tier-1'].length : 0;
+          stats.tier2Count = tierData['tier-2'] ? tierData['tier-2'].length : 0;
+          stats.tier3Count = tierData['tier-3'] ? tierData['tier-3'].length : 0;
+        }
       }
 
       setStakingStats(stats);
@@ -139,7 +287,7 @@ export const useStakingPactCalls = () => {
     } catch (error) {
       console.error('Error fetching staking stats:', error);
     }
-  }, [createPactCode, pubKey, setStakingStats]);
+  }, [createPactCode, pubKey, setStakingStats, extractNumericValue]);
 
   // Get leaderboard data
   const getLeaderboard = useCallback(async () => {
@@ -152,13 +300,13 @@ export const useStakingPactCalls = () => {
         
         // Sort by total staked amount in descending order
         const sortedData = tierData
-          .sort((a, b) => parseFloat(b.total) - parseFloat(a.total))
+          .sort((a, b) => extractNumericValue(b.total) - extractNumericValue(a.total))
           .slice(0, 10) // Top 10
           .map((item, index) => ({
             rank: index + 1,
             account: item.account,
-            amount: parseFloat(item.total),
-            tier: getTierByAmount(parseFloat(item.total))
+            amount: extractNumericValue(item.total),
+            tier: getTierByAmount(extractNumericValue(item.total)).tier
           }));
         
         setLeaderboard(sortedData);
@@ -167,14 +315,14 @@ export const useStakingPactCalls = () => {
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
     }
-  }, [createPactCode, pubKey, setLeaderboard]);
+  }, [createPactCode, pubKey, setLeaderboard, extractNumericValue]);
 
   // Helper function to determine tier
   const getTierByAmount = (amount) => {
-    if (amount >= 350000) return 3;
-    if (amount >= 150000) return 2;
-    if (amount >= 50000) return 1;
-    return 0;
+    if (amount >= 350000) return { tier: 3, name: 'Chainweb' };
+    if (amount >= 150000) return { tier: 2, name: 'Cluster' };
+    if (amount >= 50000) return { tier: 1, name: 'Node' };
+    return { tier: 0, name: 'No Tier' };
   };
 
   // Stake tokens
@@ -193,24 +341,40 @@ export const useStakingPactCalls = () => {
     clearError();
 
     try {
+      // Get the locker account first
+      const lockerAccount = await getLockerAccount(account);
+      if (!lockerAccount) {
+        throw new Error('Failed to get locker account');
+      }
+
       // Create guard for the user
       const guardCode = `(read-keyset "ks")`;
       const code = createPactCode(`lock-tokens "${account}" ${guardCode} ${amount}.0`);
       
-      const result = await pactCallsSig(code, CHAIN_ID);
+      const result = await handleTokenStaking({
+        code,
+        chainId: CHAIN_ID,
+        namespace: STAKING_NAMESPACE,
+        tokenModule: TOKEN_MODULE,
+        amount,
+        lockerAccount,
+        account,
+        pactCallsStakeTokens,
+        onSuccess: (result) => {
+          toast.success('Tokens staked successfully!');
+          // Refresh data
+          Promise.all([
+            getUserStakes(),
+            getUserBalance(),
+            getTotalStaked()
+          ]);
+        },
+        onError: (errorMsg) => {
+          setError(errorMsg);
+        }
+      });
       
-      if (result?.result?.status === 'success') {
-        toast.success('Tokens staked successfully!');
-        // Refresh data
-        await Promise.all([
-          getUserStakes(),
-          getUserBalance(),
-          getTotalStaked()
-        ]);
-        return result;
-      } else {
-        throw new Error(result?.result?.error?.message || 'Staking failed');
-      }
+      return result;
     } catch (error) {
       console.error('Error staking tokens:', error);
       const errorMsg = error.message || 'Failed to stake tokens';
@@ -219,7 +383,7 @@ export const useStakingPactCalls = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [account, pubKey, isConnected, createPactCode, clearError, getUserStakes, getUserBalance, getTotalStaked]);
+  }, [account, pubKey, isConnected, createPactCode, clearError, getUserStakes, getUserBalance, getTotalStaked, getLockerAccount]);
 
   // Unstake tokens
   const unstakeTokens = useCallback(async (amount) => {
@@ -237,22 +401,39 @@ export const useStakingPactCalls = () => {
     clearError();
 
     try {
+      // Get the locker account first
+      const lockerAccount = await getLockerAccount(account);
+      if (!lockerAccount) {
+        throw new Error('Failed to get locker account');
+      }
+
       const code = createPactCode(`remove-tokens "${account}" ${amount}.0`);
       
-      const result = await pactCallsSig(code, CHAIN_ID);
+      const result = await handleTokenUnstaking({
+        code,
+        chainId: CHAIN_ID,
+        namespace: STAKING_NAMESPACE,
+        stakingModule: STAKING_MODULE,
+        tokenModule: TOKEN_MODULE,
+        account,
+        lockerAccount,
+        amount,
+        pactCallsUnstakeTokens,
+        onSuccess: (result) => {
+          toast.success('Tokens unstaked successfully!');
+          // Refresh data
+          Promise.all([
+            getUserStakes(),
+            getUserBalance(),
+            getTotalStaked()
+          ]);
+        },
+        onError: (errorMsg) => {
+          setError(errorMsg);
+        }
+      });
       
-      if (result?.result?.status === 'success') {
-        toast.success('Tokens unstaked successfully!');
-        // Refresh data
-        await Promise.all([
-          getUserStakes(),
-          getUserBalance(),
-          getTotalStaked()
-        ]);
-        return result;
-      } else {
-        throw new Error(result?.result?.error?.message || 'Unstaking failed');
-      }
+      return result;
     } catch (error) {
       console.error('Error unstaking tokens:', error);
       const errorMsg = error.message || 'Failed to unstake tokens';
@@ -261,7 +442,7 @@ export const useStakingPactCalls = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [account, pubKey, isConnected, createPactCode, clearError, getUserStakes, getUserBalance, getTotalStaked]);
+  }, [account, pubKey, isConnected, createPactCode, clearError, getUserStakes, getUserBalance, getTotalStaked, getLockerAccount]);
 
   // Refresh all data
   const refreshData = useCallback(async () => {
@@ -300,6 +481,9 @@ export const useStakingPactCalls = () => {
     getStakingStats,
     getLeaderboard,
     refreshData,
+    getLockerAccount,
+    calculatePenalty,
+    calculatePenaltyFallback,
     
     // Action functions
     stakeTokens,
@@ -307,6 +491,8 @@ export const useStakingPactCalls = () => {
     
     // Utils
     getTierByAmount,
+    extractNumericValue,
+    extractDateValue,
     
     // Store functions (exposing for components)
     account,

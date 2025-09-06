@@ -1,15 +1,15 @@
 import React from 'react';
-import { TrendingUp, Users, DollarSign, Percent } from 'lucide-react';
+import { TrendingUp, Users, Target, Lock } from 'lucide-react';
 import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
 
 const StatsOverview = () => {
-  const { stakingStats, isLoading } = useStakingPactCalls();
+  const { stakingStats, isLoading, extractNumericValue } = useStakingPactCalls();
 
   const stats = [
     {
       id: 'totalStaked',
       label: 'Total Staked',
-      value: stakingStats.totalStaked?.toLocaleString() || '0',
+      value: extractNumericValue(stakingStats?.totalStaked)?.toLocaleString() || '0',
       suffix: 'KPAD',
       icon: TrendingUp,
       color: 'text-accent',
@@ -19,7 +19,7 @@ const StatsOverview = () => {
     {
       id: 'totalStakers',
       label: 'Total Stakers',
-      value: stakingStats.totalStakers?.toLocaleString() || '0',
+      value: extractNumericValue(stakingStats?.totalStakers)?.toLocaleString() || '0',
       suffix: '',
       icon: Users,
       color: 'text-blue-400',
@@ -27,24 +27,24 @@ const StatsOverview = () => {
       border: 'border-blue-500/20'
     },
     {
-      id: 'totalRewards',
-      label: 'Rewards Distributed',
-      value: stakingStats.totalRewardsDistributed?.toLocaleString() || '0',
-      suffix: 'KDA',
-      icon: DollarSign,
-      color: 'text-green-400',
-      bg: 'bg-green-500/10',
-      border: 'border-green-500/20'
-    },
-    {
-      id: 'currentAPY',
-      label: 'Current APY',
-      value: stakingStats.currentAPY?.toFixed(1) || '0.0',
-      suffix: '%',
-      icon: Percent,
+      id: 'lockPeriod',
+      label: 'Lock Period',
+      value: '365',
+      suffix: 'Days',
+      icon: Lock,
       color: 'text-purple-400',
       bg: 'bg-purple-500/10',
       border: 'border-purple-500/20'
+    },
+    {
+      id: 'tierThreshold',
+      label: 'Max Tier Threshold',
+      value: '350K',
+      suffix: 'KPAD',
+      icon: Target,
+      color: 'text-yellow-400',
+      bg: 'bg-yellow-500/10',
+      border: 'border-yellow-500/20'
     }
   ];
 
