@@ -13,9 +13,14 @@ import Leaderboard from '../components/staking/Leaderboard';
 const Stake = () => {
   const [activeTab, setActiveTab] = useState('stake');
   const { isConnected } = useWalletStore();
-  const { refreshData } = useStakingPactCalls();
+  const { refreshData, refreshPublicData } = useStakingPactCalls();
 
-  // Refresh data when wallet connects or component mounts
+  // Load public data when component mounts (stats overview, leaderboard)
+  useEffect(() => {
+    refreshPublicData();
+  }, [refreshPublicData]);
+
+  // Refresh user-specific data when wallet connects
   useEffect(() => {
     if (isConnected) {
       refreshData();

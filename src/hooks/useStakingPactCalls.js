@@ -96,7 +96,7 @@ export const useStakingPactCalls = () => {
   const getLockerAccount = useCallback(async (account) => {
     try {
       const code = createPactCode(`get-LOCKER-account "${account}"`);
-      const result = await pactCalls(code, CHAIN_ID, pubKey);
+      const result = await pactCalls(code, CHAIN_ID);
       
       if (result?.result?.status === 'success') {
         return result.result.data;
@@ -106,7 +106,7 @@ export const useStakingPactCalls = () => {
       console.error('Error getting locker account:', error);
       return null;
     }
-  }, [createPactCode, pubKey]);
+  }, [createPactCode]);
 
   // Get penalty calculation for an amount and lock date
   const calculatePenalty = useCallback(async (amount, lockDate) => {
@@ -177,7 +177,7 @@ export const useStakingPactCalls = () => {
     
     try {
       const code = createPactCode(`get-lockup "${account}"`);
-      const result = await pactCalls(code, CHAIN_ID, pubKey);
+      const result = await pactCalls(code, CHAIN_ID);
       
       if (result?.result?.status === 'success') {
         const lockupData = result.result.data;
@@ -236,7 +236,7 @@ export const useStakingPactCalls = () => {
   const getTotalStaked = useCallback(async () => {
     try {
       const code = createPactCode('get-total-count');
-      const result = await pactCalls(code, CHAIN_ID, pubKey);
+      const result = await pactCalls(code, CHAIN_ID);
       
       if (result?.result?.status === 'success') {
         const total = extractNumericValue(result.result.data.total || result.result.data);
@@ -252,9 +252,9 @@ export const useStakingPactCalls = () => {
   const getStakingStats = useCallback(async () => {
     try {
       const [totalResult, countResult, tierResult] = await Promise.all([
-        pactCalls(createPactCode('get-total-count'), CHAIN_ID, pubKey),
-        pactCalls(createPactCode('get-staker-count'), CHAIN_ID, pubKey),
-        pactCalls(createPactCode('get-accounts-by-tier'), CHAIN_ID, pubKey)
+        pactCalls(createPactCode('get-total-count'), CHAIN_ID),
+        pactCalls(createPactCode('get-staker-count'), CHAIN_ID),
+        pactCalls(createPactCode('get-accounts-by-tier'), CHAIN_ID)
       ]);
 
       let stats = {
@@ -293,7 +293,7 @@ export const useStakingPactCalls = () => {
   const getLeaderboard = useCallback(async () => {
     try {
       const code = createPactCode('get-tier-data');
-      const result = await pactCalls(code, CHAIN_ID, pubKey);
+      const result = await pactCalls(code, CHAIN_ID);
       
       if (result?.result?.status === 'success') {
         const tierData = result.result.data;
@@ -444,7 +444,23 @@ export const useStakingPactCalls = () => {
     }
   }, [account, pubKey, isConnected, createPactCode, clearError, getUserStakes, getUserBalance, getTotalStaked, getLockerAccount]);
 
-  // Refresh all data
+  // Refresh public data (stats, leaderboard, total staked) - doesn't require wallet connection
+  const refreshPublicData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        getTotalStaked(),
+        getStakingStats(),
+        getLeaderboard()
+      ]);
+    } catch (error) {
+      console.error('Error refreshing public data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [getTotalStaked, getStakingStats, getLeaderboard]);
+
+  // Refresh all data (including user-specific data)
   const refreshData = useCallback(async () => {
     if (!isConnected) return;
     
@@ -481,6 +497,7 @@ export const useStakingPactCalls = () => {
     getStakingStats,
     getLeaderboard,
     refreshData,
+    refreshPublicData,
     getLockerAccount,
     calculatePenalty,
     calculatePenaltyFallback,

@@ -182,37 +182,18 @@ export const pactCallsSales = async(code, chain, namespace, moduleName) => {
   }
 }
 
-export const pactCalls = async(code, chain, pubKey) => {
+export const pactCalls = async(code, chain) => {
   const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`)
-  const { account } = useWalletStore.getState()
-  const providerName = useWalletStore.getState().provider;
   
-  let txBuilder = Pact.builder
+  const tx = Pact.builder
     .execution(code)
     .setMeta({
       chainId: String(chain),
       gasLimit: 80000,
       gasPrice: 0.0000001,
     })
-    .setNetworkId(network);
-
-  if (providerName === 'magic' && account) {
-    // Extract namespace and keyset name from account for magic wallet
-    const accountParts = account.split(':')[1].split('.');
-    const namespace = accountParts[0];
-    const keysetName = accountParts[1];
-    
-    txBuilder = txBuilder.addKeyset('ks', {
-      keysetref: {
-        ns: namespace,
-        ksn: keysetName
-      }
-    });
-  } else {
-    txBuilder = txBuilder.addKeyset('ks', 'keys-all', pubKey);
-  }
-
-  const tx = txBuilder.createTransaction()     
+    .setNetworkId(network)
+    .createTransaction();   
 
   try{
     const res = await pactClient.dirtyRead(tx)
