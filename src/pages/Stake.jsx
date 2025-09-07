@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Users, TrendingUp } from 'lucide-react';
 import useWalletStore from '../wallet/walletStore';
 import { useStakingPactCalls } from '../hooks/useStakingPactCalls';
+import { StakingDataProvider, useStakingDataContext } from '../contexts/StakingDataContext';
 
 // Components
 import StakingDashboard from '../components/staking/StakingDashboard';
@@ -10,22 +11,10 @@ import UnstakingForm from '../components/staking/UnstakingForm';
 import StatsOverview from '../components/staking/StatsOverview';
 import Leaderboard from '../components/staking/Leaderboard';
 
-const Stake = () => {
+const StakeContent = () => {
   const [activeTab, setActiveTab] = useState('stake');
   const { isConnected } = useWalletStore();
-  const { refreshData, refreshPublicData } = useStakingPactCalls();
-
-  // Load public data when component mounts (stats overview, leaderboard)
-  useEffect(() => {
-    refreshPublicData();
-  }, [refreshPublicData]);
-
-  // Refresh user-specific data when wallet connects
-  useEffect(() => {
-    if (isConnected) {
-      refreshData();
-    }
-  }, [isConnected, refreshData]);
+  const { isLoading } = useStakingPactCalls();
 
   return (
     <div className="min-h-screen bg-primary-bg pt-24 pb-16">
@@ -49,7 +38,7 @@ const Stake = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="mb-12">
+        <div className="mb-8">
           <StatsOverview />
         </div>
 
@@ -213,6 +202,14 @@ const Stake = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const Stake = () => {
+  return (
+    <StakingDataProvider>
+      <StakeContent />
+    </StakingDataProvider>
   );
 };
 

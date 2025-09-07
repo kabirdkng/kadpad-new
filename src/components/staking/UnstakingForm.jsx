@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowDown, AlertTriangle, Clock, TrendingDown } from 'lucide-react';
+import { AlertTriangle, Clock, ArrowDown, CheckCircle } from 'lucide-react';
 import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
+import { useStakingDataContext } from '../../contexts/StakingDataContext';
 
 const UnstakingForm = () => {
   const [amount, setAmount] = useState('');
@@ -17,6 +18,8 @@ const UnstakingForm = () => {
     calculatePenalty,
     calculatePenaltyFallback 
   } = useStakingPactCalls();
+
+  const { refreshAfterTransaction } = useStakingDataContext();
 
   const stake = userStakes?.[0]; // Assuming single stake
   const numericAmount = parseFloat(amount) || 0;
@@ -60,8 +63,13 @@ const UnstakingForm = () => {
     if (!amount || numericAmount <= 0) return;
     
     setShowConfirm(false);
-    await unstakeTokens(numericAmount);
-    setAmount('');
+    const result = await unstakeTokens(numericAmount);
+    
+    if (result) {
+      setAmount('');
+      // Trigger immediate data refresh with transaction monitoring
+      refreshAfterTransaction();
+    }
   };
 
   const isValidAmount = numericAmount > 0 && numericAmount <= maxUnstakeAmount;

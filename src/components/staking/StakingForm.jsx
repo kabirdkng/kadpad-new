@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Coins, Info, ArrowUp, AlertTriangle } from 'lucide-react';
 import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
+import { useStakingDataContext } from '../../contexts/StakingDataContext';
 
 const StakingForm = () => {
   const [amount, setAmount] = useState('');
@@ -14,6 +15,8 @@ const StakingForm = () => {
     getTierByAmount,
     extractNumericValue 
   } = useStakingPactCalls();
+
+  const { refreshAfterTransaction } = useStakingDataContext();
 
   const numericAmount = parseFloat(amount) || 0;
   const tierData = getTierByAmount(numericAmount);
@@ -34,8 +37,13 @@ const StakingForm = () => {
     if (!amount || numericAmount <= 0) return;
     
     setShowConfirm(false);
-    await stakeTokens(numericAmount);
-    setAmount('');
+    const result = await stakeTokens(numericAmount);
+    
+    if (result) {
+      setAmount('');
+      // Trigger immediate data refresh with transaction monitoring
+      refreshAfterTransaction();
+    }
   };
 
   const isValidAmount = numericAmount > 0 && numericAmount <= extractNumericValue(userBalance || 0);
