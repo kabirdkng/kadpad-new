@@ -50,15 +50,15 @@ const StatsOverview = () => {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         {stats.map((stat) => (
-          <div key={stat.id} className="bg-card rounded-lg p-4 border border-border-color">
+          <div key={stat.id} className="bg-card rounded-lg p-3 lg:p-4 border border-border-color">
             <div className="animate-pulse">
               <div className="flex items-center space-x-2 mb-2">
-                <div className="w-5 h-5 bg-gray-700 rounded"></div>
-                <div className="h-4 bg-gray-700 rounded w-20"></div>
+                <div className="w-4 h-4 lg:w-5 lg:h-5 bg-gray-700 rounded"></div>
+                <div className="h-3 lg:h-4 bg-gray-700 rounded w-16 lg:w-20"></div>
               </div>
-              <div className="h-6 bg-gray-700 rounded w-16 mb-1"></div>
+              <div className="h-5 lg:h-6 bg-gray-700 rounded w-12 lg:w-16 mb-1"></div>
             </div>
           </div>
         ))}
@@ -67,21 +67,21 @@ const StatsOverview = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
       {stats.map((stat) => {
         const Icon = stat.icon;
         return (
-          <div key={stat.id} className={`bg-card rounded-lg p-4 border ${stat.border} ${stat.bg}`}>
+          <div key={stat.id} className={`bg-card rounded-lg p-3 lg:p-4 border ${stat.border} ${stat.bg}`}>
             <div className="flex items-center space-x-2 mb-2">
-              <Icon className={`w-5 h-5 ${stat.color}`} />
-              <span className="text-sm text-secondary font-medium">{stat.label}</span>
+              <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${stat.color}`} />
+              <span className="text-xs lg:text-sm text-secondary font-medium">{stat.label}</span>
             </div>
             <div className="flex items-baseline space-x-1">
-              <span className={`text-2xl font-bold ${stat.color}`}>
+              <span className={`text-lg lg:text-2xl font-bold ${stat.color}`}>
                 {stat.value}
               </span>
               {stat.suffix && (
-                <span className="text-sm text-secondary">{stat.suffix}</span>
+                <span className="text-xs lg:text-sm text-secondary">{stat.suffix}</span>
               )}
             </div>
           </div>

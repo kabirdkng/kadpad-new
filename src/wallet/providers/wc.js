@@ -7,25 +7,7 @@ const networkId = config.networkId;
 let clientInstance = null;
 
 export const setWalletClient = (client) => {
-  console.log("Setting WalletConnect client:", !!client);
-  if (client) {
-    console.log("Client methods:", Object.keys(client));
-    console.log("Client type:", typeof client);
-  }
   clientInstance = client;
-  
-  // Test the client immediately after setting it
-  if (client && typeof client.getConnectedAccounts === 'function') {
-    try {
-      client.getConnectedAccounts('WalletConnect').then(accounts => {
-        console.log("Connected accounts test:", accounts);
-      }).catch(err => {
-        console.log("Connected accounts test failed:", err.message);
-      });
-    } catch (error) {
-      console.log("Connected accounts test error:", error.message);
-    }
-  }
 };
 
 // Helper function to get client from the React context when needed
@@ -68,7 +50,6 @@ const validateWalletConnectConnection = async () => {
         throw new Error('Wallet connection is incomplete. Missing account or public key.');
       }
       
-      console.log('WalletConnect connection validated successfully');
       return true;
     }
     
@@ -83,14 +64,12 @@ const validateWalletConnectConnection = async () => {
 const ensureClientAvailable = async (maxRetries = 10, retryDelay = 200) => {
   // First check if we have a client instance
   if (clientInstance) {
-    console.log('Using existing client instance');
     return clientInstance;
   }
   
   // Try to get client from context
   const contextClient = await getClientFromContext();
   if (contextClient) {
-    console.log('Got client from context');
     clientInstance = contextClient;
     return clientInstance;
   }
@@ -98,24 +77,20 @@ const ensureClientAvailable = async (maxRetries = 10, retryDelay = 200) => {
   // If not, try to get it from the React context with retries
   for (let i = 0; i < maxRetries; i++) {
     if (clientInstance) {
-      console.log(`WalletConnect client became available on retry ${i + 1}`);
       return clientInstance;
     }
     
-    console.log(`WalletConnect client not available, retrying... (${i + 1}/${maxRetries})`);
     await new Promise(resolve => setTimeout(resolve, retryDelay));
   }
   
   // Try to get client from the global wallet adapter if available
   if (typeof window !== 'undefined' && window.__KADENA_WALLET_CLIENT__) {
-    console.log("Using global wallet client as fallback");
     clientInstance = window.__KADENA_WALLET_CLIENT__;
     return clientInstance;
   }
   
   // Last resort: check if there's a wallet adapter context
   if (typeof window !== 'undefined' && window.__KADENA_WALLET_ADAPTER_CONTEXT__) {
-    console.log("Using wallet adapter context as fallback");
     const client = window.__KADENA_WALLET_ADAPTER_CONTEXT__.client;
     if (client) {
       clientInstance = client;
@@ -186,17 +161,14 @@ const wc = {
       // Try different method names that might be available
       let result;
       if (typeof client.signTransaction === 'function') {
-        console.log("Using signTransaction method for sign");
         result = await client.signTransaction('WalletConnect', signingCommand);
       } else if (typeof client.sign === 'function') {
-        console.log("Using sign method for sign");
         result = await client.sign('WalletConnect', signingCommand);
       } else {
         console.error("No supported signing method found on client for sign");
         throw new Error("No supported signing method found");
       }
       
-      console.log("WalletConnect sign result:", result);
       return result;
     } catch (error) {
       console.error("Error during signing:", error);
@@ -211,26 +183,19 @@ const wc = {
       
       const client = await ensureClientAvailable();
       
-      console.log("WalletConnect client methods:", Object.keys(client));
-      console.log("Attempting to sign transaction with data:", data);
-      
       // Try different method names that might be available
       let result;
       if (typeof client.signTransaction === 'function') {
-        console.log("Using signTransaction method");
         result = await client.signTransaction('WalletConnect', data);
       } else if (typeof client.sign === 'function') {
-        console.log("Using sign method");
         result = await client.sign('WalletConnect', data);
       } else if (typeof client.signCommand === 'function') {
-        console.log("Using signCommand method");
         result = await client.signCommand('WalletConnect', data);
       } else {
         console.error("No supported signing method found on client. Available methods:", Object.keys(client));
         throw new Error("No supported signing method found");
       }
       
-      console.log("WalletConnect signing result:", result);
       return result;
     } catch (error) {
       console.error("Error during quick signing:", error);
@@ -245,22 +210,15 @@ const wc = {
       
       const client = await ensureClientAvailable();
       
-      console.log("WalletConnect quickSignAll with data:", data);
-      console.log("Data is array:", Array.isArray(data), "Length:", data?.length);
-      
       // WalletConnect supports batch signing
       let result;
       if (typeof client.signTransaction === 'function') {
-        console.log("Using signTransaction method for batch signing");
         result = await client.signTransaction('WalletConnect', data);
       } else if (typeof client.sign === 'function') {
-        console.log("Using sign method for batch signing");
         result = await client.sign('WalletConnect', data);
       } else {
         throw new Error("No supported signing method found");
       }
-      
-      console.log("WalletConnect batch signing result:", result);
       
       // Ensure result is properly formatted for batch operations
       if (Array.isArray(result)) {

@@ -10,6 +10,7 @@ import StakingForm from '../components/staking/StakingForm';
 import UnstakingForm from '../components/staking/UnstakingForm';
 import StatsOverview from '../components/staking/StatsOverview';
 import Leaderboard from '../components/staking/Leaderboard';
+import BalanceOverview from '../components/staking/MobileBalanceOverview';
 
 const StakeContent = () => {
   const [activeTab, setActiveTab] = useState('stake');
@@ -39,21 +40,22 @@ const StakeContent = () => {
 
         {/* Stats Overview */}
         <div className="mb-8">
-          <StatsOverview />
+          <div className="lg:hidden">
+            <div className="card">
+              <h3 className="text-lg font-semibold text-primary-text mb-4">Platform Stats</h3>
+              <StatsOverview />
+            </div>
+          </div>
+          <div className="hidden lg:block">
+            <StatsOverview />
+          </div>
         </div>
 
         {/* Main Content Grid - Desktop: Dashboard | Staking Form | Leaderboard */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mb-8">
-          
-          {/* Dashboard - Left Side on Desktop */}
-          <div className="lg:col-span-1 order-1 lg:order-1">
-            <div className="sticky top-24">
-              <StakingDashboard />
-            </div>
-          </div>
-
-          {/* Staking Forms - Middle on Desktop */}
-          <div className="lg:col-span-1 order-2 lg:order-2">
+        <div className="lg:hidden mb-8 space-y-6">
+          {/* Staking Form - Priority on Mobile */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-primary-text mb-4">Stake Your KPAD</h3>
             <div className="card">
               {/* Tab Navigation */}
               <div className="flex border-b border-border-color">
@@ -92,12 +94,82 @@ const StakeContent = () => {
             </div>
           </div>
 
-          {/* Leaderboard - Right Side on Desktop */}
-          <div className="lg:col-span-1 order-3 lg:order-3">
+          {/* Dashboard & Leaderboard - Secondary on Mobile */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-primary-text mb-4">Dashboard & Stats</h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-base font-medium text-primary-text mb-3">Your Staking Info</h4>
+                <StakingDashboard />
+              </div>
+              <div className="pt-4 border-t border-border-color">
+                <h4 className="text-base font-medium text-primary-text mb-3">Top Stakers</h4>
+                <Leaderboard />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="hidden lg:grid lg:grid-cols-7 gap-6 max-w-7xl mx-auto mb-8">
+          
+          {/* Dashboard - Left Side on Desktop (2 columns) */}
+          <div className="lg:col-span-2 order-1 lg:order-1">
+            <div className="sticky top-24">
+              <StakingDashboard />
+            </div>
+          </div>
+
+          {/* Staking Forms - Middle on Desktop (3 columns) */}
+          <div className="lg:col-span-3 order-2 lg:order-2">
+            <div className="card">
+              {/* Tab Navigation */}
+              <div className="flex border-b border-border-color">
+                <button
+                  onClick={() => setActiveTab('stake')}
+                  className={`flex-1 px-4 py-3 font-medium transition-colors ${
+                    activeTab === 'stake'
+                      ? 'bg-accent text-white border-b-2 border-accent'
+                      : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Stake</span>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setActiveTab('unstake')}
+                  className={`flex-1 px-4 py-3 font-medium transition-colors ${
+                    activeTab === 'unstake'
+                      ? 'bg-red-600 text-white border-b-2 border-red-600'
+                      : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <TrendingUp className="w-4 h-4 rotate-180" />
+                    <span>Unstake</span>
+                  </div>
+                </button>
+              </div>
+
+              {/* Tab Content */}
+              <div className="p-0">
+                {activeTab === 'stake' ? <StakingForm /> : <UnstakingForm />}
+              </div>
+            </div>
+          </div>
+
+          {/* Leaderboard - Right Side on Desktop (2 columns) */}
+          <div className="lg:col-span-2 order-3 lg:order-3">
             <div className="sticky top-24">
               <Leaderboard />
             </div>
           </div>
+        </div>
+
+        {/* Balance Overview - Below main content */}
+        <div className="mb-8">
+          <BalanceOverview />
         </div>
 
         {/* Grid Layout for Information */}

@@ -101,7 +101,7 @@ const Leaderboard = () => {
                   {getTierIcon(entry.tier)}
                 </div>
                 <div className="text-xs text-secondary">
-                  {extractNumericValue(entry.amount).toLocaleString()} KPAD
+                  {(extractNumericValue(entry.amount) / 1000).toFixed(0)}k KPAD
                 </div>
               </div>
 
@@ -115,19 +115,28 @@ const Leaderboard = () => {
       )}
 
       {/* Tier Legend */}
-      <div className="mt-6 pt-4 border-t border-border-color">
-        <div className="text-sm text-secondary mb-2">Staking Tiers</div>
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="flex items-center space-x-1">
-            <Medal className="w-3 h-3 text-orange-400" />
+      <div className="mt-4 pt-3 border-t border-border-color">
+        <div className="text-xs text-secondary mb-2">Tiers</div>
+        <div className="grid grid-cols-1 gap-1 text-xs">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <Medal className="w-3 h-3 text-orange-400" />
+              <span className="text-secondary">T1</span>
+            </div>
             <span className="text-secondary">50k+</span>
           </div>
-          <div className="flex items-center space-x-1">
-            <Award className="w-3 h-3 text-gray-400" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <Award className="w-3 h-3 text-gray-400" />
+              <span className="text-secondary">T2</span>
+            </div>
             <span className="text-secondary">150k+</span>
           </div>
-          <div className="flex items-center space-x-1">
-            <Crown className="w-3 h-3 text-yellow-400" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <Crown className="w-3 h-3 text-yellow-400" />
+              <span className="text-secondary">T3</span>
+            </div>
             <span className="text-secondary">350k+</span>
           </div>
         </div>

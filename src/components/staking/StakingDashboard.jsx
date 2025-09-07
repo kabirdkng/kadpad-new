@@ -79,54 +79,45 @@ const StakingDashboard = () => {
   const daysUntilUnlock = Math.max(0, Math.ceil(timeUntilUnlock / (1000 * 60 * 60 * 24)));
 
   return (
-    <div className="space-y-4">
-      <div className="bg-card rounded-lg p-4 border border-border-color">
-        <h3 className="text-lg font-semibold text-primary-text mb-3">Dashboard</h3>
+    <div className="space-y-3 lg:space-y-4">
+      <div className="bg-card rounded-lg p-3 lg:p-4 border border-border-color">
+        <h3 className="text-base font-semibold text-primary-text mb-3 lg:block hidden">Dashboard</h3>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+        <div className="grid grid-cols-1 gap-2 mb-4">
           <div className="bg-gray-800/50 rounded-lg p-3">
-            <div className="text-xs text-secondary mb-1">Total Staked</div>
-            <div className="text-lg font-bold text-primary-text">
+            <div className="text-xs text-secondary mb-1">Amount Staked</div>
+            <div className="text-base font-bold text-primary-text">
               {extractNumericValue(stake?.amount)?.toLocaleString() || '0'} KPAD
             </div>
           </div>
           
           <div className="bg-gray-800/50 rounded-lg p-3">
-            <div className="text-xs text-secondary mb-1">Available Balance</div>
-            <div className="text-lg font-bold text-primary-text">
-              {extractNumericValue(userBalance)?.toLocaleString() || '0'} KPAD
-            </div>
-          </div>
-          
-          <div className="bg-gray-800/50 rounded-lg p-3">
-            <div className="text-xs text-secondary mb-1">Days Staked</div>
-            <div className="text-lg font-bold text-primary-text">
-              {daysStaked} days
-            </div>
-          </div>
-
-          <div className="bg-gray-800/50 rounded-lg p-3">
-            <div className="text-xs text-secondary mb-1">Current Tier</div>
-            <div className="flex items-center space-x-2">
-              <div className={`text-lg font-bold ${
-                getTierByAmount(extractNumericValue(stake?.amount) || 0).tier === 3 
-                  ? 'text-yellow-400' 
-                  : getTierByAmount(extractNumericValue(stake?.amount) || 0).tier === 2
-                  ? 'text-blue-400'
-                  : 'text-green-400'
-              }`}>
-                Tier {getTierByAmount(extractNumericValue(stake?.amount) || 0).tier}
+            <div className="flex justify-between items-center">
+              <div>
+                <div className="text-xs text-secondary mb-1">Days Staked</div>
+                <div className="text-base font-bold text-primary-text">
+                  {daysStaked} days
+                </div>
               </div>
-            </div>
-            <div className="text-xs text-secondary mt-1">
-              {getTierByAmount(extractNumericValue(stake?.amount) || 0).name}
+              <div className="text-right">
+                <div className="text-xs text-secondary mb-1">Current Tier</div>
+                <div className={`text-base font-bold ${
+                  getTierByAmount(extractNumericValue(stake?.amount) || 0).tier === 3 
+                    ? 'text-yellow-400' 
+                    : getTierByAmount(extractNumericValue(stake?.amount) || 0).tier === 2
+                    ? 'text-blue-400'
+                    : 'text-green-400'
+                }`}>
+                  Tier {getTierByAmount(extractNumericValue(stake?.amount) || 0).tier}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         <div className="bg-gray-800/30 rounded-lg p-3">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-base font-semibold text-primary-text">Status</h4>
+          <div className="flex items-center justify-between mb-2 lg:mb-3">
+            <h4 className="text-sm lg:text-base font-semibold text-primary-text">Status</h4>
             <div className={`px-2 py-1 rounded-full text-xs font-medium ${
               isMatured 
                 ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
@@ -136,13 +127,13 @@ const StakingDashboard = () => {
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-2 lg:space-y-3">
             <div>
               <div className="flex items-center space-x-2 text-secondary mb-1">
                 <Clock className="w-3 h-3" />
                 <span className="text-xs">Lock Period</span>
               </div>
-              <div className="text-sm text-primary-text">
+              <div className="text-xs lg:text-sm text-primary-text">
                 {isMatured ? (
                   <span className="text-green-400 font-medium">Ready to unstake</span>
                 ) : (
@@ -156,7 +147,7 @@ const StakingDashboard = () => {
                 <AlertCircle className="w-3 h-3" />
                 <span className="text-xs">Early Unstake Penalty</span>
               </div>
-              <div className="text-sm text-primary-text">
+              <div className="text-xs lg:text-sm text-primary-text">
                 {isMatured ? (
                   <span className="text-green-400 font-medium">No penalty</span>
                 ) : (
@@ -167,7 +158,7 @@ const StakingDashboard = () => {
           </div>
 
           {!isMatured && (
-            <div className="mt-3 p-2 bg-orange-500/10 border border-orange-500/20 rounded-lg">
+            <div className="mt-2 lg:mt-3 p-2 bg-orange-500/10 border border-orange-500/20 rounded-lg">
               <div className="text-xs text-orange-400">
                 <strong>Note:</strong> Early unstaking incurs a {penaltyPercent}% penalty. Penalty decreases daily.
               </div>
@@ -175,7 +166,7 @@ const StakingDashboard = () => {
           )}
 
           {isMatured && (
-            <div className="mt-3 p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <div className="mt-2 lg:mt-3 p-2 bg-green-500/10 border border-green-500/20 rounded-lg">
               <div className="text-xs text-green-400">
                 <strong>Congratulations!</strong> Your stake has matured. You can now unstake without any penalty.
               </div>
@@ -184,18 +175,18 @@ const StakingDashboard = () => {
         </div>
       </div>
 
-      <div className="bg-card rounded-lg p-6 border border-border-color">
-        <h4 className="text-lg font-semibold text-primary-text mb-3">Important Dates</h4>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center py-2 border-b border-border-color">
-            <span className="text-secondary">Stake Date</span>
-            <span className="text-primary-text font-medium">
+      <div className="bg-card rounded-lg p-3 lg:p-4 border border-border-color">
+        <h4 className="text-sm lg:text-base font-semibold text-primary-text mb-2 lg:mb-3">Important Dates</h4>
+        <div className="space-y-1 lg:space-y-2">
+          <div className="flex justify-between items-center py-1 border-b border-border-color">
+            <span className="text-secondary text-xs lg:text-sm">Stake Date</span>
+            <span className="text-primary-text font-medium text-xs lg:text-sm">
               {lockDate ? lockDate.toLocaleDateString() : 'N/A'}
             </span>
           </div>
-          <div className="flex justify-between items-center py-2">
-            <span className="text-secondary">Unlock Date</span>
-            <span className="text-primary-text font-medium">
+          <div className="flex justify-between items-center py-1">
+            <span className="text-secondary text-xs lg:text-sm">Unlock Date</span>
+            <span className="text-primary-text font-medium text-xs lg:text-sm">
               {unlockDate ? unlockDate.toLocaleDateString() : 'N/A'}
             </span>
           </div>

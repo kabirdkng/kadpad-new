@@ -70,12 +70,9 @@ const signAndSubmitTx = async (tx, pactClient) => {
   let signedTx;
   let cmd, sigs, outcomeHash;
   
-  console.log(provider.config);
-  
   try {
     signedTx = await provider.quickSign(tx);
     if(signedTx.status === 'fail'){
-      console.log(signedTx);
       toast.error(`Error: ${signedTx.message}`, { position: 'top-center' });
       return signedTx;
     }
@@ -102,7 +99,6 @@ const signAndSubmitTx = async (tx, pactClient) => {
   };
 
   const preflightResult = await pactClient.dirtyRead(bodyPayload);
-  console.log(preflightResult);
   
   if (preflightResult.result.status === 'failure') {
     console.error(preflightResult.result.error.message);
@@ -110,7 +106,6 @@ const signAndSubmitTx = async (tx, pactClient) => {
     return preflightResult;
   } else {
     const transactionDescriptor = await pactClient.submit(bodyPayload);
-    console.log('TX Key: ', transactionDescriptor.requestKey);
     return { pactClient, transactionDescriptor, preflightResult };
   }
 };
@@ -173,9 +168,6 @@ export const pactCalls = async(code, chain) => {
 }
 
 export const fetchBalance = async(code, chain) => {
-  console.log('🔍 fetchBalance: Starting with code:', code);
-  console.log('🔍 fetchBalance: Chain:', chain);
-  
   const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`)
   
   const tx = createTx(code, chain, {
@@ -186,10 +178,6 @@ export const fetchBalance = async(code, chain) => {
              
   try{
     const res = await pactClient.dirtyRead(tx)
-    console.log('🔍 fetchBalance: Full response from pactClient.dirtyRead:', res);
-    console.log('🔍 fetchBalance: res.result:', res.result);
-    console.log('🔍 fetchBalance: res.result.data:', res.result.data);
-    console.log('🔍 fetchBalance: Returning:', res.result.data);
     return res.result.data;
   } catch (error) {
     console.error('❌ Error fetching account details:', error)
@@ -203,8 +191,6 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
 
     const receiver = salesAccount;
-    console.log(receiver);
-    console.log(amount);
 
     const tx = createTx(code, chain, {
       pubKey,
@@ -215,8 +201,6 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
         ['coin.GAS']
       ]
     });
-
-    console.log("transaction", tx);
 
     return await signAndSubmitTx(tx, pactClient);
   } catch (error) {
@@ -270,25 +254,17 @@ export const initLiquidityTreasury = async (token, code, chain, pubKey, sender) 
 
 // Poll for transaction result
 export const pollForTransactionResult = async (pactClient, transactionDescriptor, maxRetries = 30, retryInterval = 3000) => {
-  console.log('Polling for transaction result:', transactionDescriptor.requestKey);
-  
   for (let i = 0; i < maxRetries; i++) {
     try {
-      console.log(`Poll attempt ${i + 1}/${maxRetries} for transaction:`, transactionDescriptor.requestKey);
-      
       const result = await pactClient.listen({
         requestKey: transactionDescriptor.requestKey
       });
       
-      console.log(`Poll attempt ${i + 1} result:`, result);
-      
       if (result && result.result) {
-        console.log('Transaction confirmed:', result);
         return result;
       }
       
       // Wait before next retry
-      console.log(`Waiting ${retryInterval}ms before next poll attempt...`);
       await new Promise(resolve => setTimeout(resolve, retryInterval));
     } catch (error) {
       console.error(`Error polling for transaction result (attempt ${i + 1}):`, error);
@@ -310,13 +286,9 @@ export const checkTransactionStatus = async (requestKey, chainId = '1') => {
   try {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chainId}/pact`);
     
-    console.log(`Checking status for transaction: ${requestKey} on chain ${chainId}`);
-    
     const result = await pactClient.listen({
       requestKey: requestKey
     });
-    
-    console.log(`Status check result for ${requestKey}:`, result);
     
     if (result && result.result) {
       return {
