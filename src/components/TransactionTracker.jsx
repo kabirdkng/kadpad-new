@@ -3,11 +3,13 @@ import { createPortal } from 'react-dom';
 import PropTypes from 'prop-types';
 import { X, Clock, CheckCircle, XCircle, RefreshCw, ExternalLink, Trash2, Eye, EyeOff } from 'lucide-react';
 import useTransactionStore from '../store/useTransactionStore';
+import useTransactionManager from '../hooks/useTransactionManager';
 import transactionPollingService from '../services/transactionPollingService';
 
 const TransactionTracker = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState('active');
   const [showDetails, setShowDetails] = useState({});
+  const [isCheckingPending, setIsCheckingPending] = useState(false);
   
   const {
     getAllTransactions,
@@ -19,6 +21,8 @@ const TransactionTracker = ({ isOpen, onClose }) => {
     getTransactionStats,
   } = useTransactionStore();
 
+  const { checkPendingTransactions } = useTransactionManager();
+
   const stats = getTransactionStats();
   const allTransactions = getAllTransactions();
   const activeTransactions = getActiveTransactions();
@@ -28,7 +32,35 @@ const TransactionTracker = ({ isOpen, onClose }) => {
   useEffect(() => {
     // Clean up old transactions on mount
     clearOldTransactions();
-  }, [clearOldTransactions]);
+    
+    // Check pending transactions status when component mounts
+    const handleCheckPendingTransactions = async () => {
+      setIsCheckingPending(true);
+      try {
+        await checkPendingTransactions();
+      } catch (error) {
+        console.error('Error checking pending transactions:', error);
+      } finally {
+        setIsCheckingPending(false);
+      }
+    };
+    
+    // Only check when the modal is opened
+    if (isOpen) {
+      handleCheckPendingTransactions();
+    }
+  }, [clearOldTransactions, checkPendingTransactions, isOpen]);
+
+  const handleRefreshPendingTransactions = async () => {
+    setIsCheckingPending(true);
+    try {
+      await checkPendingTransactions();
+    } catch (error) {
+      console.error('Error refreshing pending transactions:', error);
+    } finally {
+      setIsCheckingPending(false);
+    }
+  };
 
   const handleStopPolling = (txId) => {
     transactionPollingService.stopPolling(txId);
@@ -344,7 +376,7 @@ const TransactionTracker = ({ isOpen, onClose }) => {
           </div>
           
           {/* Actions */}
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2 mt-3 flex-wrap">
             <button
               onClick={clearOldTransactions}
               className="px-3 py-1 text-xs bg-secondary-bg border border-border-color rounded hover:bg-hover-bg transition-colors"

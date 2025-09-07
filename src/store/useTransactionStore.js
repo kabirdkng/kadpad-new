@@ -175,6 +175,17 @@ const useTransactionStore = create(
           active: get().activeTransactions.size,
         };
       },
+
+      // Get pending transactions that need status checking
+      getPendingTransactions: () => {
+        return Object.values(get().transactions)
+          .filter(tx => tx.status === 'pending')
+          .map(tx => ({
+            ...tx,
+            explorerUrl: tx.explorerUrl || (isValidTransactionKey(tx.id) ? generateExplorerUrl(tx.id) : null)
+          }))
+          .sort((a, b) => b.createdAt - a.createdAt);
+      },
     }),
     {
       name: 'kadpad-transactions', // localStorage key

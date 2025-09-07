@@ -305,6 +305,53 @@ export const pollForTransactionResult = async (pactClient, transactionDescriptor
   throw new Error(`Transaction did not complete after ${maxRetries} attempts`);
 };
 
+// Check transaction status by request key
+export const checkTransactionStatus = async (requestKey, chainId = '1') => {
+  try {
+    const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chainId}/pact`);
+    
+    console.log(`Checking status for transaction: ${requestKey} on chain ${chainId}`);
+    
+    const result = await pactClient.listen({
+      requestKey: requestKey
+    });
+    
+    console.log(`Status check result for ${requestKey}:`, result);
+    
+    if (result && result.result) {
+      return {
+        found: true,
+        status: result.result.status,
+        result: result
+      };
+    }
+    
+    return {
+      found: false,
+      status: 'pending',
+      result: null
+    };
+  } catch (error) {
+    console.error(`Error checking transaction status for ${requestKey}:`, error);
+    // If the transaction is not found, it might still be pending
+    if (error.message && error.message.includes('not found')) {
+      return {
+        found: false,
+        status: 'pending',
+        result: null
+      };
+    }
+    
+    // For other errors, we'll consider it as still pending
+    return {
+      found: false,
+      status: 'pending',
+      result: null,
+      error: error.message
+    };
+  }
+};
+
 // Staking-specific Pact calls
 export const pactCallsStakeTokens = async(code, chain, stakingNamespace, tokenModule, amount, lockerAccount) => {
   try {
