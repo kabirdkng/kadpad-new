@@ -99,7 +99,7 @@ const StakingDashboard = () => {
                 Add Your Email for Launch Notifications
               </h4>
               <p className="text-xs text-secondary mb-2">
-                As a Tier {userTier} staker, you're eligible for exclusive project launches and whitelists. 
+                As a {getTierByAmount(extractNumericValue(stake?.amount) || 0).name} staker, you're eligible for exclusive project launches and whitelists. 
                 Add your email below to get notified when new opportunities become available.
               </p>
               <div className="text-xs text-secondary">
@@ -139,6 +139,15 @@ const StakingDashboard = () => {
                     : 'text-green-400'
                 }`}>
                   Tier {getTierByAmount(extractNumericValue(stake?.amount) || 0).tier}
+                </div>
+                <div className="text-xs text-green-400 font-medium">
+                  {getTierByAmount(extractNumericValue(stake?.amount) || 0).tier === 3 
+                    ? 'Chainweb Tier' 
+                    : getTierByAmount(extractNumericValue(stake?.amount) || 0).tier === 2
+                    ? 'Cluster Tier'
+                    : getTierByAmount(extractNumericValue(stake?.amount) || 0).tier === 1
+                    ? 'Node Tier'
+                    : 'No Tier'}
                 </div>
               </div>
             </div>
@@ -211,13 +220,21 @@ const StakingDashboard = () => {
           <div className="flex justify-between items-center py-1 border-b border-border-color">
             <span className="text-secondary text-xs lg:text-sm">Stake Date</span>
             <span className="text-primary-text font-medium text-xs lg:text-sm">
-              {lockDate ? lockDate.toLocaleDateString() : 'N/A'}
+              {lockDate ? lockDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              }) : 'N/A'}
             </span>
           </div>
           <div className="flex justify-between items-center py-1">
             <span className="text-secondary text-xs lg:text-sm">Unlock Date</span>
             <span className="text-primary-text font-medium text-xs lg:text-sm">
-              {unlockDate ? unlockDate.toLocaleDateString() : 'N/A'}
+              {unlockDate ? unlockDate.toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              }) : 'N/A'}
             </span>
           </div>
         </div>

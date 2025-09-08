@@ -329,6 +329,7 @@ input::placeholder, textarea::placeholder {
 .text-primary-text { color: var(--primary-text); }
 .bg-primary { background: var(--primary-bg); }
 .bg-secondary { background: var(--secondary-bg); }
+.bg-accent { background: var(--accent-primary); }
 .bg-card { background: var(--card-bg); }
 .bg-background { background: var(--primary-bg); }
 .bg-hover-bg { background: var(--hover-bg); }

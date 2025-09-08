@@ -59,7 +59,7 @@ const StakeContent = () => {
                   onClick={() => setActiveTab('stake')}
                   className={`flex-1 px-4 py-3 font-medium transition-colors ${
                     activeTab === 'stake'
-                      ? 'bg-accent text-white border-b-2 border-accent'
+                      ? 'text-white border-b-2 border-accent'
                       : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
                   }`}
                 >
@@ -125,7 +125,7 @@ const StakeContent = () => {
                     onClick={() => setActiveTab('stake')}
                     className={`flex-1 px-4 py-3 font-medium transition-colors ${
                       activeTab === 'stake'
-                        ? 'bg-accent text-white border-b-2 border-accent'
+                        ? 'text-white border-b-2 border-accent'
                         : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
                     }`}
                   >
