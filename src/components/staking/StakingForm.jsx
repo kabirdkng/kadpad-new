@@ -10,6 +10,7 @@ const StakingForm = () => {
   const { 
     isConnected, 
     userBalance, 
+    userStakes,
     isLoading,
     stakeTokens, 
     getTierByAmount,
@@ -19,7 +20,15 @@ const StakingForm = () => {
   const { refreshAfterTransaction } = useStakingDataContext();
 
   const numericAmount = parseFloat(amount) || 0;
-  const tierData = getTierByAmount(numericAmount);
+  
+  // Calculate current staked amount
+  const currentStakedAmount = userStakes && userStakes.length > 0 
+    ? extractNumericValue(userStakes[0]?.amount) || 0 
+    : 0;
+  
+  // Calculate tier based on total (current stake + input amount)
+  const totalAmount = currentStakedAmount + numericAmount;
+  const tierData = getTierByAmount(totalAmount);
   const tier = tierData.tier;
 
   const tierInfo = {
@@ -104,14 +113,36 @@ const StakingForm = () => {
       {/* Tier Preview */}
       {numericAmount > 0 && (
         <div className={`mb-4 p-3 rounded-lg border ${tierInfo[tier].bg} ${tierInfo[tier].border}`}>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-secondary">Your Tier:</span>
-            <span className={`font-medium ${tierInfo[tier].color}`}>
-              {tierInfo[tier].name}
-            </span>
+          <div className="space-y-2">
+            {currentStakedAmount > 0 && (
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-secondary">Current Staked:</span>
+                <span className="text-primary-text font-medium">
+                  {currentStakedAmount.toLocaleString()} KPAD
+                </span>
+              </div>
+            )}
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-secondary">Adding:</span>
+              <span className="text-primary-text font-medium">
+                {numericAmount.toLocaleString()} KPAD
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-t border-border-color pt-2">
+              <span className="text-secondary">Total Staked:</span>
+              <span className="text-primary-text font-semibold">
+                {totalAmount.toLocaleString()} KPAD
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-secondary">Your Tier:</span>
+              <span className={`font-medium ${tierInfo[tier].color}`}>
+                {tierInfo[tier].name}
+              </span>
+            </div>
           </div>
           {tier >= 3 && (
-            <div className="text-xs text-yellow-400 mt-1">
+            <div className="text-xs text-yellow-400 mt-2 pt-2 border-t border-yellow-500/20">
               🎉 Qualifies for whitelist access!
             </div>
           )}
@@ -169,8 +200,18 @@ const StakingForm = () => {
             
             <div className="space-y-3 mb-6">
               <div className="flex justify-between">
-                <span className="text-secondary">Amount:</span>
+                <span className="text-secondary">Adding Amount:</span>
                 <span className="text-primary-text font-medium">{numericAmount.toLocaleString()} KPAD</span>
+              </div>
+              {currentStakedAmount > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-secondary">Current Staked:</span>
+                  <span className="text-primary-text font-medium">{currentStakedAmount.toLocaleString()} KPAD</span>
+                </div>
+              )}
+              <div className="flex justify-between border-t border-border-color pt-2">
+                <span className="text-secondary">Total Staked:</span>
+                <span className="text-primary-text font-semibold">{totalAmount.toLocaleString()} KPAD</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-secondary">Tier:</span>

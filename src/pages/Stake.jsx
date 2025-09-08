@@ -1,7 +1,5 @@
-import React, { useState } from 'react';
-import { Users, TrendingUp } from 'lucide-react';
-import useWalletStore from '../wallet/walletStore';
-import { useStakingPactCalls } from '../hooks/useStakingPactCalls';
+import { useState } from 'react';
+import { TrendingUp } from 'lucide-react';
 import { StakingDataProvider, useStakingDataContext } from '../contexts/StakingDataContext';
 
 // Components
@@ -14,8 +12,6 @@ import BalanceOverview from '../components/staking/MobileBalanceOverview';
 
 const StakeContent = () => {
   const [activeTab, setActiveTab] = useState('stake');
-  const { isConnected } = useWalletStore();
-  const { isLoading } = useStakingPactCalls();
 
   return (
     <div className="min-h-screen bg-primary-bg pt-24 pb-16">
@@ -121,40 +117,42 @@ const StakeContent = () => {
 
           {/* Staking Forms - Middle on Desktop (3 columns) */}
           <div className="lg:col-span-3 order-2 lg:order-2">
-            <div className="card">
-              {/* Tab Navigation */}
-              <div className="flex border-b border-border-color">
-                <button
-                  onClick={() => setActiveTab('stake')}
-                  className={`flex-1 px-4 py-3 font-medium transition-colors ${
-                    activeTab === 'stake'
-                      ? 'bg-accent text-white border-b-2 border-accent'
-                      : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
-                  }`}
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    <TrendingUp className="w-4 h-4" />
-                    <span>Stake</span>
-                  </div>
-                </button>
-                <button
-                  onClick={() => setActiveTab('unstake')}
-                  className={`flex-1 px-4 py-3 font-medium transition-colors ${
-                    activeTab === 'unstake'
-                      ? 'bg-red-600 text-white border-b-2 border-red-600'
-                      : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
-                  }`}
-                >
-                  <div className="flex items-center justify-center space-x-2">
-                    <TrendingUp className="w-4 h-4 rotate-180" />
-                    <span>Unstake</span>
-                  </div>
-                </button>
-              </div>
+            <div className="sticky top-24">
+              <div className="card">
+                {/* Tab Navigation */}
+                <div className="flex border-b border-border-color">
+                  <button
+                    onClick={() => setActiveTab('stake')}
+                    className={`flex-1 px-4 py-3 font-medium transition-colors ${
+                      activeTab === 'stake'
+                        ? 'bg-accent text-white border-b-2 border-accent'
+                        : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Stake</span>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('unstake')}
+                    className={`flex-1 px-4 py-3 font-medium transition-colors ${
+                      activeTab === 'unstake'
+                        ? 'bg-red-600 text-white border-b-2 border-red-600'
+                        : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <TrendingUp className="w-4 h-4 rotate-180" />
+                      <span>Unstake</span>
+                    </div>
+                  </button>
+                </div>
 
-              {/* Tab Content */}
-              <div className="p-0">
-                {activeTab === 'stake' ? <StakingForm /> : <UnstakingForm />}
+                {/* Tab Content */}
+                <div className="p-0">
+                  {activeTab === 'stake' ? <StakingForm /> : <UnstakingForm />}
+                </div>
               </div>
             </div>
           </div>

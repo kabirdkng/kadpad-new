@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, Clock, ArrowDown, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Clock, ArrowDown, TrendingDown } from 'lucide-react';
 import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
 import { useStakingDataContext } from '../../contexts/StakingDataContext';
 

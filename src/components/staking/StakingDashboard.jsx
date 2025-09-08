@@ -1,11 +1,14 @@
 import React from 'react';
 import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
+import { useStakerEmail } from '../../hooks/useStakerEmail';
 import WalletConnectButton from '../WalletConnectButton';
-import { Clock, TrendingUp, AlertCircle } from 'lucide-react';
+import EmailManagement from './EmailManagement';
+import { Clock, TrendingUp, AlertCircle, Mail } from 'lucide-react';
 
 const StakingDashboard = () => {
   const { 
     isConnected, 
+    account,
     userStakes, 
     userBalance, 
     isLoading,
@@ -13,6 +16,8 @@ const StakingDashboard = () => {
     extractDateValue,
     getTierByAmount 
   } = useStakingPactCalls();
+
+  const { hasEmail } = useStakerEmail(account);
 
   if (!isConnected) {
     return (
@@ -66,6 +71,8 @@ const StakingDashboard = () => {
   }
 
   const stake = userStakes[0];
+  const userTier = getTierByAmount(extractNumericValue(stake?.amount) || 0).tier;
+  const isEligibleForWhitelist = userTier > 0; // Only Tier 1, 2, 3 are eligible
   
   const isMatured = extractNumericValue(stake?.['is-mature'] || stake?.isMature) === 1 || false;
   const penaltyPercent = (extractNumericValue(stake?.['penalty-percent'] || stake?.penaltyPercent) * 100).toFixed(2);
@@ -80,6 +87,29 @@ const StakingDashboard = () => {
 
   return (
     <div className="space-y-3 lg:space-y-4">
+      {/* Email notification banner for users with stakes but no email - only for eligible tiers */}
+      {userStakes && userStakes.length > 0 && !hasEmail && isEligibleForWhitelist && (
+        <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 lg:p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <Mail className="w-4 h-4 text-accent" />
+            </div>
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-accent mb-1">
+                Add Your Email for Launch Notifications
+              </h4>
+              <p className="text-xs text-secondary mb-2">
+                As a Tier {userTier} staker, you're eligible for exclusive project launches and whitelists. 
+                Add your email below to get notified when new opportunities become available.
+              </p>
+              <div className="text-xs text-secondary">
+                Stay updated on: New launches • Whitelist eligibility • Tier benefits • Platform updates
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="bg-card rounded-lg p-3 lg:p-4 border border-border-color">
         <h3 className="text-base font-semibold text-primary-text mb-3 lg:block hidden">Dashboard</h3>
         
@@ -192,6 +222,8 @@ const StakingDashboard = () => {
           </div>
         </div>
       </div>
+
+      {isEligibleForWhitelist && <EmailManagement account={account} />}
     </div>
   );
 };
