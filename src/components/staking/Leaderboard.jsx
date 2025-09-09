@@ -1,9 +1,12 @@
-import React from 'react';
 import { Trophy, Crown, Award, Medal } from 'lucide-react';
 import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
 
 const Leaderboard = () => {
   const { leaderboard, isLoading, extractNumericValue } = useStakingPactCalls();
+
+  // Extract rankings and tier percentages from leaderboard data
+  const rankings = leaderboard?.rankings || [];
+  const tierPercentages = leaderboard?.tierPercentages || null;
 
   const getTierIcon = (tier) => {
     switch (tier) {
@@ -72,13 +75,13 @@ const Leaderboard = () => {
         <h3 className="text-base font-semibold text-primary-text">Top Stakers</h3>
       </div>
 
-      {!leaderboard || leaderboard.length === 0 ? (
+      {!leaderboard || rankings.length === 0 ? (
         <div className="text-center py-4">
           <div className="text-secondary text-sm">No data available</div>
         </div>
       ) : (
         <div className="space-y-2">
-          {leaderboard.map((entry, index) => (
+          {rankings.map((entry, index) => (
             <div
               key={entry.account}
               className={`flex items-center space-x-2 p-2 rounded-lg transition-colors ${
@@ -114,33 +117,44 @@ const Leaderboard = () => {
         </div>
       )}
 
-      {/* Tier Legend */}
-      <div className="mt-4 pt-3 border-t border-border-color">
-        <div className="text-xs text-secondary mb-2">Tiers</div>
-        <div className="grid grid-cols-1 gap-1 text-xs">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1">
-              <Medal className="w-3 h-3 text-orange-400" />
-              <span className="text-secondary">T1</span>
+      {/* Tier Information */}
+      {tierPercentages && (
+        <div className="mt-4 pt-3 border-t border-border-color">
+          <div className="text-xs text-secondary mb-2">Tier Information</div>
+          <div className="grid grid-cols-1 gap-1 text-xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1">
+                <Medal className="w-3 h-3 text-orange-400" />
+                <span className="text-secondary">T1 (Node) - 50k+</span>
+              </div>
+              <span className="text-secondary">{tierPercentages.tier1}%</span>
             </div>
-            <span className="text-secondary">50k+</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1">
-              <Award className="w-3 h-3 text-gray-400" />
-              <span className="text-secondary">T2</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1">
+                <Award className="w-3 h-3 text-gray-400" />
+                <span className="text-secondary">T2 (Cluster) - 150k+</span>
+              </div>
+              <span className="text-secondary">{tierPercentages.tier2}%</span>
             </div>
-            <span className="text-secondary">150k+</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-1">
-              <Crown className="w-3 h-3 text-yellow-400" />
-              <span className="text-secondary">T3</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-1">
+                <Crown className="w-3 h-3 text-yellow-400" />
+                <span className="text-secondary">T3 (Chainweb) - 350k+</span>
+              </div>
+              <span className="text-secondary">{tierPercentages.tier3}%</span>
             </div>
-            <span className="text-secondary">350k+</span>
+            {tierPercentages.noTier > 0 && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 rounded-full bg-gray-600"></div>
+                  <span className="text-secondary">No Tier</span>
+                </div>
+                <span className="text-secondary">{tierPercentages.noTier}%</span>
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

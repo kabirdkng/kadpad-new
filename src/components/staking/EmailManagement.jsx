@@ -134,7 +134,7 @@ const EmailManagement = ({ account }) => {
           Email Notifications
         </h4>
         {!hasEmail && !isEditing && (
-          <div className="px-2 py-1 bg-accent/10 border border-accent/20 rounded-full">
+          <div className="px-2 py-1 bg-accent/10 rounded-full">
             <span className="text-xs font-medium text-accent">Recommended</span>
           </div>
         )}

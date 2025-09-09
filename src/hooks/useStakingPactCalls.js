@@ -289,6 +289,14 @@ export const useStakingPactCalls = () => {
     }
   }, [createPactCode, pubKey, setStakingStats, extractNumericValue]);
 
+  // Helper function to determine tier
+  const getTierByAmount = useCallback((amount) => {
+    if (amount >= 350000) return { tier: 3, name: 'Chainweb' };
+    if (amount >= 150000) return { tier: 2, name: 'Cluster' };
+    if (amount >= 50000) return { tier: 1, name: 'Node' };
+    return { tier: 0, name: 'No Tier' };
+  }, []);
+
   // Get leaderboard data
   const getLeaderboard = useCallback(async () => {
     try {
@@ -298,10 +306,30 @@ export const useStakingPactCalls = () => {
       if (result?.result?.status === 'success') {
         const tierData = result.result.data;
         
+        // Calculate tier percentages
+        const totalWallets = tierData.length;
+        const tierCounts = { tier1: 0, tier2: 0, tier3: 0, noTier: 0 };
+        
+        tierData.forEach(item => {
+          const amount = extractNumericValue(item.total);
+          const tierInfo = getTierByAmount(amount);
+          if (tierInfo.tier === 3) tierCounts.tier3++;
+          else if (tierInfo.tier === 2) tierCounts.tier2++;
+          else if (tierInfo.tier === 1) tierCounts.tier1++;
+          else tierCounts.noTier++;
+        });
+        
+        const tierPercentages = {
+          tier1: totalWallets > 0 ? Math.round((tierCounts.tier1 / totalWallets) * 100) : 0,
+          tier2: totalWallets > 0 ? Math.round((tierCounts.tier2 / totalWallets) * 100) : 0,
+          tier3: totalWallets > 0 ? Math.round((tierCounts.tier3 / totalWallets) * 100) : 0,
+          noTier: totalWallets > 0 ? Math.round((tierCounts.noTier / totalWallets) * 100) : 0
+        };
+        
         // Sort by total staked amount in descending order
         const sortedData = tierData
           .sort((a, b) => extractNumericValue(b.total) - extractNumericValue(a.total))
-          .slice(0, 10) // Top 10
+          .slice(0, 5) // Top 5
           .map((item, index) => ({
             rank: index + 1,
             account: item.account,
@@ -309,21 +337,19 @@ export const useStakingPactCalls = () => {
             tier: getTierByAmount(extractNumericValue(item.total)).tier
           }));
         
-        setLeaderboard(sortedData);
-        return sortedData;
+        // Add tier percentages to the leaderboard data
+        const leaderboardWithPercentages = {
+          rankings: sortedData,
+          tierPercentages: tierPercentages
+        };
+        
+        setLeaderboard(leaderboardWithPercentages);
+        return leaderboardWithPercentages;
       }
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
     }
-  }, [createPactCode, pubKey, setLeaderboard, extractNumericValue]);
-
-  // Helper function to determine tier
-  const getTierByAmount = (amount) => {
-    if (amount >= 350000) return { tier: 3, name: 'Chainweb' };
-    if (amount >= 150000) return { tier: 2, name: 'Cluster' };
-    if (amount >= 50000) return { tier: 1, name: 'Node' };
-    return { tier: 0, name: 'No Tier' };
-  };
+  }, [createPactCode, pubKey, setLeaderboard, extractNumericValue, getTierByAmount]);
 
   // Stake tokens
   const stakeTokens = useCallback(async (amount) => {
