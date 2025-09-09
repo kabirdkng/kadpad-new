@@ -112,4 +112,9 @@ export const deleteStakerEmail = (account) => {
   return api.delete(`/stakers/account/${account}`);
 };
 
+// Whitelist notification API
+export const notifyWhitelistSuccess = (data) => {
+  return api.post('/whitelist/notify-success', data);
+};
+
 export default api;

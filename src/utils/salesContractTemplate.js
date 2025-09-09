@@ -54,7 +54,7 @@ ${keys}
   ;-----------------------------------------------------------------------------
   (defconst TOTAL-BATCHES:integer ${batches} @doc "Number of Batches to sell") ;; Variable
 
-  (defconst P0-RESERVED:integer ${formattedWhitelistLimit} @doc "Number of tokens that Whitelist can purchase") ;; Variable
+  (defconst P0-RESERVED:integer ${formattedWhitelistLimit} @doc "Number of batches that Whitelist can purchase") ;; Variable
 
   (defconst AMOUNT-PER-BATCH:decimal ${formattedAmountPerBatch} 
     @doc "Number of tokens per batch Total Batches * Amount-Per-Batch = total sale") ;; Variable
