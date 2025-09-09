@@ -19,6 +19,60 @@ const StakingDashboard = () => {
 
   const { hasEmail } = useStakerEmail(account);
 
+  // Helper function to format time duration in days and hours with stylish components
+  const formatDuration = (totalHours) => {
+    if (totalHours <= 0) return { days: 0, hours: 0, formatted: '0h' };
+    
+    const days = Math.floor(totalHours / 24);
+    const hours = Math.floor(totalHours % 24);
+    
+    let formatted = '';
+    if (days === 0) {
+      formatted = `${hours}h`;
+    } else if (hours === 0) {
+      formatted = `${days}d`;
+    } else {
+      formatted = `${days}d ${hours}h`;
+    }
+    
+    return { days, hours, formatted };
+  };
+
+  // Stylish duration component
+  const DurationDisplay = ({ duration, label, className = "" }) => {
+    const { days, hours, formatted } = formatDuration(duration);
+    
+    return (
+      <div className={`flex flex-col ${className}`}>
+        <div className="text-xs text-secondary mb-1">{label}</div>
+        <div className="flex items-baseline space-x-1">
+          {days > 0 && (
+            <div className="flex items-baseline">
+              <span className="text-lg lg:text-xl font-bold text-primary-text">{days}</span>
+              <span className="text-xs text-secondary ml-0.5">d</span>
+            </div>
+          )}
+          {hours > 0 && (
+            <div className="flex items-baseline">
+              <span className="text-lg lg:text-xl font-bold text-primary-text">{hours}</span>
+              <span className="text-xs text-secondary ml-0.5">h</span>
+            </div>
+          )}
+          {days === 0 && hours === 0 && (
+            <span className="text-lg lg:text-xl font-bold text-gray-400">0h</span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // Helper function to calculate precise time difference in hours
+  const getTimeDifferenceInHours = (startDate, endDate) => {
+    if (!startDate || !endDate) return 0;
+    const diffMs = endDate.getTime() - startDate.getTime();
+    return Math.max(0, diffMs / (1000 * 60 * 60)); // Convert to hours
+  };
+
   if (!isConnected) {
     return (
       <div className="bg-card rounded-lg p-8 text-center border border-border-color">
@@ -82,8 +136,17 @@ const StakingDashboard = () => {
   const unlockDate = stake?.unlockDate || extractDateValue(stake?.['unlock-date']);
   
   const now = new Date();
-  const timeUntilUnlock = unlockDate ? unlockDate.getTime() - now.getTime() : 0;
-  const daysUntilUnlock = Math.max(0, Math.ceil(timeUntilUnlock / (1000 * 60 * 60 * 24)));
+  
+  // Calculate time staked in hours for more precise display
+  const timeStakedHours = lockDate ? getTimeDifferenceInHours(lockDate, now) : daysStaked * 24;
+  
+  // Calculate time until unlock in hours for more precise display
+  const timeUntilUnlockHours = unlockDate ? getTimeDifferenceInHours(now, unlockDate) : 0;
+  const daysUntilUnlock = Math.max(0, Math.ceil(timeUntilUnlockHours / 24));
+  
+  // Calculate progress percentage for the lock period (365 days total)
+  const totalLockHours = 365 * 24; // 365 days in hours
+  const progressPercentage = Math.min(100, Math.max(0, (timeStakedHours / totalLockHours) * 100));
 
   return (
     <div className="space-y-3 lg:space-y-4">
@@ -122,14 +185,13 @@ const StakingDashboard = () => {
           </div>
           
           <div className="bg-gray-800/50 rounded-lg p-3">
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="text-xs text-secondary mb-1">Days Staked</div>
-                <div className="text-base font-bold text-primary-text">
-                  {daysStaked} days
-                </div>
-              </div>
-              <div className="text-right">
+            <div className="flex justify-between items-start">
+              <DurationDisplay 
+                duration={timeStakedHours} 
+                label="Time Staked"
+                className="flex-1"
+              />
+              <div className="text-right flex-1">
                 <div className="text-xs text-secondary mb-1">Current Tier</div>
                 <div className={`text-base font-bold ${
                   getTierByAmount(extractNumericValue(stake?.amount) || 0).tier === 3 
@@ -168,29 +230,73 @@ const StakingDashboard = () => {
 
           <div className="space-y-2 lg:space-y-3">
             <div>
-              <div className="flex items-center space-x-2 text-secondary mb-1">
+              <div className="flex items-center space-x-2 text-secondary mb-2">
                 <Clock className="w-3 h-3" />
-                <span className="text-xs">Lock Period</span>
+                <span className="text-xs">Lock Period Remaining</span>
               </div>
-              <div className="text-xs lg:text-sm text-primary-text">
-                {isMatured ? (
-                  <span className="text-green-400 font-medium">Ready to unstake</span>
-                ) : (
-                  <span>{daysUntilUnlock} days remaining</span>
-                )}
+              <div className="space-y-2">
+                <div className="text-xs lg:text-sm text-primary-text">
+                  {isMatured ? (
+                    <div className="flex items-center space-x-2">
+                      <span className="text-green-400 font-medium">Ready to unstake</span>
+                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2">
+                      <DurationDisplay 
+                        duration={timeUntilUnlockHours} 
+                        label="" 
+                        className="flex-row space-x-1"
+                      />
+                      <span className="text-xs text-secondary">remaining</span>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Progress bar */}
+                <div className="w-full">
+                  <div className="flex justify-between text-xs text-secondary mb-1">
+                    <span>Progress</span>
+                    <span>{Math.round(progressPercentage)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-700 rounded-full h-2">
+                    <div 
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        isMatured 
+                          ? 'bg-green-400' 
+                          : progressPercentage > 75 
+                          ? 'bg-yellow-400' 
+                          : progressPercentage > 50 
+                          ? 'bg-blue-400' 
+                          : 'bg-orange-400'
+                      }`}
+                      style={{ width: `${progressPercentage}%` }}
+                    ></div>
+                  </div>
+                </div>
               </div>
             </div>
             
             <div>
-              <div className="flex items-center space-x-2 text-secondary mb-1">
+              <div className="flex items-center space-x-2 text-secondary mb-2">
                 <AlertCircle className="w-3 h-3" />
                 <span className="text-xs">Early Unstake Penalty</span>
               </div>
               <div className="text-xs lg:text-sm text-primary-text">
                 {isMatured ? (
-                  <span className="text-green-400 font-medium">No penalty</span>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-green-400 font-medium">No penalty</span>
+                    <div className="px-2 py-1 bg-green-500/20 rounded-full">
+                      <span className="text-xs text-green-400 font-medium">0%</span>
+                    </div>
+                  </div>
                 ) : (
-                  <span className="text-orange-400 font-medium">{penaltyPercent}%</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-orange-400 font-medium">Current penalty</span>
+                    <div className="px-2 py-1 bg-orange-500/20 rounded-full border border-orange-500/30">
+                      <span className="text-xs text-orange-400 font-bold">{penaltyPercent}%</span>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
