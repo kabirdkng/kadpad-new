@@ -1,0 +1,102 @@
+;; Penalty Calculation Tests
+;; Test the linear decay penalty model
+
+(begin-tx "Test penalty calculations")
+(namespace 'STAKE_NS)
+(use staking)
+
+;; Test helper to verify penalty calculations
+(let ((lock-date (time "2024-01-01T00:00:00Z"))
+      (amount 100000.0))
+
+  ;; Day 1 - Should have ~99.73% penalty
+  (env-chain-data { 'block-time: (add-time lock-date 86400)}) ; 1 day
+  (let ((result (staking.calculate-penalty amount lock-date)))
+    (expect "Day 1: days staked" 1 (at 'days-staked result))
+    (expect "Day 1: penalty ~99.73%" true (< (- 0.9973 (at 'penalty-percent result)) 0.001))
+    (expect "Day 1: return ~270 tokens" true (< (- (at 'return-amount result) 270.0) 10.0))
+    (expect "Day 1: not mature" false (at 'is-mature result)))
+
+  ;; Day 30 - Should have ~91.78% penalty
+  (env-chain-data { 'block-time: (add-time lock-date (* 30 86400))}) ; 30 days
+  (let ((result (staking.calculate-penalty amount lock-date)))
+    (expect "Day 30: days staked" 30 (at 'days-staked result))
+    (expect "Day 30: penalty ~91.78%" true (< (- 0.9178 (at 'penalty-percent result)) 0.001))
+    (expect "Day 30: return ~8220 tokens" true (< (- (at 'return-amount result) 8220.0) 100.0))
+    (expect "Day 30: not mature" false (at 'is-mature result)))
+
+  ;; Day 90 - Should have ~75.34% penalty
+  (env-chain-data { 'block-time: (add-time lock-date (* 90 86400))}) ; 90 days
+  (let ((result (staking.calculate-penalty amount lock-date)))
+    (expect "Day 90: days staked" 90 (at 'days-staked result))
+    (expect "Day 90: penalty ~75.34%" true (< (- 0.7534 (at 'penalty-percent result)) 0.001))
+    (expect "Day 90: return ~24660 tokens" true (< (- (at 'return-amount result) 24660.0) 100.0))
+    (expect "Day 90: not mature" false (at 'is-mature result)))
+
+  ;; Day 182 (6 months) - Should have ~50.17% penalty
+  (env-chain-data { 'block-time: (add-time lock-date (* 182 86400))}) ; 182 days
+  (let ((result (staking.calculate-penalty amount lock-date)))
+    (expect "Day 182: days staked" 182 (at 'days-staked result))
+    (expect "Day 182: penalty ~50.14%" true (< (- 0.5014 (at 'penalty-percent result)) 0.001))
+    (expect "Day 182: return ~49860 tokens" true (< (- (at 'return-amount result) 49860.0) 100.0))
+    (expect "Day 182: not mature" false (at 'is-mature result)))
+
+  ;; Day 270 - Should have ~26.02% penalty
+  (env-chain-data { 'block-time: (add-time lock-date (* 270 86400))}) ; 270 days
+  (let ((result (staking.calculate-penalty amount lock-date)))
+    (expect "Day 270: days staked" 270 (at 'days-staked result))
+    (expect "Day 270: penalty ~26.03%" true (< (- 0.2603 (at 'penalty-percent result)) 0.001))
+    (expect "Day 270: return ~73970 tokens" true (< (- (at 'return-amount result) 73970.0) 100.0))
+    (expect "Day 270: not mature" false (at 'is-mature result)))
+
+  ;; Day 364 - Should have ~0.27% penalty
+  (env-chain-data { 'block-time: (add-time lock-date (* 364 86400))}) ; 364 days
+  (let ((result (staking.calculate-penalty amount lock-date)))
+    (expect "Day 364: days staked" 364 (at 'days-staked result))
+    (expect "Day 364: penalty ~0.27%" true (< (- 0.0027 (at 'penalty-percent result)) 0.001))
+    (expect "Day 364: return ~99730 tokens" true (< (- (at 'return-amount result) 99730.0) 100.0))
+    (expect "Day 364: not mature" false (at 'is-mature result))
+
+  ;; Day 365 - Should have 0% penalty (fully mature)
+  (env-chain-data { 'block-time: (add-time lock-date (* 365 86400))}) ; 365 days
+  (let ((result (staking.calculate-penalty amount lock-date)))
+    (expect "Day 365: days staked" 365 (at 'days-staked result))
+    (expect "Day 365: no penalty" 0.0 (at 'penalty-percent result))
+    (expect "Day 365: full return" 100000.0 (at 'return-amount result))
+    (expect "Day 365: is mature" true (at 'is-mature result)))
+
+  ;; Day 400 - Should still have 0% penalty (past maturity)
+  (env-chain-data { 'block-time: (add-time lock-date (* 400 86400))}) ; 400 days
+  (let ((result (staking.calculate-penalty amount lock-date)))
+    (expect "Day 400: days staked" 400 (at 'days-staked result))
+    (expect "Day 400: no penalty" 0.0 (at 'penalty-percent result))
+    (expect "Day 400: full return" 100000.0 (at 'return-amount result))
+    (expect "Day 400: is mature" true (at 'is-mature result))
+  )
+))
+
+(commit-tx)
+
+;; Test with different amounts
+(begin-tx "Test penalty with various amounts")
+(namespace 'STAKE_NS)
+(use staking)
+
+(let ((lock-date (time "2024-01-01T00:00:00Z")))
+
+  ;; Test with 50k tokens at day 180
+  (env-chain-data { 'block-time: (add-time lock-date (* 180 86400))})
+  (let ((result (staking.calculate-penalty 50000.0 lock-date)))
+    (print (format "50k at day 180: {} penalty, {} returned" [(at 'penalty-amount result) (at 'return-amount result)])))
+
+  ;; Test with 150k tokens at day 180
+  (let ((result (staking.calculate-penalty 150000.0 lock-date)))
+    (print (format "150k at day 180: {} penalty, {} returned" [(at 'penalty-amount result) (at 'return-amount result)])))
+
+  ;; Test with 350k tokens at day 180
+  (let ((result (staking.calculate-penalty 350000.0 lock-date)))
+    (print (format "350k at day 180: {} penalty, {} returned" [(at 'penalty-amount result) (at 'return-amount result)])))
+)
+
+(commit-tx)
+

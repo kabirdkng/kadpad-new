@@ -1,0 +1,95 @@
+; Test that prices cannot be updated with unauthorized key
+(begin-tx)
+(env-sigs
+  [{ "key": "b1"
+   , "caps": []
+   }])
+
+(expect-failure "unauthorized price update rejected"
+  (NS.token-sales.set-price "phase-1" 10.0))
+(commit-tx)
+
+; Set time to before Phase 0 starts (before sales begin)
+(env-chain-data {"chain-id": "1", "block-time": (time "2025-08-26T11:40:00Z")})
+
+(begin-tx)
+; Test initial prices (should be 1.0 and 2.0 from setup)
+(expect "initial phase 0 price" 1.0 
+  (NS.token-sales.get-p0-price))
+(expect "initial phase 1 price" 2.0 
+  (NS.token-sales.get-p1-price))
+(commit-tx)
+
+; Test first price update to 3.0 and 4.0
+(begin-tx)
+(env-sigs
+  [{ "key": "gk"
+   , "caps": [(NS.token-sales.SALES-OPERATOR)]
+   }])
+
+(NS.token-sales.set-price "phase-0" 3.0)
+(NS.token-sales.set-price "phase-1" 4.0)
+
+; Verify the price updates
+(expect "phase 0 price updated to 3.0" 3.0 
+  (NS.token-sales.get-p0-price))
+(expect "phase 1 price updated to 4.0" 4.0 
+  (NS.token-sales.get-p1-price))
+(commit-tx)
+
+; Test second price update back to 1.0 and 2.0
+(begin-tx)
+(env-sigs
+  [{ "key": "gk"
+   , "caps": [(NS.token-sales.SALES-OPERATOR)]
+   }])
+
+(NS.token-sales.set-price "phase-0" 1.0)
+(NS.token-sales.set-price "phase-1" 2.0)
+
+; Verify the final price updates
+(expect "phase 0 price back to 1.0" 1.0 
+  (NS.token-sales.get-p0-price))
+(expect "phase 1 price back to 2.0" 2.0 
+  (NS.token-sales.get-p1-price))
+(commit-tx)
+
+; Test that price updates work correctly with current-price function
+(begin-tx)
+; Before Phase 0, should return Phase 1 price as default
+(expect "current price before phase 0" 2.0 
+  (NS.token-sales.get-price))
+(commit-tx)
+
+; Advance time to Phase 0 and test current price
+(env-chain-data {"chain-id": "1", "block-time": (time "2025-08-26T11:45:30Z")})
+
+(begin-tx)
+(expect "in phase 0" true 
+  (NS.token-sales.in-phase-0))
+(expect "current price in phase 0" 1.0 
+  (NS.token-sales.get-price))
+(commit-tx)
+
+; Advance time to Phase 1 and test current price
+(env-chain-data {"chain-id": "1", "block-time": (time "2025-08-26T11:50:30Z")})
+
+(begin-tx)
+(expect "in phase 1" true 
+  (NS.token-sales.in-phase-1))
+(expect "current price in phase 1" 2.0 
+  (NS.token-sales.get-price))
+(commit-tx)
+
+(begin-tx)
+; Set up sales operator signature
+(env-sigs
+  [{ "key": "gk"
+   , "caps": [(NS.token-sales.SALES-OPERATOR)]
+   }])
+
+; Try to update price during active sales (this should fail)
+(print "Attempting to update price during active Phase 1...")
+(expect-failure "Price update blocked during active sales"
+  (NS.token-sales.set-price "phase-1" 5.0))
+(commit-tx)

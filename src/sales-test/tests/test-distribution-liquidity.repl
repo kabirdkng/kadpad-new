@@ -1,0 +1,72 @@
+; Test Distribution and Liquidity with Real Operations
+; This test validates post-sales token distribution and DEX liquidity setup
+
+; End sales and test distribution
+(env-chain-data {"chain-id": "1", "block-time": (time "2025-08-26T12:10:00Z")})
+
+(begin-tx)
+; Test sales ended status
+(expect "sales ended" true 
+  (NS.token-sales.ended))
+
+; Check reserve account balance before distribution
+(expect "reserve account has tokens for distribution" 0.4 
+  (NS.token.get-balance NS.token-sales.RESERVE-ACCOUNT))
+(commit-tx)
+
+; Test token distribution
+(begin-tx)
+; Set up sales operator signature for distribution
+(env-sigs
+  [{ "key": "gk"
+   , "caps": [(NS.token-sales.SALES-OPERATOR)]
+   }])
+
+; Get initial balances before distribution
+(let ((buyer1-initial (NS.token.get-balance "buyer1"))
+      (buyer2-initial (NS.token.get-balance "buyer2"))
+      (buyer3-initial (NS.token.get-balance "buyer3")))
+
+; Execute distribution
+(NS.token-sales.distribute-tokens)
+
+; Calculate actual token amounts based on purchases from previous tests:
+; buyer1: 10 batches (phase 0) + 15 batches (phase 1) = 25 total
+; buyer2: 20 batches (phase 0) + 25 batches (phase 1) = 45 total
+; buyer3: 30 batches (phase 1) = 30 total
+
+(expect "buyer1 received correct tokens" (+ buyer1-initial (* 25 NS.token-sales.AMOUNT-PER-BATCH))
+  (NS.token.get-balance "buyer1"))
+(expect "buyer2 received correct tokens" (+ buyer2-initial (* 45 NS.token-sales.AMOUNT-PER-BATCH))
+  (NS.token.get-balance "buyer2"))
+(expect "buyer3 received correct tokens" (+ buyer3-initial (* 30 NS.token-sales.AMOUNT-PER-BATCH))
+  (NS.token.get-balance "buyer3")))
+(commit-tx)
+
+; Test end-sales function
+(begin-tx)
+(env-sigs
+  [{ "key": "gk"
+   , "caps": [(NS.token-sales.SALES-OPERATOR)]
+   }])
+
+; Get total sales amount before end-sales
+(let ((total-sales (coin.get-balance NS.token-sales.SALES-ACCOUNT)))
+
+(NS.token-sales.end-sales)
+
+; Test liquidity account received all sales proceeds
+(expect "liquidity account received all sales proceeds" total-sales
+  (coin.get-balance NS.token-treasury.LIQUIDITY-ACCOUNT))
+(expect "sales account emptied" 0.0 
+  (coin.get-balance NS.token-sales.SALES-ACCOUNT)))
+(commit-tx)
+
+; Test init-liquidity function
+(begin-tx)
+(use NS.token-treasury)
+(env-sigs [{'key:"gk", 'caps:[(INIT)]}])
+
+(expect "liquidity initialization completed" "Write succeeded"
+  (init-liquidity))
+(commit-tx)

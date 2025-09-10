@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import useTransactionStore from '../store/useTransactionStore';
 import transactionPollingService from '../services/transactionPollingService';
+import { checkTransactionStatus } from '../pactcalls/kadena';
 
 /**
  * Custom hook for centralized transaction management
@@ -13,6 +14,7 @@ const useTransactionManager = () => {
     getTransaction,
     getAllTransactions,
     getActiveTransactions,
+    getPendingTransactions,
     removeTransaction,
   } = useTransactionStore();
 
@@ -142,6 +144,56 @@ const useTransactionManager = () => {
   }, [getAllTransactions, getActiveTransactions]);
 
   /**
+   * Check pending transactions status and update them
+   * This should be called when the component mounts to refresh transaction states
+   */
+  const checkPendingTransactions = useCallback(async () => {
+    const pendingTransactions = getPendingTransactions();
+    
+    console.log(`Checking status for ${pendingTransactions.length} pending transactions`);
+    
+    // Check each pending transaction
+    const statusChecks = pendingTransactions.map(async (tx) => {
+      try {
+        // Extract chain ID from transaction metadata, default to '1'
+        const chainId = tx.chainId || '1';
+        
+        const statusResult = await checkTransactionStatus(tx.requestKey || tx.id, chainId);
+        
+        if (statusResult.found && statusResult.status === 'success') {
+          updateTransaction(tx.id, {
+            status: 'success',
+            result: statusResult.result,
+            message: 'Transaction completed successfully',
+            updatedAt: Date.now(),
+          });
+          console.log(`Transaction ${tx.id} found as successful`);
+        } else if (statusResult.found && statusResult.status === 'failure') {
+          updateTransaction(tx.id, {
+            status: 'error',
+            result: statusResult.result,
+            message: statusResult.result?.result?.error?.message || 'Transaction failed',
+            error: statusResult.result?.result?.error?.message,
+            updatedAt: Date.now(),
+          });
+          console.log(`Transaction ${tx.id} found as failed`);
+        } else {
+          // Transaction is still pending or not found yet
+          console.log(`Transaction ${tx.id} is still pending`);
+        }
+      } catch (error) {
+        console.error(`Error checking status for transaction ${tx.id}:`, error);
+        // Don't update the transaction status on error, keep it as pending
+      }
+    });
+    
+    // Wait for all status checks to complete
+    await Promise.allSettled(statusChecks);
+    
+    console.log('Finished checking pending transaction statuses');
+  }, [getPendingTransactions, updateTransaction]);
+
+  /**
    * Create transaction metadata helper
    */
   const createTransactionMetadata = useCallback((type, description, additionalData = {}) => {
@@ -174,6 +226,7 @@ const useTransactionManager = () => {
     submitTransaction,
     stopTransaction,
     retryTransaction,
+    checkPendingTransactions,
     
     // Store functions
     addTransaction,
@@ -182,6 +235,7 @@ const useTransactionManager = () => {
     removeTransaction,
     getAllTransactions,
     getActiveTransactions,
+    getPendingTransactions,
     
     // Utilities
     getStats,

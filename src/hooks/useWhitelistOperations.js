@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import { pactCallsSales } from '../pactcalls/kadena';
+import { notifyWhitelistSuccess } from '../api';
 import useTransactionManager from './useTransactionManager';
 
 export const useWhitelistOperations = (
@@ -57,6 +58,22 @@ export const useWhitelistOperations = (
           });
 
           if (finalResult?.result?.status === 'success') {
+            // Send whitelist success notification to backend
+            try {
+              await notifyWhitelistSuccess({
+                walletAddresses: walletsToWhitelist,
+                projectNamespace: namespace,
+                projectModuleName: moduleName,
+                transactionHash: txKey,
+                chainId: supplyChain
+              });
+              console.log('Whitelist notification sent successfully');
+            } catch (notificationError) {
+              console.error('Failed to send whitelist notification:', notificationError);
+              // Don't fail the whole transaction if notification fails
+              toast.warning('Transaction successful, but email notification may have failed');
+            }
+
             onSuccess && onSuccess();
           }
         } catch (pollError) {

@@ -95,4 +95,26 @@ export const incrementDistributionRound = (namespace, moduleName, transactionDat
   return api.patch(`/projects/increment-distribution/${namespace}/${moduleName}`, transactionData);
 };
 
+// Staker API functions
+export const addOrUpdateStakerEmail = (account, email) => {
+  return api.post('/stakers/email', { account, email });
+};
+
+export const getStakerByAccount = (account) => {
+  return api.get(`/stakers/account/${account}`);
+};
+
+export const updateNotificationPreferences = (account, emailNotificationsEnabled) => {
+  return api.patch(`/stakers/account/${account}/notifications`, { emailNotificationsEnabled });
+};
+
+export const deleteStakerEmail = (account) => {
+  return api.delete(`/stakers/account/${account}`);
+};
+
+// Whitelist notification API
+export const notifyWhitelistSuccess = (data) => {
+  return api.post('/whitelist/notify-success', data);
+};
+
 export default api;

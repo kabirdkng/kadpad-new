@@ -1,0 +1,94 @@
+; Test Phase 0 - Whitelist Sales with Real Coin Operations
+; This test validates the complete whitelist phase functionality
+
+; Set time to before Phase 0 starts
+(env-chain-data {"chain-id": "1", "block-time": (time "2025-08-26T11:40:00Z")})
+
+(begin-tx)
+; Test pre-phase state
+(expect "not in sales phase yet" "phase-1" 
+  (NS.token-sales.current-phase))
+(expect "sales not ended" false 
+  (NS.token-sales.ended))
+(commit-tx)
+
+; Advance time to Phase 0
+(env-chain-data {"chain-id": "1", "block-time": (time "2025-08-26T11:45:30Z")})
+
+(begin-tx)
+; Test Phase 0 activation
+(expect "now in phase 0" "phase-0" 
+  (NS.token-sales.current-phase))
+(expect "in phase 0 check" true 
+  (NS.token-sales.in-phase-0))
+(expect "phase 0 price is 1.0 KDA" 1.0 
+  (NS.token-sales.get-price))
+(commit-tx)
+
+; Test reservations (sales operator function)
+(begin-tx)
+(env-sigs
+  [{ "key": "gk"
+   , "caps": [(NS.token-sales.SALES-OPERATOR)]
+   }])
+
+(NS.token-sales.reserve-batch "buyer1")
+(NS.token-sales.reserve-batch "buyer2")
+
+; Test reservation status
+(expect "buyer1 has reservation" true 
+  (NS.token-sales.has-reservation "buyer1"))
+(expect "buyer2 has reservation" true 
+  (NS.token-sales.has-reservation "buyer2"))
+(expect "buyer3 has no reservation" false 
+  (NS.token-sales.has-reservation "buyer3"))
+(commit-tx)
+
+; Test Phase 0 buying
+(begin-tx)
+(env-sigs
+  [{ "key": "b1"
+   , "caps": 
+     [(coin.TRANSFER "buyer1" NS.token-sales.SALES-ACCOUNT 10.0)]
+   }])
+
+; buyer1 buys 10 batches at 1.0 KDA each = 10.0 KDA
+(NS.token-sales.buy "buyer1" (keyset-ref-guard "buyer1") 10)
+
+; Test buyer1 balance after purchase
+(expect "buyer1 KDA reduced by 10.0" 990.0 
+  (coin.get-balance "buyer1"))
+(expect "sales account received 10.0 KDA" 10.0 
+  (coin.get-balance NS.token-sales.SALES-ACCOUNT))
+(commit-tx)
+
+; Test second buyer
+(begin-tx)
+(env-sigs
+  [{ "key": "b2"
+   , "caps": 
+     [(coin.TRANSFER "buyer2" NS.token-sales.SALES-ACCOUNT 20.0)]
+   }])
+
+; buyer2 buys all 20 reserved batches
+(NS.token-sales.buy "buyer2" (keyset-ref-guard "buyer2") 20)
+
+; Test buyer2 balance after purchase
+(expect "buyer2 KDA reduced by 20.0" 980.0 
+  (coin.get-balance "buyer2"))
+(expect "sales account total is 30.0 KDA" 30.0 
+  (coin.get-balance NS.token-sales.SALES-ACCOUNT))
+(commit-tx)
+
+; Test buying without reservation (should fail in Phase 0)
+(begin-tx)
+(env-sigs
+  [{ "key": "b3"
+   , "caps": 
+     [(coin.TRANSFER "buyer3" NS.token-sales.SALES-ACCOUNT 5.0)]
+   }])
+
+; This should fail because buyer3 has no reservation
+(expect-failure "buyer3 cannot buy without reservation"
+  (NS.token-sales.buy "buyer3" (keyset-ref-guard "buyer3") 5))
+(commit-tx)

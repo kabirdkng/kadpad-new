@@ -29,6 +29,8 @@ export const transactionTypes = {
   UPDATE_PRICE: 'update-price',
   DEPLOY_CONTRACT: 'deploy-contract',
   MINT_TOKENS: 'mint-tokens',
+  STAKE_TOKENS: 'stake-tokens',
+  UNSTAKE_TOKENS: 'unstake-tokens',
   OTHER: 'other',
 };
 
@@ -340,10 +342,174 @@ export const handleWhitelistOperation = async ({
   }
 };
 
+/**
+ * Handle token staking with centralized transaction management
+ */
+export const handleTokenStaking = async ({
+  code,
+  chainId,
+  namespace,
+  tokenModule,
+  amount,
+  lockerAccount,
+  account,
+  pactCallsStakeTokens,
+  onSuccess,
+  onError,
+}) => {
+  try {
+    toast.info('Submitting stake transaction...', { position: 'top-center', autoClose: 2000 });
+    
+    const result = await pactCallsStakeTokens(
+      code,
+      chainId,
+      namespace,
+      tokenModule,
+      amount,
+      lockerAccount
+    );
+    
+    if (result?.preflightResult?.result?.status === 'success' || result?.result?.status === 'success') {
+      const txKey = result.transactionDescriptor?.requestKey || result.requestKey;
+      
+      // Create transaction metadata
+      const metadata = createTransactionMetadata(
+        transactionTypes.STAKE_TOKENS,
+        `Stake ${amount} KADPAD tokens`,
+        {
+          amount: amount,
+          account: account,
+          lockerAccount: lockerAccount,
+          chainId: chainId,
+          namespace: namespace,
+          tokenModule: tokenModule,
+          operation: 'stake',
+        }
+      );
+
+      // Submit transaction using the centralized manager
+      const finalResult = await submitTransaction({
+        txId: txKey,
+        pactClient: result.pactClient,
+        transactionDescriptor: result.transactionDescriptor,
+        metadata,
+        pollingConfig: {
+          enableToasts: true,
+        }
+      });
+
+      if (finalResult?.result?.status === 'success') {
+        onSuccess && onSuccess(finalResult);
+        return { success: true, result: finalResult, txKey };
+      } else {
+        const errorMessage = finalResult?.result?.error?.message || 'Staking transaction failed';
+        onError && onError(errorMessage);
+        return { success: false, error: errorMessage, txKey };
+      }
+    } else {
+      const errorMessage = 'Staking transaction submission failed';
+      toast.error(errorMessage, { position: 'top-center' });
+      onError && onError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  } catch (error) {
+    console.error('Staking error:', error);
+    const errorMessage = `Staking failed: ${error.message}`;
+    toast.error(errorMessage, { position: 'top-center' });
+    onError && onError(errorMessage);
+    return { success: false, error: errorMessage };
+  }
+};
+
+/**
+ * Handle token unstaking with centralized transaction management
+ */
+export const handleTokenUnstaking = async ({
+  code,
+  chainId,
+  namespace,
+  stakingModule,
+  tokenModule,
+  account,
+  lockerAccount,
+  amount,
+  pactCallsUnstakeTokens,
+  onSuccess,
+  onError,
+}) => {
+  try {
+    toast.info('Submitting unstake transaction...', { position: 'top-center', autoClose: 2000 });
+    
+    const result = await pactCallsUnstakeTokens(
+      code,
+      chainId,
+      namespace,
+      stakingModule,
+      tokenModule,
+      account,
+      lockerAccount,
+      amount
+    );
+    
+    if (result?.preflightResult?.result?.status === 'success' || result?.result?.status === 'success') {
+      const txKey = result.transactionDescriptor?.requestKey || result.requestKey;
+      
+      // Create transaction metadata
+      const metadata = createTransactionMetadata(
+        transactionTypes.UNSTAKE_TOKENS,
+        `Unstake ${amount} KADPAD tokens`,
+        {
+          amount: amount,
+          account: account,
+          lockerAccount: lockerAccount,
+          chainId: chainId,
+          namespace: namespace,
+          stakingModule: stakingModule,
+          tokenModule: tokenModule,
+          operation: 'unstake',
+        }
+      );
+
+      // Submit transaction using the centralized manager
+      const finalResult = await submitTransaction({
+        txId: txKey,
+        pactClient: result.pactClient,
+        transactionDescriptor: result.transactionDescriptor,
+        metadata,
+        pollingConfig: {
+          enableToasts: true,
+        }
+      });
+
+      if (finalResult?.result?.status === 'success') {
+        onSuccess && onSuccess(finalResult);
+        return { success: true, result: finalResult, txKey };
+      } else {
+        const errorMessage = finalResult?.result?.error?.message || 'Unstaking transaction failed';
+        onError && onError(errorMessage);
+        return { success: false, error: errorMessage, txKey };
+      }
+    } else {
+      const errorMessage = 'Unstaking transaction submission failed';
+      toast.error(errorMessage, { position: 'top-center' });
+      onError && onError(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  } catch (error) {
+    console.error('Unstaking error:', error);
+    const errorMessage = `Unstaking failed: ${error.message}`;
+    toast.error(errorMessage, { position: 'top-center' });
+    onError && onError(errorMessage);
+    return { success: false, error: errorMessage };
+  }
+};
+
 export default {
   handleTokenPurchase,
   handleTreasuryTransfer,
   handleWhitelistOperation,
+  handleTokenStaking,
+  handleTokenUnstaking,
   createTransactionMetadata,
   transactionTypes,
   submitTransaction,

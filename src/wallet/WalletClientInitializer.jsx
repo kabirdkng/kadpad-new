@@ -7,11 +7,8 @@ export const WalletClientInitializer = ({ children }) => {
   const { client } = walletContext;
 
   useEffect(() => {
-    console.log("WalletClientInitializer: client available:", !!client);
-    console.log("WalletClientInitializer: full context:", walletContext);
     
     if (client) {
-      console.log("WalletClientInitializer: Setting WalletConnect client");
       setWalletClient(client);
       
       // Store both client and full context globally as fallbacks
