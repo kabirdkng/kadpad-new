@@ -56,15 +56,16 @@ const WhitelistForm = ({
   // Initialize with available selected wallets when lottery data is available
   useEffect(() => {
     if (hasLotteryData && availableSelectedWallets.length > 0 && walletsToWhitelist.length === 0) {
-      setWalletsToWhitelist([...availableSelectedWallets]);
-      
-      const excludedCount = selectedWallets.length - availableSelectedWallets.length;
+      // Only add wallets that are not reserved
+      const walletsToAdd = availableSelectedWallets.filter(wallet => !reservedWallets.includes(wallet));
+      setWalletsToWhitelist([...walletsToAdd]);
+      const excludedCount = selectedWallets.length - walletsToAdd.length;
       if (excludedCount > 0) {
         toast.info(
-          `Added ${availableSelectedWallets.length} lottery wallets. ${excludedCount} already reserved.`
+          `Added ${walletsToAdd.length} lottery wallets. ${excludedCount} already reserved.`
         );
       } else {
-        toast.info(`Added ${availableSelectedWallets.length} lottery-selected wallets. These must be whitelisted first.`);
+        toast.info(`Added ${walletsToAdd.length} lottery-selected wallets. These must be whitelisted first.`);
       }
     }
   }, [hasLotteryData, availableSelectedWallets.length, walletsToWhitelist.length]);
@@ -97,10 +98,14 @@ const WhitelistForm = ({
             return;
           }
         }
-        
-        setWalletsToWhitelist([...walletsToWhitelist, newWallet]);
-        setNewWallet('');
-        toast.success('Address added to whitelist');
+        // Prevent reserved wallets from being added
+        if (!reservedWallets.includes(newWallet)) {
+          setWalletsToWhitelist([...walletsToWhitelist, newWallet]);
+          setNewWallet('');
+          toast.success('Address added to whitelist');
+        } else {
+          toast.error('Wallet address is already reserved and cannot be whitelisted');
+        }
       }
     } else {
       toast.error('Invalid wallet address');
@@ -139,7 +144,9 @@ const WhitelistForm = ({
         }
       }
       
-      validateAndAddAddresses(addresses, walletsToWhitelist, setWalletsToWhitelist, toast, reservedWallets);
+  // Filter out reserved wallets before adding
+  const filteredAddresses = addresses.filter(addr => !reservedWallets.includes(addr));
+  validateAndAddAddresses(filteredAddresses, walletsToWhitelist, setWalletsToWhitelist, toast, reservedWallets);
     } catch (error) {
       console.error('Error parsing CSV:', error);
       toast.error('Error parsing CSV file');
@@ -167,7 +174,9 @@ const WhitelistForm = ({
       }
     }
     
-    validateAndAddAddresses(addresses, walletsToWhitelist, setWalletsToWhitelist, toast, reservedWallets);
+  // Filter out reserved wallets before adding
+  const filteredAddresses = addresses.filter(addr => !reservedWallets.includes(addr));
+  validateAndAddAddresses(filteredAddresses, walletsToWhitelist, setWalletsToWhitelist, toast, reservedWallets);
     setBulkWallets('');
   };
 
@@ -253,7 +262,7 @@ const WhitelistForm = ({
   };
 
   const addAllSelectedWallets = () => {
-    const remaining = getRemainingSelectedWallets();
+    const remaining = getRemainingSelectedWallets().filter(wallet => !reservedWallets.includes(wallet));
     if (remaining.length > 0) {
       setWalletsToWhitelist(prev => [...prev, ...remaining]);
       toast.success(`Added ${remaining.length} remaining lottery-selected wallets`);
@@ -312,11 +321,6 @@ const WhitelistForm = ({
             <CheckCircle className="w-5 h-5 text-green-600" />
             <span className="text-green-700 text-sm">
               ✅ All {totalLotteryWallets} lottery wallets handled - ready for additional wallets
-              {selectedWallets.length < totalLotteryWallets && (
-                <span className="block text-xs mt-1">
-                  ({totalLotteryWallets - selectedWallets.length} were already reserved)
-                </span>
-              )}
             </span>
           </div>
         </div>
