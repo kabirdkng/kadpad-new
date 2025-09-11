@@ -122,4 +122,9 @@ export const getSelectedWallets = (namespace, moduleName) => {
   return api.get(`/projects/selected-wallets/${namespace}/${moduleName}`);
 };
 
+// Mark lottery wallets as whitelisted
+export const markLotteryWalletsWhitelisted = (namespace, moduleName, data) => {
+  return api.patch(`/projects/mark-lottery-whitelisted/${namespace}/${moduleName}`, data);
+};
+
 export default api;

@@ -74,7 +74,12 @@ export const useWhitelistOperations = (
               toast.warning('Transaction successful, but email notification may have failed');
             }
 
-            onSuccess && onSuccess();
+            // Pass transaction result to callback
+            onSuccess && onSuccess({
+              transactionHash: txKey,
+              finalResult: finalResult,
+              walletsWhitelisted: walletsToWhitelist
+            });
           }
         } catch (pollError) {
           console.error('Transaction polling error:', pollError);
