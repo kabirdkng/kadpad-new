@@ -117,4 +117,9 @@ export const notifyWhitelistSuccess = (data) => {
   return api.post('/whitelist/notify-success', data);
 };
 
+// Get selected lottery wallets for a project
+export const getSelectedWallets = (namespace, moduleName) => {
+  return api.get(`/projects/selected-wallets/${namespace}/${moduleName}`);
+};
+
 export default api;

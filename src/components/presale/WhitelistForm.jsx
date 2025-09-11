@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { Plus, Clipboard, Upload, FileText } from 'lucide-react';
+import { Plus, Clipboard, Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { validateAddress, parseCsvFile, parseBulkAddresses, validateAndAddAddresses } from '../../utils/addressUtils';
 import { useWhitelistOperations } from '../../hooks/useWhitelistOperations';
+import { useLotteryWallets } from '../../hooks/useLotteryWallets';
 
 const WhitelistForm = ({
   namespace,
@@ -25,6 +26,34 @@ const WhitelistForm = ({
     supplyChain,
     moduleName
   );
+
+  // Fetch lottery selected wallets
+  const { 
+    selectedWallets, 
+    hasLotteryData, 
+    lotteryDate, 
+    loading: lotteryLoading 
+  } = useLotteryWallets(namespace, moduleName);
+
+  // Initialize with selected wallets when lottery data is available
+  useEffect(() => {
+    if (hasLotteryData && selectedWallets.length > 0 && walletsToWhitelist.length === 0) {
+      setWalletsToWhitelist([...selectedWallets]);
+      toast.info(`Added ${selectedWallets.length} lottery-selected wallets. These must be whitelisted first.`);
+    }
+  }, [hasLotteryData, selectedWallets, walletsToWhitelist.length]);
+
+  // Check if all selected wallets are in the current whitelist
+  const areAllSelectedWalletsIncluded = () => {
+    if (!hasLotteryData || selectedWallets.length === 0) return true;
+    return selectedWallets.every(wallet => walletsToWhitelist.includes(wallet));
+  };
+
+  // Get remaining selected wallets that haven't been added yet
+  const getRemainingSelectedWallets = () => {
+    if (!hasLotteryData) return [];
+    return selectedWallets.filter(wallet => !walletsToWhitelist.includes(wallet));
+  };
 
   const handleAddToWhitelist = () => {
     if (validateAddress(newWallet)) {
@@ -69,13 +98,27 @@ const WhitelistForm = ({
   };
 
   const removeFromWhitelist = (indexToRemove) => {
+    const addressToRemove = walletsToWhitelist[indexToRemove];
+    
+    // Prevent removal of lottery-selected wallets
+    if (hasLotteryData && selectedWallets.includes(addressToRemove)) {
+      toast.error('Cannot remove lottery-selected wallets. These must be whitelisted.');
+      return;
+    }
+    
     setWalletsToWhitelist(prev => prev.filter((_, index) => index !== indexToRemove));
     toast.info('Address removed from whitelist');
   };
 
   const clearAllAddresses = () => {
-    setWalletsToWhitelist([]);
-    toast.info('All addresses cleared from whitelist');
+    if (hasLotteryData && selectedWallets.length > 0) {
+      // Only clear non-lottery addresses
+      setWalletsToWhitelist(selectedWallets);
+      toast.info('Cleared additional addresses. Lottery-selected wallets remain.');
+    } else {
+      setWalletsToWhitelist([]);
+      toast.info('All addresses cleared from whitelist');
+    }
   };
 
   const handlePasteFromClipboard = async () => {
@@ -92,10 +135,28 @@ const WhitelistForm = ({
   };
 
   const handleWhitelistSubmit = async () => {
+    // Check if lottery wallets are properly included
+    if (!areAllSelectedWalletsIncluded()) {
+      const remaining = getRemainingSelectedWallets();
+      toast.error(
+        `You must whitelist all ${selectedWallets.length} lottery-selected wallets first. ` +
+        `Missing ${remaining.length} wallet(s).`
+      );
+      return;
+    }
+
     await whitelistAddresses(walletsToWhitelist, () => {
       setWalletsToWhitelist([]);
       onSuccess && onSuccess();
     });
+  };
+
+  const addAllSelectedWallets = () => {
+    const remaining = getRemainingSelectedWallets();
+    if (remaining.length > 0) {
+      setWalletsToWhitelist(prev => [...prev, ...remaining]);
+      toast.success(`Added ${remaining.length} remaining lottery-selected wallets`);
+    }
   };
 
   return (
@@ -106,6 +167,62 @@ const WhitelistForm = ({
       >
         ← Back to options
       </button>
+      
+      {/* Lottery Status Information */}
+      {lotteryLoading && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <span className="text-blue-700">Loading lottery data...</span>
+          </div>
+        </div>
+      )}
+
+      {hasLotteryData && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1">
+              <h4 className="font-semibold text-yellow-800">Lottery Winners Selected</h4>
+              <p className="text-sm text-yellow-700 mt-1">
+                {selectedWallets.length} wallet addresses were selected in the lottery on{' '}
+                {lotteryDate ? new Date(lotteryDate).toLocaleDateString() : 'an earlier date'}.
+                These addresses must be whitelisted before you can add other wallets.
+              </p>
+              
+              {!areAllSelectedWalletsIncluded() && (
+                <div className="mt-3">
+                  <p className="text-sm text-yellow-700 mb-2">
+                    Missing {getRemainingSelectedWallets().length} lottery-selected wallets:
+                  </p>
+                  <button
+                    onClick={addAllSelectedWallets}
+                    className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition-colors"
+                  >
+                    Add All Missing Lottery Wallets
+                  </button>
+                </div>
+              )}
+
+              {areAllSelectedWalletsIncluded() && (
+                <div className="flex items-center gap-2 mt-2 text-green-700">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm">All lottery-selected wallets are included</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!hasLotteryData && !lotteryLoading && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <span className="text-green-700">No lottery restrictions - you can whitelist any wallets</span>
+          </div>
+        </div>
+      )}
       
       {/* Mode Selection */}
       <div className="flex flex-wrap gap-2 p-4 bg-secondary-bg rounded-lg border border-border-color">
@@ -245,34 +362,60 @@ const WhitelistForm = ({
               onClick={clearAllAddresses}
               className="text-red-400 hover:text-red-300 text-sm transition-colors"
             >
-              Clear All
+              {hasLotteryData && selectedWallets.length > 0 ? 'Clear Additional' : 'Clear All'}
             </button>
           </div>
           <div className="space-y-2 max-h-48 overflow-y-auto">
-            {walletsToWhitelist.map((address, index) => (
-              <div key={index} className="flex items-center justify-between p-2 bg-secondary-bg rounded border">
-                <span className="text-sm break-all flex-1 mr-2">
-                  {index + 1}. {address}
-                </span>
-                <button
-                  onClick={() => removeFromWhitelist(index)}
-                  className="text-red-400 hover:text-red-300 text-xs px-2 py-1 hover:bg-red-400/10 rounded transition-colors"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
+            {walletsToWhitelist.map((address, index) => {
+              const isLotterySelected = hasLotteryData && selectedWallets.includes(address);
+              return (
+                <div key={index} className={`flex items-center justify-between p-2 rounded border ${
+                  isLotterySelected 
+                    ? 'bg-yellow-50 border-yellow-200' 
+                    : 'bg-secondary-bg border-border-color'
+                }`}>
+                  <div className="flex items-center gap-2 flex-1 mr-2">
+                    <span className="text-sm break-all">
+                      {index + 1}. {address}
+                    </span>
+                    {isLotterySelected && (
+                      <span className="px-2 py-0.5 bg-yellow-200 text-yellow-800 text-xs rounded font-medium">
+                        Lottery
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => removeFromWhitelist(index)}
+                    className={`text-xs px-2 py-1 rounded transition-colors ${
+                      isLotterySelected
+                        ? 'text-yellow-700 hover:text-yellow-800 hover:bg-yellow-200'
+                        : 'text-red-400 hover:text-red-300 hover:bg-red-400/10'
+                    }`}
+                    disabled={isLotterySelected && hasLotteryData}
+                    title={isLotterySelected ? 'Lottery-selected wallets cannot be removed' : 'Remove wallet'}
+                  >
+                    {isLotterySelected ? 'Required' : 'Remove'}
+                  </button>
+                </div>
+              );
+            })}
           </div>
           <button 
-            className="btn btn-primary w-full"
+            className={`btn w-full transition-colors ${
+              areAllSelectedWalletsIncluded() 
+                ? 'btn-primary' 
+                : 'bg-red-600 hover:bg-red-700 text-white'
+            }`}
             onClick={handleWhitelistSubmit}
-            disabled={isWhitelisting}
+            disabled={isWhitelisting || walletsToWhitelist.length === 0}
           >
             {isWhitelisting ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
                 Whitelisting...
               </>
+            ) : !areAllSelectedWalletsIncluded() ? (
+              `Missing ${getRemainingSelectedWallets().length} Lottery Wallets`
             ) : (
               `Whitelist All ${walletsToWhitelist.length} Addresses`
             )}
