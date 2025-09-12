@@ -36,16 +36,19 @@ export const parseBulkAddresses = (text) => {
     .filter(addr => addr);
 };
 
-export const validateAndAddAddresses = (addresses, walletsToWhitelist, setWalletsToWhitelist, toast) => {
+export const validateAndAddAddresses = (addresses, walletsToWhitelist, setWalletsToWhitelist, toast, reservedWallets = []) => {
   const validAddresses = [];
   const invalidAddresses = [];
   const duplicateAddresses = [];
+  const reservedAddresses = [];
   
   addresses.forEach(address => {
     if (!address) return;
     
     if (walletsToWhitelist.includes(address)) {
       duplicateAddresses.push(address);
+    } else if (reservedWallets.includes(address)) {
+      reservedAddresses.push(address);
     } else if (validateAddress(address)) {
       validAddresses.push(address);
     } else {
@@ -67,5 +70,9 @@ export const validateAndAddAddresses = (addresses, walletsToWhitelist, setWallet
     toast.warning(`${duplicateAddresses.length} duplicate addresses skipped`);
   }
   
-  return { validAddresses, invalidAddresses, duplicateAddresses };
+  if (reservedAddresses.length > 0) {
+    toast.warning(`${reservedAddresses.length} addresses skipped (already reserved)`);
+  }
+  
+  return { validAddresses, invalidAddresses, duplicateAddresses, reservedAddresses };
 };
