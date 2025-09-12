@@ -133,7 +133,7 @@ const Header = () => {
         <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center justify-center text-center">
             <p className="text-white text-sm font-medium">
-              🚀 Announcing $KPAD Testnet Launch soon! 
+              This is testnet demo site Mainnet coming soon!!
               <a 
                 href="https://x.com/kadpad_official" 
                 target="_blank" 
