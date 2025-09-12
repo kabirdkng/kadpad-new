@@ -11,7 +11,7 @@ const metamask = {
       
       const { detectSnapProvider, SnapAdapter } = await import('@kadena/wallet-adapter-metamask-snap');
       
-      // Detect MetaMask provider
+      // Detect MetaMask provider - only show prompt when user explicitly connects
       const provider = await detectSnapProvider({ silent: false });
       if (!provider) {
         return {

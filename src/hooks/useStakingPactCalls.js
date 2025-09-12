@@ -21,6 +21,7 @@ export const useStakingPactCalls = () => {
     setStakingStats,
     setError,
     clearError,
+    clearUserData,
     // Get current state values
     userBalance,
     userStakes,
@@ -488,8 +489,9 @@ export const useStakingPactCalls = () => {
 
   // Refresh all data (including user-specific data)
   const refreshData = useCallback(async () => {
-    if (!isConnected) return;
+    if (!isConnected || !account) return;
     
+    console.log('useStakingPactCalls: Refreshing data for account:', account);
     setIsLoading(true);
     try {
       await Promise.all([
@@ -504,7 +506,23 @@ export const useStakingPactCalls = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [isConnected, getUserBalance, getUserStakes, getTotalStaked, getStakingStats, getLeaderboard]);
+  }, [isConnected, account, getUserBalance, getUserStakes, getTotalStaked, getStakingStats, getLeaderboard]);
+
+  // Effect to clear and refresh data when account changes
+  useEffect(() => {
+    if (account) {
+      console.log('useStakingPactCalls: Account changed, clearing and refreshing data for:', account);
+      // Clear user-specific data first
+      clearUserData();
+      
+      // Then refresh with new account data (but don't call refreshData directly here to avoid loops)
+      // The data will be refreshed by useStakingDataSync
+    } else if (isConnected) {
+      // If connected but no account, clear user data
+      console.log('useStakingPactCalls: Connected but no account, clearing user data');
+      clearUserData();
+    }
+  }, [account, isConnected]); // Remove refreshData and clearUserData from dependencies
 
   return {
     // Store data (like presale pattern)

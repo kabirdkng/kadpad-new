@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Mail, Edit3, Trash2, Bell, BellOff, CheckCircle, X, Save } from 'lucide-react';
-import { useStakerEmail } from '../../hooks/useStakerEmail';
+import { useStakerEmailContext } from '../../contexts/StakerEmailContext';
 
-const EmailManagement = ({ account, onEmailChange }) => {
+const EmailManagement = ({ onEmailChange }) => {
   const {
     stakerData,
     isLoading,
@@ -11,7 +11,7 @@ const EmailManagement = ({ account, onEmailChange }) => {
     addOrUpdateEmail,
     updateNotifications,
     deleteEmail
-  } = useStakerEmail(account);
+  } = useStakerEmailContext();
 
   const [isEditing, setIsEditing] = useState(false);
   const [emailInput, setEmailInput] = useState('');

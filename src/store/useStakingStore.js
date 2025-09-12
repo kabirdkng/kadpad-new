@@ -67,6 +67,16 @@ const useStakingStore = create(
       // Clear error
       clearError: () => set({ error: null }),
       
+      // Clear user-specific data (for account switching)
+      clearUserData: () => set({
+        userStakes: [],
+        userBalance: 0,
+        error: null,
+        isStaking: false,
+        isUnstaking: false,
+        isClaiming: false,
+      }),
+      
       // Reset state
       reset: () => set({
         userStakes: [],

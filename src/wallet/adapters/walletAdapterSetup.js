@@ -14,7 +14,9 @@ export const adapters = [
       icons: ["https://kadpad.xyz/favicon.ico"],
     },
   }),
-  createSnapAdapter(),
+  createSnapAdapter({
+    silent: true, // Prevent automatic connection prompts
+  }),
   createMagicAdapter({
     magicApiKey: import.meta.env.VITE_APP_MAGIC_API_KEY,
     chainId: config.chainId,

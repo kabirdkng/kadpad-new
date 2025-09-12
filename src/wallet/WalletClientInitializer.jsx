@@ -7,7 +7,6 @@ export const WalletClientInitializer = ({ children }) => {
   const { client } = walletContext;
 
   useEffect(() => {
-    
     if (client) {
       setWalletClient(client);
       

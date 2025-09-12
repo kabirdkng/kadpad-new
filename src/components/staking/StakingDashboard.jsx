@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
-import { useStakerEmail } from '../../hooks/useStakerEmail';
+import { useStakerEmailContext } from '../../contexts/StakerEmailContext';
 import WalletConnectButton from '../WalletConnectButton';
 import EmailManagement from './EmailManagement';
 import { Clock, TrendingUp, AlertCircle, Mail } from 'lucide-react';
@@ -17,7 +17,7 @@ const StakingDashboard = () => {
     getTierByAmount 
   } = useStakingPactCalls();
 
-  const { hasEmail, stakerData, refetch } = useStakerEmail(account);
+  const { hasEmail, stakerData, refetch } = useStakerEmailContext();
 
   // Handle email changes to trigger refetch
   const handleEmailChange = React.useCallback(() => {
@@ -355,7 +355,7 @@ const StakingDashboard = () => {
         </div>
       </div>
 
-      {isEligibleForWhitelist && <EmailManagement account={account} onEmailChange={handleEmailChange} />}
+      {isEligibleForWhitelist && <EmailManagement onEmailChange={handleEmailChange} />}
     </div>
   );
 };

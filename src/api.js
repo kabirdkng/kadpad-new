@@ -2,12 +2,54 @@ import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_APP_API;
 
+// Request tracking for deduplication
+const requestTracker = new Map();
+const REQUEST_DEDUPE_TIMEOUT = 1000; // 1 second debounce
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Add a request interceptor for deduplication
+api.interceptors.request.use(
+  config => {
+    // Create a unique key for this request
+    const requestKey = `${config.method}_${config.url}_${JSON.stringify(config.params || {})}_${JSON.stringify(config.data || {})}`;
+    
+    // Check if we've made this exact request recently
+    const lastRequestTime = requestTracker.get(requestKey);
+    const now = Date.now();
+    
+    if (lastRequestTime && (now - lastRequestTime) < REQUEST_DEDUPE_TIMEOUT) {
+      console.log('API: Preventing duplicate request:', config.method?.toUpperCase(), config.url);
+      // Cancel the request
+      const error = new Error('Duplicate request cancelled');
+      error.code = 'DUPLICATE_REQUEST';
+      return Promise.reject(error);
+    }
+    
+    // Track this request
+    requestTracker.set(requestKey, now);
+    
+    // Clean up old entries (keep only last 100 requests)
+    if (requestTracker.size > 100) {
+      const entries = Array.from(requestTracker.entries());
+      const sortedEntries = entries.sort((a, b) => b[1] - a[1]);
+      requestTracker.clear();
+      sortedEntries.slice(0, 50).forEach(([key, time]) => {
+        requestTracker.set(key, time);
+      });
+    }
+    
+    return config;
+  },
+  error => {
+    return Promise.reject(error);
+  }
+);
 
 // Add a response interceptor for error handling
 api.interceptors.response.use(
@@ -16,13 +58,16 @@ api.interceptors.response.use(
     return response;
   },
   error => {
-    console.error('API Error:', {
-      method: error.config?.method?.toUpperCase(),
-      url: error.config?.url,
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
-    });
+    // Don't log duplicate request errors
+    if (error.code !== 'DUPLICATE_REQUEST') {
+      console.error('API Error:', {
+        method: error.config?.method?.toUpperCase(),
+        url: error.config?.url,
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+    }
     return Promise.reject(error);
   }
 );
