@@ -326,10 +326,15 @@ input::placeholder, textarea::placeholder {
 /* Utility Classes */
 .text-accent { color: var(--accent-primary); }
 .text-secondary { color: var(--secondary-text); }
+.text-primary-text { color: var(--primary-text); }
 .bg-primary { background: var(--primary-bg); }
 .bg-secondary { background: var(--secondary-bg); }
+.bg-accent { background: var(--accent-primary); }
 .bg-card { background: var(--card-bg); }
+.bg-background { background: var(--primary-bg); }
+.bg-hover-bg { background: var(--hover-bg); }
 .border-accent { border-color: var(--accent-primary); }
+.border-border-color { border-color: var(--border-color); }
 
 .glow {
   box-shadow: 0 0 20px rgba(194, 250, 59, 0.3);

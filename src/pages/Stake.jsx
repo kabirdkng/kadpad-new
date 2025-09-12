@@ -1,167 +1,285 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { TrendingUp } from 'lucide-react';
+import { StakingDataProvider, useStakingDataContext } from '../contexts/StakingDataContext';
 
-const Stake = () => {
-  const [stakeAmount, setStakeAmount] = useState('');
-  const [unstakeAmount, setUnstakeAmount] = useState('');
+// Components
+import StakingDashboard from '../components/staking/StakingDashboard';
+import StakingForm from '../components/staking/StakingForm';
+import UnstakingForm from '../components/staking/UnstakingForm';
+import StatsOverview from '../components/staking/StatsOverview';
+import Leaderboard from '../components/staking/Leaderboard';
+import BalanceOverview from '../components/staking/MobileBalanceOverview';
+
+const StakeContent = () => {
   const [activeTab, setActiveTab] = useState('stake');
 
-  // Placeholder data (replace with actual data in a real implementation)
-  const userKPADBalance = 50000;
-  const userStakedKPAD = 69420;
-  const totalKPADStaked = 30000000;
-  const totalKDARewards = 1234;
-  const userAccumulatedRewards = 42;
-
-  const handleClaimRewards = () => {
-    // Implement reward claiming logic here
-    console.log('Claiming rewards');
-  };
-
-  const handleMaxStake = () => {
-    setStakeAmount(userKPADBalance.toString());
-  };
-
-  const handleMaxUnstake = () => {
-    setUnstakeAmount(userStakedKPAD.toString());
-  };
-
   return (
-    <div className="container mx-auto px-4 py-8 text-white">
-      <h1 className='text-center py-6 text-4xl'>Staking</h1>
+    <div className="min-h-screen bg-primary-bg pt-24 pb-16">
+      <div className="container mx-auto px-4 max-w-6xl">
+        
+        {/* Header Section */}
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-card border border-accent-primary/20 mb-6">
+            <span className="text-sm font-medium text-accent-primary">
+              🥇 Staking Platform
+            </span>
+          </div>
+          
+          <h1 className="text-4xl md:text-5xl font-bold text-primary-text mb-4">
+            Stake Your <span className="text-gradient">KPAD</span>
+          </h1>
+          <p className="text-lg text-secondary max-w-2xl mx-auto mb-8">
+            Stake your KPAD tokens to earn rewards and gain access to exclusive launches. 
+            Higher tiers unlock better benefits and guaranteed whitelist spots.
+          </p>
+        </div>
 
-      <h1 className='h-[50vh] text-8xl text-center my-52'> Coming Soon </h1>
-      {/* <div className="flex flex-row gap-6 mb-6">
-        <div className="bg-gray-800 bg-opacity-80 rounded-lg p-6 shadow-lg flex-1">
-          <p className="text-sm text-gray-400">Total Staked</p>
-          <p className="text-2xl font-semibold">{totalKPADStaked.toLocaleString()} $KPAD</p>
-        </div>
-        <div className="bg-gray-800 bg-opacity-80 rounded-lg p-6 shadow-lg flex-1">
-          <p className="text-sm text-gray-400">Total Rewards</p>
-          <p className="text-2xl font-semibold">{totalKDARewards.toLocaleString()} $KDA</p>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <div className="bg-gray-800 bg-opacity-80 rounded-lg p-6 shadow-lg">
-            <p className="text-gray-400 mb-4">
-              Stake any amount to earn $KDA rewards. Stake 200k $KPAD to earn a Whitelist spot on all KadPad launches.
-            </p>
-            <div className="flex space-x-2 mb-4">
-              <button
-                className={`px-4 py-2 rounded-md font-medium ${
-                  activeTab === 'stake' ? 'bg-lime-500 text-white' : 'bg-gray-700 text-gray-300'
-                }`}
-                onClick={() => setActiveTab('stake')}
-              >
-                Stake
-              </button>
-              <button
-                className={`px-4 py-2 rounded-md font-medium ${
-                  activeTab === 'unstake' ? 'bg-red-500 text-white' : 'bg-gray-700 text-gray-300'
-                }`}
-                onClick={() => setActiveTab('unstake')}
-              >
-                Unstake
-              </button>
+        {/* Stats Overview */}
+        <div className="mb-8">
+          <div className="lg:hidden">
+            <div className="card">
+              <h3 className="text-lg font-semibold text-primary-text mb-4">Platform Stats</h3>
+              <StatsOverview />
             </div>
-            {activeTab === 'stake' ? (
-              <div className="space-y-4">
-                <div className="rounded p-2 mb-2">
-                  <p className="text-sm text-gray-300">Your $KPAD Balance: {userKPADBalance.toLocaleString()} $KPAD</p>
-                </div>
-                <div>
-                  <label htmlFor="stake" className="block text-sm font-medium text-gray-400 mb-1">
-                    Amount to Stake
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="stake"
-                      type="number"
-                      value={stakeAmount}
-                      onChange={(e) => setStakeAmount(e.target.value)}
-                      className="w-full bg-gray-700 bg-opacity-50 rounded border border-gray-600 focus:border-lime-500 focus:bg-gray-800 focus:ring-2 focus:ring-lime-900 text-base outline-none text-gray-100 py-1 px-3 pr-0 leading-8 transition-colors duration-200 ease-in-out"
-                      placeholder="Enter amount"
-                      min="0"
-                      step="1"
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center">
-                      <span className="px-2 text-gray-400 text-sm">$KPAD</span>
-                      <button
-                        onClick={handleMaxStake}
-                        className="px-2 mr-5 text-sm font-medium text-gray-300 hover:text-white"
-                      >
-                        Max
-                      </button>
-                    </div>
+          </div>
+          <div className="hidden lg:block">
+            <StatsOverview />
+          </div>
+        </div>
+
+        {/* Main Content Grid - Desktop: Dashboard | Staking Form | Leaderboard */}
+        <div className="lg:hidden mb-8 space-y-6">
+          {/* Staking Form - Priority on Mobile */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-primary-text mb-4">Stake Your KPAD</h3>
+            <div className="card">
+              {/* Tab Navigation */}
+              <div className="flex border-b border-border-color">
+                <button
+                  onClick={() => setActiveTab('stake')}
+                  className={`flex-1 px-4 py-3 font-medium transition-colors ${
+                    activeTab === 'stake'
+                      ? 'text-white border-b-2 border-accent'
+                      : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Stake</span>
                   </div>
-                </div>
-                <button className="w-full bg-lime-500 hover:bg-lime-600 text-white font-bold py-2 px-4 rounded">
-                  Stake $KPAD →
+                </button>
+                <button
+                  onClick={() => setActiveTab('unstake')}
+                  className={`flex-1 px-4 py-3 font-medium transition-colors ${
+                    activeTab === 'unstake'
+                      ? 'bg-red-600 text-white border-b-2 border-red-600'
+                      : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
+                  }`}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <TrendingUp className="w-4 h-4 rotate-180" />
+                    <span>Unstake</span>
+                  </div>
                 </button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="rounded p-2 mb-2">
-                  <p className="text-sm text-gray-300">Your Staked $KPAD: {userStakedKPAD.toLocaleString()} $KPAD</p>
-                </div>
-                <div>
-                  <label htmlFor="unstake" className="block text-sm font-medium text-gray-400 mb-1">
-                    Amount to Unstake
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="unstake"
-                      type="number"
-                      value={unstakeAmount}
-                      onChange={(e) => setUnstakeAmount(e.target.value)}
-                      className="w-full bg-gray-700 bg-opacity-50 rounded border border-gray-600 focus:border-red-500 focus:bg-gray-800 focus:ring-2 focus:ring-red-900 text-base outline-none text-gray-100 py-1 px-3 pr-0 leading-8 transition-colors duration-200 ease-in-out"
-                      placeholder="Enter amount"
-                      min="0"
-                      step="1"
-                    />
-                    <div className="absolute inset-y-0 right-0 flex items-center">
-                      <span className="px-2 text-gray-400 text-sm">$KPAD</span>
-                      <button
-                        onClick={handleMaxUnstake}
-                        className="px-2 mr-5 text-sm font-medium text-gray-300 hover:text-white"
-                      >
-                        Max
-                      </button>
+
+              {/* Tab Content */}
+              <div className="p-0">
+                {activeTab === 'stake' ? <StakingForm /> : <UnstakingForm />}
+              </div>
+            </div>
+          </div>
+
+          {/* Dashboard & Leaderboard - Secondary on Mobile */}
+          <div className="card">
+            <h3 className="text-lg font-semibold text-primary-text mb-4">Dashboard & Stats</h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-base font-medium text-primary-text mb-3">Your Staking Info</h4>
+                <StakingDashboard />
+              </div>
+              <div className="pt-4 border-t border-border-color">
+                <h4 className="text-base font-medium text-primary-text mb-3">Top Stakers</h4>
+                <Leaderboard />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="hidden lg:grid lg:grid-cols-7 gap-6 max-w-7xl mx-auto mb-8">
+          
+          {/* Dashboard - Left Side on Desktop (2 columns) */}
+          <div className="lg:col-span-2 order-1 lg:order-1">
+            <div className="sticky top-24">
+              <StakingDashboard />
+            </div>
+          </div>
+
+          {/* Staking Forms - Middle on Desktop (3 columns) */}
+          <div className="lg:col-span-3 order-2 lg:order-2">
+            <div className="sticky top-24">
+              <div className="card">
+                {/* Tab Navigation */}
+                <div className="flex border-b border-border-color">
+                  <button
+                    onClick={() => setActiveTab('stake')}
+                    className={`flex-1 px-4 py-3 font-medium transition-colors ${
+                      activeTab === 'stake'
+                        ? 'text-white border-b-2 border-accent'
+                        : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <TrendingUp className="w-4 h-4" />
+                      <span>Stake</span>
                     </div>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('unstake')}
+                    className={`flex-1 px-4 py-3 font-medium transition-colors ${
+                      activeTab === 'unstake'
+                        ? 'bg-red-600 text-white border-b-2 border-red-600'
+                        : 'text-secondary hover:text-primary-text hover:bg-hover-bg'
+                    }`}
+                  >
+                    <div className="flex items-center justify-center space-x-2">
+                      <TrendingUp className="w-4 h-4 rotate-180" />
+                      <span>Unstake</span>
+                    </div>
+                  </button>
+                </div>
+
+                {/* Tab Content */}
+                <div className="p-0">
+                  {activeTab === 'stake' ? <StakingForm /> : <UnstakingForm />}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Leaderboard - Right Side on Desktop (2 columns) */}
+          <div className="lg:col-span-2 order-3 lg:order-3">
+            <div className="sticky top-24">
+              <Leaderboard />
+            </div>
+          </div>
+        </div>
+
+        {/* Balance Overview - Below main content */}
+        <div className="mb-8">
+          <BalanceOverview />
+        </div>
+
+        {/* Grid Layout for Information */}
+        <div className="max-w-6xl mx-auto">
+          <div className="card">
+            <h3 className="text-xl font-semibold text-primary-text mb-4">Staking Information</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="font-medium text-primary-text mb-3">Staking Tiers</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-secondary">Tier 1 (50k+ KPAD):</span>
+                    <span className="text-orange-400">Basic rewards</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-secondary">Tier 2 (150k+ KPAD):</span>
+                    <span className="text-gray-400">Enhanced rewards</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-secondary">Tier 3 (350k+ KPAD):</span>
+                    <span className="text-yellow-400">Premium + Whitelist</span>
                   </div>
                 </div>
-                <button className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">
-                  ← Unstake $KPAD
-                </button>
               </div>
-            )}
-            <div className="mt-6 bg-gray-700 bg-opacity-80 rounded-md p-4">
-              <h4 className="font-semibold mb-2">Important Note</h4>
-              <p className="text-sm text-gray-300">
-                When unstaking, there is a 7 day waiting period. During this period, you do not earn rewards or Whitelist spots.
+
+              <div>
+                <h4 className="font-medium text-primary-text mb-3">Key Features</h4>
+                <ul className="space-y-2 text-sm text-secondary">
+                  <li>• 365-day lock period</li>
+                  <li>• Daily penalty reduction</li>
+                  <li>• Tier-based rewards</li>
+                  <li>• Whitelist access (Tier 3)</li>
+                  <li>• No fees on matured stakes</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-accent/5 border border-accent/20 rounded-lg">
+              <h5 className="font-medium text-primary-text mb-2">🎯 Tier 3 Benefits</h5>
+              <p className="text-sm text-secondary">
+                Stake 350k+ KPAD to unlock Tier 3 and gain guaranteed whitelist access to all KadPad launches, 
+                plus premium reward rates and exclusive community features.
               </p>
             </div>
           </div>
         </div>
-        <div className="space-y-6">
-          <div className="bg-gray-800 bg-opacity-80 rounded-lg p-6 shadow-lg">
-            <h3 className="text-xl font-semibold mb-4">Your Rewards</h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-400">Accumulated Rewards:</span>
-                <span className="font-medium">{userAccumulatedRewards.toLocaleString()} $KDA</span>
-              </div>
-              <button 
-                onClick={handleClaimRewards}
-                className="w-full bg-lime-500 hover:bg-lime-600 text-white font-bold py-2 px-4 rounded"
-              >
-                Claim Rewards
-              </button>
+
+        {/* Help Section */}
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="card text-center group hover:scale-105 transition-all duration-300">
+            <div className="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">📚</span>
             </div>
+            <h4 className="font-semibold text-primary-text mb-2">Staking Guide</h4>
+            <p className="text-sm text-secondary mb-4">
+              Learn how to stake KPAD and maximize your rewards
+            </p>
+            <a 
+              href="https://docs.kadpad.xyz/staking" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="btn btn-ghost text-sm"
+            >
+              Read Guide
+            </a>
+          </div>
+
+          <div className="card text-center group hover:scale-105 transition-all duration-300">
+            <div className="w-12 h-12 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">💬</span>
+            </div>
+            <h4 className="font-semibold text-primary-text mb-2">Community Support</h4>
+            <p className="text-sm text-secondary mb-4">
+              Get help from our community and team
+            </p>
+            <a 
+              href="https://discord.gg/3jkAcdtAxf" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="btn btn-ghost text-sm"
+            >
+              Join Discord
+            </a>
+          </div>
+
+          <div className="card text-center group hover:scale-105 transition-all duration-300">
+            <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">📊</span>
+            </div>
+            <h4 className="font-semibold text-primary-text mb-2">Analytics</h4>
+            <p className="text-sm text-secondary mb-4">
+              Track your staking rewards and performance
+            </p>
+            <a 
+              href="/analytics" 
+              className="btn btn-ghost text-sm"
+            >
+              View Analytics
+            </a>
           </div>
         </div>
-      </div> */}
+      </div>
     </div>
+  );
+};
+
+const Stake = () => {
+  return (
+    <StakingDataProvider>
+      <StakeContent />
+    </StakingDataProvider>
   );
 };
 

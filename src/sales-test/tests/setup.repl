@@ -1,0 +1,124 @@
+; REPL setup for token token, sales, and treasury modules
+
+;; Load Kadena REPL Sandbox for standard contracts (coin, fungible-v2, etc.)
+(load "../kadena_repl_sandbox/kda-env/init.repl")
+;; Load Ecko DEX environment - this handles all exchange setup properly
+(load "../ecko/init_ecko.repl")
+
+
+(env-chain-data {"chain-id": "1", "block-time": (time "2025-09-01T10:00:00Z")})
+
+(env-data
+  { "governance": { "keys":["gk"], "pred":"keys-all" }
+  , "sales-operator": { "keys":["gk"], "pred":"keys-all" }
+  , "operator": { "keys":["gk"], "pred":"keys-all" }
+  , "buyer1": { "keys":["b1"], "pred":"keys-all" }
+  , "buyer2": { "keys":["b2"], "pred":"keys-all" }
+  , "buyer3": { "keys":["b3"], "pred":"keys-all" }
+  })
+
+(env-keys ["gk", "b1", "b2", "b3"])
+
+; ----------------------------------------------------------------------------
+; Define principal namespaces & keysets (including existing burn and sushi)
+; ----------------------------------------------------------------------------
+(begin-tx)
+  (define-namespace "NS" (read-keyset "governance") (read-keyset "governance"))
+  (define-namespace "BURN_NS" (read-keyset "governance") (read-keyset "governance"))
+  (define-namespace "PROTOCOL_NS" (read-keyset "governance") (read-keyset "governance"))
+  (define-namespace "SUSHI_NS" (read-keyset "governance") (read-keyset "governance"))
+
+  ; keysets
+  (namespace "NS")
+  (define-keyset "NS.gov" (read-keyset "governance"))
+  (define-keyset "NS.sales-operator" (read-keyset "sales-operator"))
+  (define-keyset "NS.operator" (read-keyset "operator"))
+
+  (define-keyset "user.burn" (read-keyset "governance"))
+  
+  (namespace "PROTOCOL_NS")
+  (define-keyset "PROTOCOL_NS.GOV" (read-keyset "governance"))
+  
+  (namespace "SUSHI_NS")
+  (define-keyset "SUSHI_NS.gov-ks" (read-keyset "governance"))
+  (define-keyset "SUSHI_NS.ops-ks" (read-keyset "governance"))
+  
+
+  (define-keyset "buyer1" (read-keyset "buyer1"))
+  (define-keyset "buyer2" (read-keyset "buyer2"))
+  (define-keyset "buyer3" (read-keyset "buyer3"))
+(commit-tx)
+
+; ----------------------------------------------------------------------------
+; Load required library modules for all namespaces
+; ----------------------------------------------------------------------------
+(begin-tx)
+  (namespace "BURN_NS")
+  (load "../root/burn.pact")
+  
+  (namespace "SUSHI_NS")
+  (load "../root/util-chain-data.pact")
+  (load "../root/util-fungible.pact")
+  (load "../root/swap-callable-v1.pact")
+  (load "../root/noop-callable.pact")
+  (load "../root/tokens-sushi.pact")
+  (load "../root/exchange-sushi.pact")
+ 
+  (namespace "PROTOCOL_NS")
+  (load "../root/protocol-treasury.pact")
+  
+  (namespace "SUSHI_NS")
+  (create-table tokens.ledger)
+  (create-table tokens.issuers)
+  (create-table tokens.supplies)
+  (create-table exchange.contract-lock)
+  (create-table exchange.pairs)
+  (create-table exchange.oracles-v2)
+  (create-table exchange.observations-v2)
+  
+  (namespace "PROTOCOL_NS")
+  (create-table protocol-treasury.positions)
+  (create-table protocol-treasury.position-trackers)
+  (create-table protocol-treasury.transfer-requests)
+(commit-tx)
+
+; ----------------------------------------------------------------------------
+; Load project contracts
+; ----------------------------------------------------------------------------
+(begin-tx)
+  (env-data
+    { "governance": { "keys":["gk"], "pred":"keys-all" }
+    , "ks": { "keys":["gk"], "pred":"keys-all" }})
+  
+  (env-keys ["gk"])
+  (namespace "NS")
+  (load "../root/swap-callable-v1.pact")
+  (load "../modules/token.pact")
+  (load "../modules/token-treasury.pact")
+  (load "../modules/token-sales.pact")
+(commit-tx)
+
+; ----------------------------------------------------------------------------
+; Initialize token supply in deployer account
+; ----------------------------------------------------------------------------
+(begin-tx)
+  (NS.token.init-supply "deployer-account" (keyset-ref-guard "NS.gov"))
+(commit-tx)
+
+; ----------------------------------------------------------------------------
+; Set up test accounts
+; ----------------------------------------------------------------------------
+(begin-tx)
+  (coin.create-account "buyer1" (keyset-ref-guard "buyer1"))
+  (coin.create-account "buyer2" (keyset-ref-guard "buyer2"))
+  (coin.create-account "buyer3" (keyset-ref-guard "buyer3"))
+(commit-tx)
+
+(begin-tx)
+  (test-capability (coin.COINBASE))
+  (coin.coinbase "buyer1" (keyset-ref-guard "buyer1") 1000.0)
+  (coin.coinbase "buyer2" (keyset-ref-guard "buyer2") 1000.0)
+  (coin.coinbase "buyer3" (keyset-ref-guard "buyer3") 1000.0)
+(commit-tx)
+
+(print "✅ token Sales System Setup Complete!")

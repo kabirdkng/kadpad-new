@@ -162,6 +162,7 @@ const ManageSales = ({
                 salesModuleName={SALES_MODULE_NAME}
                 supplyChain={supplyChain}
                 moduleName={moduleName}
+                reservations={reservations}
                 onBack={handleBackToOptions}
                 onSuccess={handleWhitelistSuccess}
               />
