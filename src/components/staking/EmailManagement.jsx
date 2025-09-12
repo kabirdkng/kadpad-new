@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Mail, Edit3, Trash2, Bell, BellOff, CheckCircle, X, Save } from 'lucide-react';
 import { useStakerEmail } from '../../hooks/useStakerEmail';
 
-const EmailManagement = ({ account }) => {
+const EmailManagement = ({ account, onEmailChange }) => {
   const {
     stakerData,
     isLoading,
@@ -64,6 +64,10 @@ const EmailManagement = ({ account }) => {
       await addOrUpdateEmail(emailInput.trim());
       setSuccessMessage(hasEmail ? 'Email updated successfully!' : 'Email added successfully!');
       setIsEditing(false);
+      // Notify parent component about email change
+      if (onEmailChange) {
+        onEmailChange();
+      }
     } catch (err) {
       setEmailError(err.message || 'Failed to save email');
     } finally {
@@ -76,7 +80,7 @@ const EmailManagement = ({ account }) => {
 
     setIsSubmitting(true);
     try {
-      await updateNotifications(!stakerData.emailNotificationsEnabled);
+      await updateNotifications(!stakerData?.emailNotificationsEnabled);
       setSuccessMessage('Notification preferences updated!');
     } catch (err) {
       setEmailError(err.message || 'Failed to update notification preferences');
@@ -96,6 +100,10 @@ const EmailManagement = ({ account }) => {
       setSuccessMessage('Email deleted successfully!');
       setEmailInput('');
       setIsEditing(false);
+      // Notify parent component about email change
+      if (onEmailChange) {
+        onEmailChange();
+      }
     } catch (err) {
       setEmailError(err.message || 'Failed to delete email');
     } finally {
@@ -142,24 +150,34 @@ const EmailManagement = ({ account }) => {
 
       {/* Success Message */}
       {successMessage && (
-        <div className="mb-3 p-2 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-green-400" />
-          <span className="text-xs text-green-400">{successMessage}</span>
+        <div className="mb-3 transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-top-1">
+          <div className="p-2 bg-green-500/10 border border-green-500/20 rounded-lg flex items-center gap-2">
+            <CheckCircle className="w-4 h-4 text-green-400" />
+            <span className="text-xs text-green-400">{successMessage}</span>
+          </div>
         </div>
       )}
 
       {/* Error Message */}
       {emailError && (
-        <div className="mb-3 p-2 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2">
-          <X className="w-4 h-4 text-red-400" />
-          <span className="text-xs text-red-400">{emailError}</span>
+        <div className="mb-3 transition-all duration-300 ease-in-out animate-in fade-in slide-in-from-top-1">
+          <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2">
+            <X className="w-4 h-4 text-red-400" />
+            <span className="text-xs text-red-400">{emailError}</span>
+          </div>
         </div>
       )}
 
       {/* Email Management */}
-      {!hasEmail || isEditing ? (
-        <div className="space-y-3">
-          <div>
+      <div className={`relative overflow-hidden h-auto ${!hasEmail ? 'min-h-[100px]' : 'min-h-[150px]'}`}>
+        {/* Email Form - Add/Edit State */}
+        <div className={`absolute inset-0 transition-all duration-500 ease-in-out ${
+          !hasEmail || isEditing 
+            ? 'opacity-100 transform translate-y-0 pointer-events-auto' 
+            : 'opacity-0 transform -translate-y-4 pointer-events-none'
+        }`}>
+          <div className="space-y-3">
+            <div>
             <label className="block text-xs text-secondary mb-1">
               {hasEmail ? 'Update Email Address' : 'Add Email Address'}
             </label>
@@ -169,13 +187,13 @@ const EmailManagement = ({ account }) => {
                 value={emailInput}
                 onChange={(e) => setEmailInput(e.target.value)}
                 placeholder="Enter your email address"
-                className="flex-1 px-3 py-2 bg-gray-800/50 border border-border-color rounded-md text-sm text-primary-text placeholder-secondary focus:outline-none focus:border-accent"
+                className="flex-1 px-3 py-2 bg-gray-800/50 border border-border-color rounded-md text-sm text-primary-text placeholder-secondary focus:outline-none focus:border-accent transition-all duration-200 focus:shadow-lg focus:shadow-accent/20"
                 disabled={isSubmitting}
               />
               <button
                 onClick={handleEmailSubmit}
                 disabled={isSubmitting || !emailInput.trim()}
-                className="px-3 py-2 bg-accent hover:bg-accent/80 disabled:bg-gray-600 disabled:cursor-not-allowed text-black text-sm font-medium rounded-md transition-colors flex items-center gap-1"
+                className="px-3 py-2 bg-accent hover:bg-accent/80 disabled:bg-gray-600 disabled:cursor-not-allowed text-black text-sm font-medium rounded-md transition-all duration-200 flex items-center gap-1 transform hover:scale-[1.02]"
               >
                 <Save className="w-3 h-3" />
                 {isSubmitting ? '...' : 'Save'}
@@ -184,33 +202,23 @@ const EmailManagement = ({ account }) => {
                 <button
                   onClick={handleCancelEditing}
                   disabled={isSubmitting}
-                  className="px-3 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm font-medium rounded-md transition-colors"
+                  className="px-3 py-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm font-medium rounded-md transition-all duration-200 transform hover:scale-[1.02]"
                 >
                   Cancel
                 </button>
               )}
             </div>
           </div>
-          
-          {!hasEmail && (
-            <>
-              <div className="text-xs text-secondary mb-2">
-                Add your email to receive notifications about new launches, whitelist eligibility, staking rewards, tier updates, and important announcements.
-              </div>
-              <div className="bg-accent/10 border border-accent/20 rounded-lg p-3 mt-3">
-                <div className="text-xs font-medium text-accent mb-1">Benefits of adding your email:</div>
-                <ul className="text-xs text-secondary space-y-1">
-                  <li>• Get notified about new project launches</li>
-                  <li>• Receive whitelist eligibility alerts based on your tier</li>
-                  <li>• Updates on staking rewards and tier changes</li>
-                  <li>• Important platform announcements</li>
-                </ul>
-              </div>
-            </>
-          )}
+          </div>
         </div>
-      ) : (
-        <div className="space-y-3">
+
+        {/* Email Display State */}
+        <div className={`absolute inset-0 transition-all duration-500 ease-in-out ${
+          hasEmail && !isEditing && stakerData
+            ? 'opacity-100 transform translate-y-0 pointer-events-auto' 
+            : 'opacity-0 transform translate-y-4 pointer-events-none'
+        }`}>
+          <div className="space-y-3">
           {/* Display Email */}
           <div className="bg-gray-800/30 rounded-lg p-3">
             <div className="flex items-center justify-between mb-2">
@@ -219,7 +227,7 @@ const EmailManagement = ({ account }) => {
                 <button
                   onClick={handleStartEditing}
                   disabled={isSubmitting}
-                  className="p-1 text-secondary hover:text-accent transition-colors"
+                  className="p-1 text-secondary hover:text-accent transition-all duration-200 transform hover:scale-110"
                   title="Edit email"
                 >
                   <Edit3 className="w-3 h-3" />
@@ -227,7 +235,7 @@ const EmailManagement = ({ account }) => {
                 <button
                   onClick={handleDeleteEmail}
                   disabled={isSubmitting}
-                  className="p-1 text-secondary hover:text-red-400 transition-colors"
+                  className="p-1 text-secondary hover:text-red-400 transition-all duration-200 transform hover:scale-110"
                   title="Delete email"
                 >
                   <Trash2 className="w-3 h-3" />
@@ -235,39 +243,42 @@ const EmailManagement = ({ account }) => {
               </div>
             </div>
             <div className="text-sm text-primary-text font-medium">
-              {stakerData.email}
+              {stakerData?.email || 'No email set'}
             </div>
           </div>
 
           {/* Notification Preferences */}
-          <div className="bg-gray-800/30 rounded-lg p-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-xs text-secondary mb-1">Email Notifications</div>
-                <div className="text-sm text-primary-text">
-                  {stakerData.emailNotificationsEnabled ? 'Enabled' : 'Disabled'}
+          {stakerData && (
+            <div className="bg-gray-800/30 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-xs text-secondary mb-1">Email Notifications</div>
+                  <div className="text-sm text-primary-text">
+                    {stakerData?.emailNotificationsEnabled ? 'Enabled' : 'Disabled'}
+                  </div>
                 </div>
+                <button
+                  onClick={handleNotificationToggle}
+                  disabled={isSubmitting}
+                  className={`p-2 rounded-lg transition-all duration-200 transform hover:scale-110 ${
+                    stakerData?.emailNotificationsEnabled
+                      ? 'bg-accent/20 text-accent hover:bg-accent/30'
+                      : 'bg-gray-600/50 text-secondary hover:bg-gray-600'
+                  } ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={stakerData?.emailNotificationsEnabled ? 'Disable notifications' : 'Enable notifications'}
+                >
+                  {stakerData?.emailNotificationsEnabled ? (
+                    <Bell className="w-4 h-4" />
+                  ) : (
+                    <BellOff className="w-4 h-4" />
+                  )}
+                </button>
               </div>
-              <button
-                onClick={handleNotificationToggle}
-                disabled={isSubmitting}
-                className={`p-2 rounded-lg transition-colors ${
-                  stakerData.emailNotificationsEnabled
-                    ? 'bg-accent/20 text-accent hover:bg-accent/30'
-                    : 'bg-gray-600/50 text-secondary hover:bg-gray-600'
-                }`}
-                title={stakerData.emailNotificationsEnabled ? 'Disable notifications' : 'Enable notifications'}
-              >
-                {stakerData.emailNotificationsEnabled ? (
-                  <Bell className="w-4 h-4" />
-                ) : (
-                  <BellOff className="w-4 h-4" />
-                )}
-              </button>
             </div>
+          )}
           </div>
         </div>
-      )}
+      </div>
 
       {/* API Error Display */}
       {error && !emailError && (
