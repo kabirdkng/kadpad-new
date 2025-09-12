@@ -76,7 +76,7 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
     <div className="wallet-modal-container tm-bg-dark-n">
       <div className="wallet-modal" ref={modalRef}>
             <button onClick={connectXWalletClicked} className='btn provider-button' ><img src={Ecko} /> Ecko Wallet </button>
-            <button onClick={connectMetaMaskClicked} className='btn provider-button' ><img src="https://images.ctfassets.net/clixtyxoaeas/4rnpEzy1ATWRKVBOLxZ1Fm/a74dc1eed36d23d7ea6030383a4d5163/MetaMask-icon-fox.svg" /> MetaMask </button>
+            <button onClick={connectMetaMaskClicked} className='btn provider-button' ><img src="https://images.ctfassets.net/clixtyxoaeas/4rnpEzy1ATWRKVBOLxZ1Fm/a74dc1eed36d23d7ea6030383a4d5163/MetaMask-icon-fox.svg" /> MetaMask (Snap)</button>
             <button onClick={handleWalletConnect} className='btn provider-button' ><img src={wc} /> Wallet Connect </button>
             <button onClick={connectMagicClicked} className='btn provider-button' ><img src={magic} /> Magic Wallet (Spirekey) </button>
       </div>
