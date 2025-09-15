@@ -363,8 +363,6 @@ export const pactCallsUnstakeTokens = async(code, chain, stakingNamespace, staki
       sender: userAccount,
       signers: [
         [`${stakingNamespace}.${stakingModule}.VERIFY-LOCKER`, account],
-        [`${stakingNamespace}.${tokenModule}.TRANSFER`, lockerAccount, account, Number(amount)],
-        [`${stakingNamespace}.${tokenModule}.TRANSFER`, lockerAccount, burnAccount, Number(amount)],
         ['coin.GAS']
       ]
     });
