@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TrendingUp } from 'lucide-react';
 import { StakingDataProvider } from '../contexts/StakingDataContext';
 import { StakerEmailProvider } from '../contexts/StakerEmailContext';
@@ -15,6 +15,11 @@ import BalanceOverview from '../components/staking/MobileBalanceOverview';
 const StakeContent = () => {
   const [activeTab, setActiveTab] = useState('stake');
   const { isConnected } = useWalletStore();
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <div className="min-h-screen bg-primary-bg pt-24 pb-16">

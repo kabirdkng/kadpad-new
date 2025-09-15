@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Menu, X, Rocket, TrendingUp, Coins, BookOpen } from 'lucide-react';
+import { Menu, X, Rocket, TrendingUp, Coins, BookOpen, Link as ChainIcon } from 'lucide-react';
 import kadPadLogo from '../assets/KADPAD_Green-Rocket-01.svg';
 import WalletConnectButton from './WalletConnectButton';
 import useWalletStore from '../wallet/walletStore';
+import config from '../wallet/config';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -126,6 +127,21 @@ const Header = () => {
       isActive ? 'active text-accent' : 'text-secondary hover:text-accent'
     }`;
 
+  // Network indicator component
+  const NetworkIndicator = ({ mobile = false }) => {
+    const networkColor = config.name === 'mainnet' ? 'text-green-400' : 'text-orange-400';
+    const networkBg = config.name === 'mainnet' ? 'bg-green-400/10 border-green-400/20' : 'bg-orange-400/10 border-orange-400/20';
+    
+    return (
+      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${networkBg} ${mobile ? 'text-sm' : 'text-xs'}`}>
+        <ChainIcon size={mobile ? 16 : 14} className={networkColor} />
+        <span className={`font-medium ${networkColor}`}>
+          Kadena {config.name} | Chain {config.chainId}
+        </span>
+      </div>
+    );
+  };
+
   return (
     <>
       {/* Announcement Banner */}
@@ -210,6 +226,11 @@ const Header = () => {
 
             {/* Wallet Connect & Mobile Menu */}
             <div className="flex items-center space-x-4">
+              {/* Network Indicator - Desktop */}
+              <div className="hidden lg:block">
+                <NetworkIndicator />
+              </div>
+              
               {/* Desktop Wallet Connect */}
               <div className="hidden lg:block">
                 <WalletConnectButton />
@@ -218,12 +239,19 @@ const Header = () => {
               {/* Mobile Menu Button */}
               <button
                 onClick={toggleMenu}
-                className="lg:hidden p-2 rounded-xl bg-card border border-border-color hover:bg-hover-bg transition-all duration-200"
+                className={`lg:hidden p-3 rounded-xl transition-all duration-300 relative group ${
+                  isMenuOpen 
+                    ? 'bg-accent-primary text-primary-bg shadow-lg shadow-accent-primary/20 border-2 border-accent-primary' 
+                    : 'bg-gradient-card border-2 border-accent-primary/30 hover:border-accent-primary hover:bg-accent-primary/10 hover:shadow-lg hover:shadow-accent-primary/10'
+                }`}
               >
+                {!isMenuOpen && (
+                  <div className="absolute inset-0 rounded-xl bg-accent-primary/5 animate-pulse"></div>
+                )}
                 {isMenuOpen ? (
-                  <X size={20} className="text-primary-text" />
+                  <X size={22} className="relative z-10 transition-transform duration-200 group-hover:rotate-90" />
                 ) : (
-                  <Menu size={20} className="text-primary-text" />
+                  <Menu size={22} className="relative z-10 text-accent-primary transition-transform duration-200 group-hover:scale-110" />
                 )}
               </button>
             </div>
@@ -281,6 +309,11 @@ const Header = () => {
                   )
                 ))}
               </nav>
+              
+              {/* Network Indicator - Mobile */}
+              <div className="mb-4 flex justify-center">
+                <NetworkIndicator mobile={true} />
+              </div>
               
               {/* Mobile Wallet Connect - Centered at Bottom */}
               <div className="flex justify-center">
