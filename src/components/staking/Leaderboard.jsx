@@ -1,6 +1,7 @@
 import { Trophy, Crown, Award, Medal } from 'lucide-react';
 import useStakingStore from '../../store/useStakingStore';
 import { extractNumericValue } from '../../utils/stakingUtils';
+import { formatCompact } from '../../utils/numberUtils';
 
 const Leaderboard = () => {
   // Get cached data from staking store
@@ -106,7 +107,7 @@ const Leaderboard = () => {
                   {getTierIcon(entry.tier)}
                 </div>
                 <div className="text-xs text-secondary">
-                  {(extractNumericValue(entry.amount) / 1000).toFixed(0)}k KPAD
+                  {formatCompact(extractNumericValue(entry.amount))} KPAD
                 </div>
               </div>
 

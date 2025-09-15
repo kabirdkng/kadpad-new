@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Coins, Info, ArrowUp, AlertTriangle } from 'lucide-react';
-import useStakingActions from '../../hooks/useStakingActions';
+import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
 import { useStakingDataContext } from '../../contexts/StakingDataContext';
 import useWalletStore from '../../wallet/walletStore';
 import useStakingStore from '../../store/useStakingStore';
 import { extractNumericValue, getTierByAmount } from '../../utils/stakingUtils';
+import { formatBalance } from '../../utils/numberUtils';
 
 const StakingForm = () => {
   const [amount, setAmount] = useState('');
@@ -16,8 +17,8 @@ const StakingForm = () => {
   // Get cached data from staking store
   const { userBalance, userStakes, isLoading } = useStakingStore();
   
-  // Get staking actions (no data fetching)
-  const { stakeTokens } = useStakingActions();
+  // Get only the staking action function from useStakingPactCalls (disable auto-refresh to prevent redundant fetching)
+  const { stakeTokens } = useStakingPactCalls({ disableAutoRefresh: true });
 
   const { refreshAfterTransaction } = useStakingDataContext();
 
@@ -81,7 +82,7 @@ const StakingForm = () => {
       <div className="mb-4 p-3 bg-gray-800/50 rounded-lg">
         <div className="text-sm text-secondary mb-1">Available Balance</div>
         <div className="text-lg font-semibold text-primary-text">
-          {extractNumericValue(userBalance)?.toLocaleString() || '0'} KPAD
+          {formatBalance(extractNumericValue(userBalance)) || '0'} KPAD
         </div>
       </div>
 
@@ -120,20 +121,20 @@ const StakingForm = () => {
               <div className="flex items-center justify-between text-xs">
                 <span className="text-secondary">Current Staked:</span>
                 <span className="text-primary-text font-medium">
-                  {currentStakedAmount.toLocaleString()} KPAD
+                  {formatBalance(currentStakedAmount)} KPAD
                 </span>
               </div>
             )}
             <div className="flex items-center justify-between text-xs">
               <span className="text-secondary">Adding:</span>
               <span className="text-primary-text font-medium">
-                {numericAmount.toLocaleString()} KPAD
+                {formatBalance(numericAmount)} KPAD
               </span>
             </div>
             <div className="flex items-center justify-between border-t border-border-color pt-2">
               <span className="text-secondary">Total Staked:</span>
               <span className="text-primary-text font-semibold">
-                {totalAmount.toLocaleString()} KPAD
+                {formatBalance(totalAmount)} KPAD
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -203,17 +204,17 @@ const StakingForm = () => {
             <div className="space-y-3 mb-6">
               <div className="flex justify-between">
                 <span className="text-secondary">Adding Amount:</span>
-                <span className="text-primary-text font-medium">{numericAmount.toLocaleString()} KPAD</span>
+                <span className="text-primary-text font-medium">{formatBalance(numericAmount)} KPAD</span>
               </div>
               {currentStakedAmount > 0 && (
                 <div className="flex justify-between">
                   <span className="text-secondary">Current Staked:</span>
-                  <span className="text-primary-text font-medium">{currentStakedAmount.toLocaleString()} KPAD</span>
+                  <span className="text-primary-text font-medium">{formatBalance(currentStakedAmount)} KPAD</span>
                 </div>
               )}
               <div className="flex justify-between border-t border-border-color pt-2">
                 <span className="text-secondary">Total Staked:</span>
-                <span className="text-primary-text font-semibold">{totalAmount.toLocaleString()} KPAD</span>
+                <span className="text-primary-text font-semibold">{formatBalance(totalAmount)} KPAD</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-secondary">Tier:</span>

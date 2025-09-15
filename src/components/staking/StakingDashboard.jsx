@@ -3,6 +3,7 @@ import { useStakerEmailContext } from '../../contexts/StakerEmailContext';
 import useWalletStore from '../../wallet/walletStore';
 import useStakingStore from '../../store/useStakingStore';
 import { extractNumericValue, extractDateValue, getTierByAmount } from '../../utils/stakingUtils';
+import { formatBalance } from '../../utils/numberUtils';
 import WalletConnectButton from '../WalletConnectButton';
 import EmailManagement from './EmailManagement';
 import { Clock, TrendingUp, AlertCircle, Mail } from 'lucide-react';
@@ -119,7 +120,7 @@ const StakingDashboard = () => {
             You haven't staked in any tiers yet. Start staking to earn rewards and gain access to exclusive launches.
           </p>
           <div className="text-sm text-secondary">
-            Your KPAD Balance: <span className="font-medium text-primary-text">{extractNumericValue(userBalance)?.toLocaleString() || '0'} KPAD</span>
+            Your KPAD Balance: <span className="font-medium text-primary-text">{formatBalance(extractNumericValue(userBalance)) || '0'} KPAD</span>
           </div>
         </div>
       </div>
@@ -186,7 +187,7 @@ const StakingDashboard = () => {
           <div className="bg-gray-800/50 rounded-lg p-3">
             <div className="text-xs text-secondary mb-1">Amount Staked</div>
             <div className="text-base font-bold text-primary-text">
-              {extractNumericValue(stake?.amount)?.toLocaleString() || '0'} KPAD
+              {formatBalance(extractNumericValue(stake?.amount)) || '0'} KPAD
             </div>
           </div>
           

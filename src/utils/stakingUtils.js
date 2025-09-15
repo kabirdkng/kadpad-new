@@ -59,12 +59,12 @@ export const extractDateValue = (value) => {
 export const getTierByAmount = (amount) => {
   const numericAmount = extractNumericValue(amount);
   
-  if (numericAmount >= 100000) {
-    return { tier: 3, name: 'Tier 3', minAmount: 100000 };
+  if (numericAmount >= 350000) {
+    return { tier: 3, name: 'Tier 3', minAmount: 350000 };
+  } else if (numericAmount >= 150000) {
+    return { tier: 2, name: 'Tier 2', minAmount: 150000 };
   } else if (numericAmount >= 50000) {
-    return { tier: 2, name: 'Tier 2', minAmount: 50000 };
-  } else if (numericAmount >= 10000) {
-    return { tier: 1, name: 'Tier 1', minAmount: 10000 };
+    return { tier: 1, name: 'Tier 1', minAmount: 50000 };
   } else {
     return { tier: 0, name: 'No Tier', minAmount: 0 };
   }

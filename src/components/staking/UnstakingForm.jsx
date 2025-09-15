@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Clock, ArrowDown, TrendingDown } from 'lucide-react';
-import useStakingActions from '../../hooks/useStakingActions';
+import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
 import { useStakingDataContext } from '../../contexts/StakingDataContext';
 import useWalletStore from '../../wallet/walletStore';
 import useStakingStore from '../../store/useStakingStore';
 import { extractNumericValue, calculatePenaltyFallback } from '../../utils/stakingUtils';
+import { formatBalance } from '../../utils/numberUtils';
 
 const UnstakingForm = () => {
   const [amount, setAmount] = useState('');
@@ -18,8 +19,8 @@ const UnstakingForm = () => {
   // Get cached data from staking store
   const { userStakes, isLoading } = useStakingStore();
   
-  // Get staking actions (no data fetching)
-  const { unstakeTokens, calculatePenalty } = useStakingActions();
+  // Get action functions from useStakingPactCalls (disable auto-refresh to prevent redundant fetching)
+  const { unstakeTokens, calculatePenalty } = useStakingPactCalls({ disableAutoRefresh: true });
 
   const { refreshAfterTransaction } = useStakingDataContext();
 
@@ -129,7 +130,7 @@ const UnstakingForm = () => {
       <div className="mb-4 p-3 bg-gray-800/50 rounded-lg">
         <div className="text-sm text-secondary mb-1">Total Staked</div>
         <div className="text-lg font-semibold text-primary-text">
-          {maxUnstakeAmount.toLocaleString()} KPAD
+          {formatBalance(maxUnstakeAmount)} KPAD
         </div>
       </div>
 
@@ -190,16 +191,16 @@ const UnstakingForm = () => {
           <div className="text-sm space-y-2">
             <div className="flex justify-between">
               <span className="text-secondary">Amount to unstake:</span>
-              <span className="text-primary-text">{numericAmount.toLocaleString()} KPAD</span>
+              <span className="text-primary-text">{formatBalance(numericAmount)} KPAD</span>
             </div>
             <div className="flex justify-between">
               <span className="text-secondary">Penalty ({penaltyPercent}%):</span>
-              <span className="text-orange-400">-{(numericAmount * actualPenaltyPercent).toLocaleString()} KPAD</span>
+              <span className="text-orange-400">-{formatBalance(numericAmount * actualPenaltyPercent)} KPAD</span>
             </div>
             <div className="flex justify-between border-t border-orange-500/20 pt-2">
               <span className="text-secondary font-medium">You will receive:</span>
               <span className="text-primary-text font-medium">
-                {(numericAmount * (1 - actualPenaltyPercent)).toLocaleString()} KPAD
+                {formatBalance(numericAmount * (1 - actualPenaltyPercent))} KPAD
               </span>
             </div>
           </div>
@@ -212,7 +213,7 @@ const UnstakingForm = () => {
           <div className="text-sm space-y-2">
             <div className="flex justify-between">
               <span className="text-secondary">Amount to unstake:</span>
-              <span className="text-primary-text">{numericAmount.toLocaleString()} KPAD</span>
+              <span className="text-primary-text">{formatBalance(numericAmount)} KPAD</span>
             </div>
             <div className="flex justify-between">
               <span className="text-secondary">Penalty:</span>
@@ -220,7 +221,7 @@ const UnstakingForm = () => {
             </div>
             <div className="flex justify-between border-t border-green-500/20 pt-2">
               <span className="text-secondary font-medium">You will receive:</span>
-              <span className="text-primary-text font-medium">{numericAmount.toLocaleString()} KPAD</span>
+              <span className="text-primary-text font-medium">{formatBalance(numericAmount)} KPAD</span>
             </div>
           </div>
         </div>
@@ -282,7 +283,7 @@ const UnstakingForm = () => {
             <div className="space-y-3 mb-6">
               <div className="flex justify-between">
                 <span className="text-secondary">Amount to unstake:</span>
-                <span className="text-primary-text font-medium">{numericAmount.toLocaleString()} KPAD</span>
+                <span className="text-primary-text font-medium">{formatBalance(numericAmount)} KPAD</span>
               </div>
               {!isMatured && (
                 <>
@@ -293,7 +294,7 @@ const UnstakingForm = () => {
                   <div className="flex justify-between">
                     <span className="text-secondary">Penalty amount:</span>
                     <span className="text-red-400 font-medium">
-                      -{(numericAmount * actualPenaltyPercent).toLocaleString()} KPAD
+                      -{formatBalance(numericAmount * actualPenaltyPercent)} KPAD
                     </span>
                   </div>
                 </>
@@ -302,8 +303,8 @@ const UnstakingForm = () => {
                 <span className="text-secondary font-medium">You will receive:</span>
                 <span className="text-green-400 font-medium">
                   {isMatured 
-                    ? numericAmount.toLocaleString()
-                    : (numericAmount * (1 - actualPenaltyPercent)).toLocaleString()
+                    ? formatBalance(numericAmount)
+                    : formatBalance(numericAmount * (1 - actualPenaltyPercent))
                   } KPAD
                 </span>
               </div>

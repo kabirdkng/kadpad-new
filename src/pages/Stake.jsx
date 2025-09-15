@@ -220,7 +220,7 @@ const StakeContent = () => {
         </div>
 
         {/* Help Section */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="card text-center group hover:scale-105 transition-all duration-300">
             <div className="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">📚</span>
@@ -230,7 +230,7 @@ const StakeContent = () => {
               Learn how to stake KPAD and maximize your rewards
             </p>
             <a 
-              href="https://docs.kadpad.xyz/staking" 
+              href="https://docs.kadpad.xyz/documentation/kadpad-token/staking-tiers/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="btn btn-ghost text-sm"
@@ -254,22 +254,6 @@ const StakeContent = () => {
               className="btn btn-ghost text-sm"
             >
               Join Discord
-            </a>
-          </div>
-
-          <div className="card text-center group hover:scale-105 transition-all duration-300">
-            <div className="w-12 h-12 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mx-auto mb-4">
-              <span className="text-2xl">📊</span>
-            </div>
-            <h4 className="font-semibold text-primary-text mb-2">Analytics</h4>
-            <p className="text-sm text-secondary mb-4">
-              Track your staking rewards and performance
-            </p>
-            <a 
-              href="/analytics" 
-              className="btn btn-ghost text-sm"
-            >
-              View Analytics
             </a>
           </div>
         </div>

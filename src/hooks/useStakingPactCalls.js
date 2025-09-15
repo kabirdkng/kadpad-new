@@ -4,13 +4,15 @@ import useStakingStore from '../store/useStakingStore';
 import useWalletStore from '../wallet/walletStore';
 import { toast } from 'react-toastify';
 import { handleTokenStaking, handleTokenUnstaking } from '../utils/transactionUtils';
+import { formatAmountForPact } from '../utils/decimalUtils';
 
 const STAKING_NAMESPACE = 'n_b9880e372b7ec49d21ef4afe82ece29c3a536bde';
 const STAKING_MODULE = 'kadpad-staking';
 const TOKEN_MODULE = 'kadpad';
 const CHAIN_ID = 1;
 
-export const useStakingPactCalls = () => {
+export const useStakingPactCalls = (options = {}) => {
+  const { disableAutoRefresh = false } = options;
   const [isLoading, setIsLoading] = useState(false);
   const { account, pubKey, isConnected } = useWalletStore();
   const { 
@@ -112,7 +114,8 @@ export const useStakingPactCalls = () => {
   // Get penalty calculation for an amount and lock date
   const calculatePenalty = useCallback(async (amount, lockDate) => {
     try {
-      const code = createPactCode(`calculate-penalty ${amount}.0 (time "${lockDate.toISOString()}")`);
+      const formattedAmount = formatAmountForPact(amount);
+      const code = createPactCode(`calculate-penalty ${formattedAmount} (time "${lockDate.toISOString()}")`);
       const result = await fetchBalance(code, CHAIN_ID);
       
       if (result) {
@@ -376,7 +379,8 @@ export const useStakingPactCalls = () => {
 
       // Create guard for the user
       const guardCode = `(read-keyset "ks")`;
-      const code = createPactCode(`lock-tokens "${account}" ${guardCode} ${amount}.0`);
+      const formattedAmount = formatAmountForPact(amount);
+      const code = createPactCode(`lock-tokens "${account}" ${guardCode} ${formattedAmount}`);
       
       const result = await handleTokenStaking({
         code,
@@ -434,7 +438,8 @@ export const useStakingPactCalls = () => {
         throw new Error('Failed to get locker account');
       }
 
-      const code = createPactCode(`remove-tokens "${account}" ${amount}.0`);
+      const formattedAmount = formatAmountForPact(amount);
+      const code = createPactCode(`remove-tokens "${account}" ${formattedAmount}`);
       
       const result = await handleTokenUnstaking({
         code,
@@ -510,6 +515,9 @@ export const useStakingPactCalls = () => {
 
   // Effect to clear and refresh data when account changes
   useEffect(() => {
+    // Skip auto-refresh if disabled (used in forms to prevent redundant fetching)
+    if (disableAutoRefresh) return;
+    
     if (account) {
       console.log('useStakingPactCalls: Account changed, clearing and refreshing data for:', account);
       // Clear user-specific data first
@@ -522,7 +530,7 @@ export const useStakingPactCalls = () => {
       console.log('useStakingPactCalls: Connected but no account, clearing user data');
       clearUserData();
     }
-  }, [account, isConnected]); // Remove refreshData and clearUserData from dependencies
+  }, [account, isConnected, disableAutoRefresh]); // Add disableAutoRefresh to dependencies
 
   return {
     // Store data (like presale pattern)

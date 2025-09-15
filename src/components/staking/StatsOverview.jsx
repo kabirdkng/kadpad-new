@@ -2,6 +2,7 @@ import React from 'react';
 import { TrendingUp, Users, Target, Lock } from 'lucide-react';
 import useStakingStore from '../../store/useStakingStore';
 import { extractNumericValue } from '../../utils/stakingUtils';
+import { formatCompact } from '../../utils/numberUtils';
 
 const StatsOverview = () => {
   // Get cached data from staking store
@@ -11,7 +12,7 @@ const StatsOverview = () => {
     {
       id: 'totalStaked',
       label: 'Total Staked',
-      value: extractNumericValue(stakingStats?.totalStaked)?.toLocaleString() || '0',
+      value: formatCompact(extractNumericValue(stakingStats?.totalStaked)) || '0',
       suffix: 'KPAD',
       icon: TrendingUp,
       color: 'text-accent',
@@ -21,7 +22,7 @@ const StatsOverview = () => {
     {
       id: 'totalStakers',
       label: 'Total Stakers',
-      value: extractNumericValue(stakingStats?.totalStakers)?.toLocaleString() || '0',
+      value: formatCompact(extractNumericValue(stakingStats?.totalStakers)) || '0',
       suffix: '',
       icon: Users,
       color: 'text-blue-400',

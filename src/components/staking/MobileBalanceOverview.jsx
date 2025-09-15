@@ -3,6 +3,7 @@ import { TrendingUp, Wallet } from 'lucide-react';
 import useWalletStore from '../../wallet/walletStore';
 import useStakingStore from '../../store/useStakingStore';
 import { extractNumericValue, getTierByAmount } from '../../utils/stakingUtils';
+import { formatBalance } from '../../utils/numberUtils';
 
 const BalanceOverview = () => {
   const { isConnected } = useWalletStore();
@@ -55,7 +56,7 @@ const BalanceOverview = () => {
             <span className="text-xs text-secondary">Available Balance</span>
           </div>
           <div className="text-lg font-bold text-accent">
-            {availableBalance.toLocaleString()} KPAD
+            {formatBalance(availableBalance)} KPAD
           </div>
         </div>
         
@@ -65,7 +66,7 @@ const BalanceOverview = () => {
             <span className="text-xs text-secondary">Total Staked</span>
           </div>
           <div className="text-lg font-bold text-green-400">
-            {totalStaked.toLocaleString()} KPAD
+            {formatBalance(totalStaked)} KPAD
           </div>
         </div>
       </div>
@@ -74,7 +75,7 @@ const BalanceOverview = () => {
       {totalStaked === 0 && availableBalance > 0 && (
         <div className="bg-orange-500/10 border border-orange-500/20 rounded-lg p-3 mt-4">
           <div className="text-xs text-orange-400 text-center">
-            <strong>Ready to stake?</strong> You have {availableBalance.toLocaleString()} KPAD available for staking
+            <strong>Ready to stake?</strong> You have {formatBalance(availableBalance)} KPAD available for staking
           </div>
         </div>
       )}
