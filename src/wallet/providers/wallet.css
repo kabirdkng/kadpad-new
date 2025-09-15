@@ -1,7 +1,4 @@
-.tm-bg-dark-n {
-  background-color: #485f2daa !important;
-  border-radius: 2px;
-}
+/* Minimal modal-specific styles - everything else uses index.css classes */
 .wallet-modal-container {
   position: fixed;
   top: 0;
@@ -12,36 +9,45 @@
   place-items: center;
   z-index: 5000;
   overflow-y: auto;
+  background-color: rgba(0, 0, 0, 0.5);
 }
+
 .wallet-modal {
-  background-color: rgba(0, 0, 0, 0.9);
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
+  background: var(--card-bg);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-large);
   width: 100%;
-  height: auto;
-  max-width: 500px;
-  margin: 0 auto;
-  padding-block: 2rem;
-  display: grid;
-  place-items: center;
-  grid-auto-rows: 1fr;
-}
-.provider-button {
-  width: 90%;
-  height: 80%;
+  max-width: 400px;
+  padding: 2rem;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Custom layout for wallet buttons */
+.wallet-row {
+  display: flex;
   align-items: center;
-  gap: 2rem;
-  border: 1px solid var(--accent-color) !important;
+  justify-content: flex-start;
+  width: 100%;
+  gap: 1rem;
 }
 
-.provider-button img{
-   width: 50px;
-   height: 50px;
-   margin-block: 0.5rem !important;
+.wallet-icon {
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.provider-button:hover {
-  background: var(--accent-color) !important;
+.wallet-icon img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.wallet-name {
+  flex: 1;
+  text-align: left;
+  font-weight: 500;
 }

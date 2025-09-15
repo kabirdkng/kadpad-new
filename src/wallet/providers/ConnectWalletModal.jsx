@@ -64,21 +64,36 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
       onWalletConnected(provider);
     }
   }, [provider, onWalletConnected]);
- 
-  useEffect(() => {
-    if (!showModal) {
-      return null;
-    }
-  }, [])
   
- console.log(showModal)
+  if (!showModal) {
+    return null;
+  }
+  
+  console.log(showModal)
   return (
-    <div className="wallet-modal-container tm-bg-dark-n">
+    <div className="wallet-modal-container">
       <div className="wallet-modal" ref={modalRef}>
-            <button onClick={connectXWalletClicked} className='btn provider-button' ><img src={Ecko} /> Ecko Wallet </button>
-            <button onClick={connectMetaMaskClicked} className='btn provider-button' ><img src="https://images.ctfassets.net/clixtyxoaeas/4rnpEzy1ATWRKVBOLxZ1Fm/a74dc1eed36d23d7ea6030383a4d5163/MetaMask-icon-fox.svg" /> MetaMask (Snap)</button>
-            <button onClick={handleWalletConnect} className='btn provider-button' ><img src={wc} /> Wallet Connect </button>
-            <button onClick={connectMagicClicked} className='btn provider-button' ><img src={magic} /> Magic Wallet (Spirekey) </button>
+        <h3 className="text-xl font-semibold text-center mb-4 text-primary">Connect Wallet</h3>
+        
+        <button onClick={connectXWalletClicked} className="btn btn-secondary wallet-row">
+          <span className="wallet-icon"><img src={Ecko} alt="Ecko" /></span>
+          <span className="wallet-name">Ecko Wallet</span>
+        </button>
+        
+        <button onClick={connectMetaMaskClicked} className="btn btn-secondary wallet-row">
+          <span className="wallet-icon"><img src="https://images.ctfassets.net/clixtyxoaeas/4rnpEzy1ATWRKVBOLxZ1Fm/a74dc1eed36d23d7ea6030383a4d5163/MetaMask-icon-fox.svg" alt="MetaMask" /></span>
+          <span className="wallet-name">MetaMask (Snap)</span>
+        </button>
+        
+        <button onClick={handleWalletConnect} className="btn btn-secondary wallet-row">
+          <span className="wallet-icon"><img src={wc} alt="WalletConnect" /></span>
+          <span className="wallet-name">Wallet Connect</span>
+        </button>
+        
+        <button onClick={connectMagicClicked} className="btn btn-secondary wallet-row">
+          <span className="wallet-icon"><img src={magic} alt="Magic" /></span>
+          <span className="wallet-name">Magic Wallet (Spirekey)</span>
+        </button>
       </div>
     </div>
   );
