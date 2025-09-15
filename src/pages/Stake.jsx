@@ -3,6 +3,7 @@ import { TrendingUp } from 'lucide-react';
 import { StakingDataProvider } from '../contexts/StakingDataContext';
 import { StakerEmailProvider } from '../contexts/StakerEmailContext';
 import useWalletStore from '../wallet/walletStore';
+import useStakingStore from '../store/useStakingStore';
 
 // Components
 import StakingDashboard from '../components/staking/StakingDashboard';
@@ -12,8 +13,23 @@ import StatsOverview from '../components/staking/StatsOverview';
 import Leaderboard from '../components/staking/Leaderboard';
 import BalanceOverview from '../components/staking/MobileBalanceOverview';
 
+// Skeleton Components
+import StakingDashboardSkeleton from '../components/staking/skeletons/StakingDashboardSkeleton';
+import StakingFormSkeleton from '../components/staking/skeletons/StakingFormSkeleton';
+import LeaderboardSkeleton from '../components/staking/skeletons/LeaderboardSkeleton';
+import StatsOverviewSkeleton from '../components/staking/skeletons/StatsOverviewSkeleton';
+import BalanceOverviewSkeleton from '../components/staking/skeletons/BalanceOverviewSkeleton';
+
+// Common Components
+import SmoothTransition from '../components/common/SmoothTransition';
+
 const StakeContent = () => {
   const [activeTab, setActiveTab] = useState('stake');
+  const { 
+    isLoading, 
+    isPublicDataLoaded,
+    isUserDataLoaded
+  } = useStakingStore();
   const { isConnected } = useWalletStore();
 
   // Scroll to top when component mounts
@@ -21,8 +37,21 @@ const StakeContent = () => {
     window.scrollTo(0, 0);
   }, []);
 
+  // Determine loading state for dynamic data only
+  const shouldShowDataLoading = () => {
+    if (isConnected) {
+      // For connected users, check if user data is still loading
+      return !isUserDataLoaded || isLoading;
+    } else {
+      // For non-connected users, check if public data is still loading
+      return !isPublicDataLoaded || isLoading;
+    }
+  };
+
+  const dataIsLoading = shouldShowDataLoading();
+
   return (
-    <div className="min-h-screen bg-primary-bg pt-24 pb-16">
+    <div className="min-h-screen bg-primary-bg pt-24 pb-16 animate-fade-in">
       <div className="container mx-auto px-4 max-w-6xl">
         
         {/* Header Section */}
@@ -43,20 +72,30 @@ const StakeContent = () => {
         </div>
 
         {/* Stats Overview */}
-        <div className="mb-8">
+        <div className="mb-8 transition-all duration-500 ease-in-out">
           <div className="lg:hidden">
             <div className="card">
               <h3 className="text-lg font-semibold text-primary-text mb-4">Platform Stats</h3>
-              <StatsOverview />
+              <SmoothTransition 
+                isLoading={dataIsLoading} 
+                loadingComponent={StatsOverviewSkeleton}
+              >
+                <StatsOverview />
+              </SmoothTransition>
             </div>
           </div>
           <div className="hidden lg:block">
-            <StatsOverview />
+            <SmoothTransition 
+              isLoading={dataIsLoading} 
+              loadingComponent={StatsOverviewSkeleton}
+            >
+              <StatsOverview />
+            </SmoothTransition>
           </div>
         </div>
 
         {/* Main Content Grid - Desktop: Dashboard | Staking Form | Leaderboard */}
-        <div className="lg:hidden mb-8 space-y-6">
+        <div className="lg:hidden mb-8 space-y-6 transition-all duration-500 ease-in-out">
           {/* Staking Form - Priority on Mobile */}
           <div className="card">
             <h3 className="text-lg font-semibold text-primary-text mb-4">Stake Your KPAD</h3>
@@ -93,7 +132,11 @@ const StakeContent = () => {
 
               {/* Tab Content */}
               <div className="p-0">
-                {activeTab === 'stake' ? <StakingForm /> : <UnstakingForm />}
+                {dataIsLoading ? (
+                  <StakingFormSkeleton />
+                ) : (
+                  activeTab === 'stake' ? <StakingForm /> : <UnstakingForm />
+                )}
               </div>
             </div>
           </div>
@@ -104,22 +147,37 @@ const StakeContent = () => {
             <div className="space-y-4">
               <div>
                 <h4 className="text-base font-medium text-primary-text mb-3">Your Staking Info</h4>
-                <StakingDashboard />
+                <SmoothTransition 
+                  isLoading={dataIsLoading} 
+                  loadingComponent={StakingDashboardSkeleton}
+                >
+                  <StakingDashboard />
+                </SmoothTransition>
               </div>
               <div className="pt-4 border-t border-border-color">
                 <h4 className="text-base font-medium text-primary-text mb-3">Top Stakers</h4>
-                <Leaderboard />
+                <SmoothTransition 
+                  isLoading={dataIsLoading} 
+                  loadingComponent={LeaderboardSkeleton}
+                >
+                  <Leaderboard />
+                </SmoothTransition>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="hidden lg:grid lg:grid-cols-7 gap-6 max-w-7xl mx-auto mb-8">
+        <div className="hidden lg:grid lg:grid-cols-7 gap-6 max-w-7xl mx-auto mb-8 transition-all duration-500 ease-in-out">
           
           {/* Dashboard - Left Side on Desktop (2 columns) */}
           <div className="lg:col-span-2 order-1 lg:order-1">
             <div className="sticky top-24">
-              <StakingDashboard />
+              <SmoothTransition 
+                isLoading={dataIsLoading} 
+                loadingComponent={StakingDashboardSkeleton}
+              >
+                <StakingDashboard />
+              </SmoothTransition>
             </div>
           </div>
 
@@ -159,7 +217,11 @@ const StakeContent = () => {
 
                 {/* Tab Content */}
                 <div className="p-0">
-                  {activeTab === 'stake' ? <StakingForm /> : <UnstakingForm />}
+                  {dataIsLoading ? (
+                    <StakingFormSkeleton />
+                  ) : (
+                    activeTab === 'stake' ? <StakingForm /> : <UnstakingForm />
+                  )}
                 </div>
               </div>
             </div>
@@ -168,14 +230,24 @@ const StakeContent = () => {
           {/* Leaderboard - Right Side on Desktop (2 columns) */}
           <div className="lg:col-span-2 order-3 lg:order-3">
             <div className="sticky top-24">
-              <Leaderboard />
+              <SmoothTransition 
+                isLoading={dataIsLoading} 
+                loadingComponent={LeaderboardSkeleton}
+              >
+                <Leaderboard />
+              </SmoothTransition>
             </div>
           </div>
         </div>
 
         {/* Balance Overview - Below main content */}
-        <div className="mb-8">
-          <BalanceOverview />
+        <div className="mb-8 transition-all duration-500 ease-in-out">
+          <SmoothTransition 
+            isLoading={dataIsLoading} 
+            loadingComponent={BalanceOverviewSkeleton}
+          >
+            <BalanceOverview />
+          </SmoothTransition>
         </div>
 
         {/* Grid Layout for Information */}

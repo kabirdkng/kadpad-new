@@ -17,6 +17,10 @@ const useStakingStore = create(
       isUnstaking: false,
       isClaiming: false,
       
+      // Data initialization states
+      isPublicDataLoaded: false,
+      isUserDataLoaded: false,
+      
       // Error handling
       error: null,
       
@@ -29,11 +33,11 @@ const useStakingStore = create(
       },
       
       // Actions
-      setUserStakes: (stakes) => set({ userStakes: stakes }),
+      setUserStakes: (stakes) => set({ userStakes: stakes, isUserDataLoaded: true }),
       setUserBalance: (balance) => set({ userBalance: balance }),
       setTotalStaked: (total) => set({ totalStaked: total }),
       setTotalRewards: (rewards) => set({ totalRewards: rewards }),
-      setLeaderboard: (leaderboard) => set({ leaderboard: leaderboard }),
+      setLeaderboard: (leaderboard) => set({ leaderboard: leaderboard, isPublicDataLoaded: true }),
       setStakingStats: (stats) => set({ stakingStats: stats }),
       
       setLoading: (loading) => set({ isLoading: loading }),
@@ -75,6 +79,7 @@ const useStakingStore = create(
         isStaking: false,
         isUnstaking: false,
         isClaiming: false,
+        isUserDataLoaded: false,
       }),
       
       // Reset state
@@ -89,6 +94,8 @@ const useStakingStore = create(
         isUnstaking: false,
         isClaiming: false,
         error: null,
+        isPublicDataLoaded: false,
+        isUserDataLoaded: false,
         stakingStats: {
           totalStaked: 0,
           totalStakers: 0,
