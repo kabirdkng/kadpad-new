@@ -1,17 +1,14 @@
 import React from 'react';
 import { TrendingUp, Wallet } from 'lucide-react';
-import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
 import useWalletStore from '../../wallet/walletStore';
+import useStakingStore from '../../store/useStakingStore';
+import { extractNumericValue, getTierByAmount } from '../../utils/stakingUtils';
 
 const BalanceOverview = () => {
   const { isConnected } = useWalletStore();
-  const { 
-    userStakes, 
-    userBalance, 
-    isLoading,
-    extractNumericValue,
-    getTierByAmount 
-  } = useStakingPactCalls();
+  
+  // Get cached data from staking store
+  const { userStakes, userBalance, isLoading } = useStakingStore();
 
   if (!isConnected) {
     return (

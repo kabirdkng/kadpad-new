@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Clock, ArrowDown, TrendingDown } from 'lucide-react';
-import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
+import useStakingActions from '../../hooks/useStakingActions';
 import { useStakingDataContext } from '../../contexts/StakingDataContext';
+import useWalletStore from '../../wallet/walletStore';
+import useStakingStore from '../../store/useStakingStore';
+import { extractNumericValue, calculatePenaltyFallback } from '../../utils/stakingUtils';
 
 const UnstakingForm = () => {
   const [amount, setAmount] = useState('');
@@ -9,15 +12,14 @@ const UnstakingForm = () => {
   const [currentPenalty, setCurrentPenalty] = useState(null);
   const [penaltyLoading, setPenaltyLoading] = useState(false);
   
-  const { 
-    isConnected, 
-    userStakes, 
-    isLoading,
-    unstakeTokens,
-    extractNumericValue,
-    calculatePenalty,
-    calculatePenaltyFallback 
-  } = useStakingPactCalls();
+  // Get wallet connection status from wallet store
+  const { isConnected } = useWalletStore();
+  
+  // Get cached data from staking store
+  const { userStakes, isLoading } = useStakingStore();
+  
+  // Get staking actions (no data fetching)
+  const { unstakeTokens, calculatePenalty } = useStakingActions();
 
   const { refreshAfterTransaction } = useStakingDataContext();
 
@@ -25,9 +27,24 @@ const UnstakingForm = () => {
   const numericAmount = parseFloat(amount) || 0;
   const maxUnstakeAmount = extractNumericValue(stake?.amount) || 0;
   
-  // Calculate current penalty when stake data is available
+  // Get penalty data from stake object first (same as dashboard)
+  const stakePenaltyPercent = extractNumericValue(stake?.['penalty-percent'] || stake?.penaltyPercent) || 0;
+  const stakeIsMatured = extractNumericValue(stake?.['is-mature'] || stake?.isMature) === 1;
+  
+  // Calculate current penalty when stake data is available (fallback if not in stake data)
   useEffect(() => {
     const getCurrentPenalty = async () => {
+      // If we already have penalty data in the stake object, use it
+      if (stakePenaltyPercent !== undefined && stakePenaltyPercent !== null) {
+        setCurrentPenalty({
+          'penalty-percent': stakePenaltyPercent,
+          'is-mature': stakeIsMatured ? 1 : 0
+        });
+        setPenaltyLoading(false);
+        return;
+      }
+      
+      // Otherwise, calculate it (fallback)
       if (stake && stake.lockDate && maxUnstakeAmount > 0) {
         setPenaltyLoading(true);
         try {
@@ -49,11 +66,13 @@ const UnstakingForm = () => {
     };
 
     getCurrentPenalty();
-  }, [stake, maxUnstakeAmount, calculatePenalty, calculatePenaltyFallback]);
+  }, [stake, maxUnstakeAmount, stakePenaltyPercent, stakeIsMatured, calculatePenalty, calculatePenaltyFallback]);
   
-  const isMatured = extractNumericValue(currentPenalty?.['is-mature'] || stake?.['is-mature'] || stake?.isMature) === 1 || false;
-  const penaltyPercent = penaltyLoading ? 'Calculating...' : currentPenalty ? (extractNumericValue(currentPenalty?.['penalty-percent']) * 100).toFixed(2) : '0.00';
-  const actualPenaltyPercent = currentPenalty ? extractNumericValue(currentPenalty?.['penalty-percent']) : 0;
+  const isMatured = stakeIsMatured || (extractNumericValue(currentPenalty?.['is-mature']) === 1);
+  const penaltyPercent = penaltyLoading ? 'Calculating...' : 
+    stakePenaltyPercent !== undefined ? (stakePenaltyPercent * 100).toFixed(2) :
+    currentPenalty ? (extractNumericValue(currentPenalty?.['penalty-percent']) * 100).toFixed(2) : '0.00';
+  const actualPenaltyPercent = stakePenaltyPercent || (currentPenalty ? extractNumericValue(currentPenalty?.['penalty-percent']) : 0);
 
   const handleMaxClick = () => {
     setAmount(maxUnstakeAmount.toString());

@@ -1,8 +1,10 @@
 import { Trophy, Crown, Award, Medal } from 'lucide-react';
-import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
+import useStakingStore from '../../store/useStakingStore';
+import { extractNumericValue } from '../../utils/stakingUtils';
 
 const Leaderboard = () => {
-  const { leaderboard, isLoading, extractNumericValue } = useStakingPactCalls();
+  // Get cached data from staking store
+  const { leaderboard, isLoading } = useStakingStore();
 
   // Extract rankings and tier percentages from leaderboard data
   const rankings = leaderboard?.rankings || [];

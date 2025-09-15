@@ -1,21 +1,18 @@
 import React from 'react';
-import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
 import { useStakerEmailContext } from '../../contexts/StakerEmailContext';
+import useWalletStore from '../../wallet/walletStore';
+import useStakingStore from '../../store/useStakingStore';
+import { extractNumericValue, extractDateValue, getTierByAmount } from '../../utils/stakingUtils';
 import WalletConnectButton from '../WalletConnectButton';
 import EmailManagement from './EmailManagement';
 import { Clock, TrendingUp, AlertCircle, Mail } from 'lucide-react';
 
 const StakingDashboard = () => {
-  const { 
-    isConnected, 
-    account,
-    userStakes, 
-    userBalance, 
-    isLoading,
-    extractNumericValue,
-    extractDateValue,
-    getTierByAmount 
-  } = useStakingPactCalls();
+  // Get wallet connection status from wallet store
+  const { isConnected, account } = useWalletStore();
+  
+  // Get cached data from staking store
+  const { userStakes, userBalance, isLoading } = useStakingStore();
 
   const { hasEmail, stakerData, refetch } = useStakerEmailContext();
 

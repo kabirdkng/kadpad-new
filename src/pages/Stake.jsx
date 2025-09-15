@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { TrendingUp } from 'lucide-react';
 import { StakingDataProvider } from '../contexts/StakingDataContext';
 import { StakerEmailProvider } from '../contexts/StakerEmailContext';
@@ -14,19 +14,10 @@ import BalanceOverview from '../components/staking/MobileBalanceOverview';
 
 const StakeContent = () => {
   const [activeTab, setActiveTab] = useState('stake');
-  const [refreshKey, setRefreshKey] = useState(0);
-  const { account, isConnected } = useWalletStore();
-
-  // Force re-render when account changes
-  useEffect(() => {
-    if (isConnected && account) {
-      console.log('Account changed in Stake page, triggering refresh for:', account);
-      setRefreshKey(prev => prev + 1);
-    }
-  }, [account, isConnected]);
+  const { isConnected } = useWalletStore();
 
   return (
-    <div className="min-h-screen bg-primary-bg pt-24 pb-16" key={refreshKey}>
+    <div className="min-h-screen bg-primary-bg pt-24 pb-16">
       <div className="container mx-auto px-4 max-w-6xl">
         
         {/* Header Section */}

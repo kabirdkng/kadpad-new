@@ -1,9 +1,11 @@
 import React from 'react';
 import { TrendingUp, Users, Target, Lock } from 'lucide-react';
-import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
+import useStakingStore from '../../store/useStakingStore';
+import { extractNumericValue } from '../../utils/stakingUtils';
 
 const StatsOverview = () => {
-  const { stakingStats, isLoading, extractNumericValue } = useStakingPactCalls();
+  // Get cached data from staking store
+  const { stakingStats, isLoading } = useStakingStore();
 
   const stats = [
     {

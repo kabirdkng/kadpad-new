@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import { Coins, Info, ArrowUp, AlertTriangle } from 'lucide-react';
-import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
+import useStakingActions from '../../hooks/useStakingActions';
 import { useStakingDataContext } from '../../contexts/StakingDataContext';
+import useWalletStore from '../../wallet/walletStore';
+import useStakingStore from '../../store/useStakingStore';
+import { extractNumericValue, getTierByAmount } from '../../utils/stakingUtils';
 
 const StakingForm = () => {
   const [amount, setAmount] = useState('');
   const [showConfirm, setShowConfirm] = useState(false);
   
-  const { 
-    isConnected, 
-    userBalance, 
-    userStakes,
-    isLoading,
-    stakeTokens, 
-    getTierByAmount,
-    extractNumericValue 
-  } = useStakingPactCalls();
+  // Get wallet connection status from wallet store
+  const { isConnected } = useWalletStore();
+  
+  // Get cached data from staking store
+  const { userBalance, userStakes, isLoading } = useStakingStore();
+  
+  // Get staking actions (no data fetching)
+  const { stakeTokens } = useStakingActions();
 
   const { refreshAfterTransaction } = useStakingDataContext();
 
