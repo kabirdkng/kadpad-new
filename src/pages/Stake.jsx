@@ -307,7 +307,7 @@ const StakeContent = () => {
               Learn how to stake KPAD and maximize your rewards
             </p>
             <a 
-              href="https://docs.kadpad.xyz/documentation/kadpad-token/staking-tiers/" 
+              href="https://docs.kadpad.xyz/documentation/kadpad-token/kadpad-staking/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="btn btn-ghost text-sm"
@@ -352,3 +352,4 @@ const Stake = () => {
 };
 
 export default Stake;
+
