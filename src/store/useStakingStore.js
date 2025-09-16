@@ -34,7 +34,7 @@ const useStakingStore = create(
       
       // Actions
       setUserStakes: (stakes) => set({ userStakes: stakes, isUserDataLoaded: true }),
-      setUserBalance: (balance) => set({ userBalance: balance }),
+      setUserBalance: (balance) => set({ userBalance: balance, isUserDataLoaded: true }),
       setTotalStaked: (total) => set({ totalStaked: total }),
       setTotalRewards: (rewards) => set({ totalRewards: rewards }),
       setLeaderboard: (leaderboard) => set({ leaderboard: leaderboard, isPublicDataLoaded: true }),

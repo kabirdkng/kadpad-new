@@ -308,7 +308,7 @@ const TransactionTracker = ({ isOpen, onClose }) => {
       className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-[1000] p-2 md:p-4"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
-      <div className="bg-primary-bg border border-border-color rounded-xl w-full max-w-4xl max-h-[95vh] md:max-h-[90vh] flex flex-col shadow-xl">
+      <div className="bg-primary-bg border border-border-color rounded-xl w-full max-w-4xl max-h-[80vh] md:max-h-[90vh] flex flex-col shadow-xl">
         {/* Header */}
         <div className="p-4 md:p-6 border-b border-border-color flex-shrink-0">
           <div className="flex items-center justify-between">
