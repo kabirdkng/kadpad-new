@@ -478,7 +478,6 @@ export const useStakingPactCalls = (options = {}) => {
 
   // Refresh public data (stats, leaderboard, total staked) - doesn't require wallet connection
   const refreshPublicData = useCallback(async () => {
-    setIsLoading(true);
     try {
       await Promise.all([
         getTotalStaked(),
@@ -487,8 +486,6 @@ export const useStakingPactCalls = (options = {}) => {
       ]);
     } catch (error) {
       console.error('Error refreshing public data:', error);
-    } finally {
-      setIsLoading(false);
     }
   }, [getTotalStaked, getStakingStats, getLeaderboard]);
 

@@ -73,7 +73,7 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
   return (
     <div className="wallet-modal-container">
       <div className="wallet-modal" ref={modalRef}>
-        <h3 className="text-xl font-semibold text-center mb-4 text-primary">Connect Wallet</h3>
+        <h3 className="text-xl font-semibold text-left text-primary">Select Wallet</h3>
         
         <button onClick={connectXWalletClicked} className="btn btn-secondary wallet-row">
           <span className="wallet-icon"><img src={Ecko} alt="Ecko" /></span>

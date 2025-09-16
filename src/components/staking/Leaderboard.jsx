@@ -5,7 +5,7 @@ import { formatCompact } from '../../utils/numberUtils';
 
 const Leaderboard = () => {
   // Get cached data from staking store
-  const { leaderboard, isLoading } = useStakingStore();
+  const { leaderboard, isPublicDataLoaded } = useStakingStore();
 
   // Extract rankings and tier percentages from leaderboard data
   const rankings = leaderboard?.rankings || [];
@@ -49,7 +49,7 @@ const Leaderboard = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  if (isLoading) {
+  if (!isPublicDataLoaded) {
     return (
       <div className="bg-card rounded-lg p-4 border border-border-color">
         <div className="flex items-center space-x-2 mb-3">

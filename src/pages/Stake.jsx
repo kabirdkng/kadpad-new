@@ -40,13 +40,17 @@ const StakeContent = () => {
   // Determine loading state for dynamic data only
   const shouldShowDataLoading = () => {
     if (isConnected) {
-      // For connected users, check if user data is still loading
-      return !isUserDataLoaded || isLoading;
+      // For connected users, only check user data loading, not global isLoading
+      return !isUserDataLoaded;
     } else {
-      // For non-connected users, check if public data is still loading
-      return !isPublicDataLoaded || isLoading;
+      // For non-connected users, only check public data loading
+      return !isPublicDataLoaded;
     }
   };
+
+  // Separate loading states for different component types
+  const shouldShowPublicDataLoading = () => !isPublicDataLoaded;
+  const shouldShowUserDataLoading = () => isConnected && !isUserDataLoaded;
 
   const dataIsLoading = shouldShowDataLoading();
 
@@ -77,7 +81,7 @@ const StakeContent = () => {
             <div className="card">
               <h3 className="text-lg font-semibold text-primary-text mb-4">Platform Stats</h3>
               <SmoothTransition 
-                isLoading={dataIsLoading} 
+                isLoading={shouldShowPublicDataLoading()} 
                 loadingComponent={StatsOverviewSkeleton}
               >
                 <StatsOverview />
@@ -86,7 +90,7 @@ const StakeContent = () => {
           </div>
           <div className="hidden lg:block">
             <SmoothTransition 
-              isLoading={dataIsLoading} 
+              isLoading={shouldShowPublicDataLoading()} 
               loadingComponent={StatsOverviewSkeleton}
             >
               <StatsOverview />
@@ -148,7 +152,7 @@ const StakeContent = () => {
               <div>
                 <h4 className="text-base font-medium text-primary-text mb-3">Your Staking Info</h4>
                 <SmoothTransition 
-                  isLoading={dataIsLoading} 
+                  isLoading={shouldShowUserDataLoading()} 
                   loadingComponent={StakingDashboardSkeleton}
                 >
                   <StakingDashboard />
@@ -157,7 +161,7 @@ const StakeContent = () => {
               <div className="pt-4 border-t border-border-color">
                 <h4 className="text-base font-medium text-primary-text mb-3">Top Stakers</h4>
                 <SmoothTransition 
-                  isLoading={dataIsLoading} 
+                  isLoading={shouldShowPublicDataLoading()} 
                   loadingComponent={LeaderboardSkeleton}
                 >
                   <Leaderboard />
@@ -173,7 +177,7 @@ const StakeContent = () => {
           <div className="lg:col-span-2 order-1 lg:order-1">
             <div className="sticky top-24">
               <SmoothTransition 
-                isLoading={dataIsLoading} 
+                isLoading={shouldShowUserDataLoading()} 
                 loadingComponent={StakingDashboardSkeleton}
               >
                 <StakingDashboard />
@@ -231,7 +235,7 @@ const StakeContent = () => {
           <div className="lg:col-span-2 order-3 lg:order-3">
             <div className="sticky top-24">
               <SmoothTransition 
-                isLoading={dataIsLoading} 
+                isLoading={shouldShowPublicDataLoading()} 
                 loadingComponent={LeaderboardSkeleton}
               >
                 <Leaderboard />

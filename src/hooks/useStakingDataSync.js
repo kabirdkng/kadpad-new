@@ -35,58 +35,6 @@ export const useStakingDataSync = () => {
     return transactions.some(tx => tx.status === 'pending');
   }, [getStakingTransactions]);
   
-  // Refresh public data (stats, leaderboard, total staked)
-  const refreshPublicDataSafe = useCallback(async () => {
-    if (isLoading) return;
-    
-    try {
-      await refreshPublicData();
-    } catch (error) {
-      console.error('Error refreshing public data:', error);
-    }
-  }, [isLoading]); // Remove refreshPublicData from dependencies
-  
-  // Refresh user-specific data
-  const refreshUserDataSafe = useCallback(async () => {
-    if (!isConnected || !account || isLoading) return;
-    
-    try {
-      console.log('useStakingDataSync: Refreshing user data for account:', account);
-      await refreshData();
-    } catch (error) {
-      console.error('Error refreshing user data:', error);
-    }
-  }, [isConnected, account, isLoading]); // Remove refreshData from dependencies
-  
-  // Start public data polling
-  const startPublicDataPolling = useCallback(() => {
-    if (publicDataPollingRef.current) return;
-    
-    publicDataPollingRef.current = setInterval(() => {
-      // Use the current refreshPublicData function directly
-      if (!isLoading) {
-        refreshPublicData().catch(error => {
-          console.error('Error refreshing public data:', error);
-        });
-      }
-    }, PUBLIC_DATA_POLL_INTERVAL);
-  }, []); // No dependencies needed
-  
-  // Start user data polling
-  const startUserDataPolling = useCallback(() => {
-    if (!isConnected || !account || userDataPollingRef.current) return;
-    
-    console.log('useStakingDataSync: Starting user data polling for account:', account);
-    userDataPollingRef.current = setInterval(() => {
-      // Use the current refreshData function directly
-      if (isConnected && account && !isLoading) {
-        refreshData().catch(error => {
-          console.error('Error refreshing user data:', error);
-        });
-      }
-    }, USER_DATA_POLL_INTERVAL);
-  }, [isConnected, account]); // Only depend on isConnected and account
-  
   // Start transaction monitoring (more frequent polling when there are pending transactions)
   const startTransactionMonitoring = useCallback(() => {
     if (lastTransactionCheckRef.current) return;
@@ -236,9 +184,7 @@ export const useStakingDataSync = () => {
       }
     }
     
-    // Don't add getStakingTransactions().length as dependency to avoid infinite re-renders
-    // Instead we'll rely on the periodic polling to catch updates
-  }, []); // Empty dependency array, will run once on mount
+  }, []);
   
   // Listen for page visibility changes
   useEffect(() => {

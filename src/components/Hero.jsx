@@ -10,14 +10,6 @@ const Hero = () => {
   const text = "THE HOME OF TOKEN LAUNCHES ON KADENA";
   const words = text.split(' ');
 
-  // Mock stats that would come from your API
-  const stats = [
-    { label: "Total Projects", value: "47", suffix: "+" },
-    { label: "Total Raised", value: "2.3M", suffix: " KDA" },
-    { label: "Active Users", value: "1.2K", suffix: "+" },
-    { label: "Success Rate", value: "94", suffix: "%" }
-  ];
-
   const features = [
     {
       icon: <Shield className="w-6 h-6" />,
@@ -40,13 +32,6 @@ const Hero = () => {
     const timer = setTimeout(() => setVisible(true), 100);
     return () => clearTimeout(timer);
   }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentStat((prev) => (prev + 1) % stats.length);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [stats.length]);
 
   const handleInteraction = useCallback((index) => {
     setActiveIndex(index);
@@ -174,26 +159,6 @@ const Hero = () => {
           </Link>
         </div>
 
-        {/* Stats Section */}
-        {/* <div className={`grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto mb-12 transition-all duration-1000 delay-900 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          {stats.map((stat, index) => (
-            <div 
-              key={index}
-              className={`card text-center p-6 transition-all duration-500 ${
-                currentStat === index ? 'glow scale-105' : ''
-              }`}
-            >
-              <div className="text-2xl sm:text-3xl font-bold text-gradient mb-1">
-                {stat.value}
-                <span className="text-accent-primary">{stat.suffix}</span>
-              </div>
-              <div className="text-sm text-secondary font-medium">
-                {stat.label}
-              </div>
-            </div>
-          ))}
-        </div> */}
-
         {/* Features Preview */}
         <div className={`grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-16 transition-all duration-1000 delay-1100 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           {features.map((feature, index) => (
@@ -214,19 +179,6 @@ const Hero = () => {
           ))}
         </div>
       </div>
-
-      {/* Scroll Indicator - Positioned absolutely at bottom */}
-      {/* <div className={`absolute bottom-8 left-1/2 transform -translate-x-1/2 transition-all duration-1000 delay-1300 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-        <div className="flex flex-col items-center text-secondary">
-          <span className="text-xs font-medium mb-3 px-3 py-1 bg-card/80 backdrop-blur-sm rounded-full border border-accent-primary/20">
-            Scroll to explore
-          </span>
-          <div className="relative">
-            <div className="w-px h-12 bg-gradient-to-b from-accent-primary via-accent-primary/50 to-transparent animate-pulse"></div>
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-accent-primary rounded-full animate-bounce"></div>
-          </div>
-        </div>
-      </div> */}
     </section>
   );
 };

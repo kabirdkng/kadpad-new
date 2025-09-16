@@ -35,10 +35,7 @@ export const StakingDataProvider = ({ children }) => {
       // Stop existing polling
       stakingDataSync.stopAllPolling();
       
-      // Refresh data for new account
-      stakingDataSync.refreshAfterTransaction();
-      
-      // Restart polling with new account
+      // Restart polling with new account (this will fetch user data)
       stakingDataSync.startPolling();
     } else if (!isConnected) {
       // Stop polling and clear data when disconnected

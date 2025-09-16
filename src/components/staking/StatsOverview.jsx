@@ -6,7 +6,7 @@ import { formatCompact } from '../../utils/numberUtils';
 
 const StatsOverview = () => {
   // Get cached data from staking store
-  const { stakingStats, isLoading } = useStakingStore();
+  const { stakingStats, isPublicDataLoaded } = useStakingStore();
 
   const stats = [
     {
@@ -51,7 +51,7 @@ const StatsOverview = () => {
     }
   ];
 
-  if (isLoading) {
+  if (!isPublicDataLoaded) {
     return (
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
         {stats.map((stat) => (
