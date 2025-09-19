@@ -25,7 +25,6 @@ export const useWhitelistOperations = (
         (wallet) => `(reserve-batch "${wallet}")`
       );
       
-      toast.info('Submitting whitelist transaction...', { position: 'top-center', autoClose: 2000 });
       const code = `(use ${namespace}.${salesModuleName}) ${walletList.join(' ')}`;
       const res = await pactCallsSales(code, supplyChain, namespace, moduleName);
       

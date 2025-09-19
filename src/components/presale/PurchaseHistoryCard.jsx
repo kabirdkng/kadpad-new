@@ -10,6 +10,7 @@ const PurchaseHistoryCard = ({
   isPhase0, 
   isPhase1, 
   isSaleEnded, 
+  distributionComplete,
   safeRender 
 }) => {
   if (!account) {
@@ -45,7 +46,12 @@ const PurchaseHistoryCard = ({
           <div className="flex items-start gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
             <Info className="w-4 h-4 text-green-400 mt-0.5 flex-shrink-0" />
             <p className="text-sm text-green-400">
-              Tokens will be distributed after presale ends.
+              {distributionComplete 
+                ? 'Tokens have been distributed to your wallet!'
+                : isSaleEnded 
+                  ? 'Sale ended. Tokens are being distributed.'
+                  : 'Tokens will be distributed after presale ends.'
+              }
             </p>
           </div>
         </div>
@@ -72,6 +78,7 @@ PurchaseHistoryCard.propTypes = {
   isPhase0: PropTypes.bool.isRequired,
   isPhase1: PropTypes.bool.isRequired,
   isSaleEnded: PropTypes.bool.isRequired,
+  distributionComplete: PropTypes.bool,
   safeRender: PropTypes.func.isRequired,
 };
 

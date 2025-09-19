@@ -103,6 +103,10 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
           console.log("WalletConnect client status before signing:", clientStatus);
         }
         
+        // Show signing toast before batch signing
+        const { showSigningToast } = await import("../transactionUtils.js");
+        showSigningToast();
+        
         deploymentSignedBatch = await provider.quickSignAll(deploymentCommands);
       } catch (error) {
         console.error("Deployment signing error:", error);
@@ -261,6 +265,10 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
           const clientStatus = getClientStatus();
           console.log("WalletConnect client status before transfer signing:", clientStatus);
         }
+        
+        // Show signing toast before batch signing
+        const { showSigningToast } = await import("../transactionUtils.js");
+        showSigningToast();
         
         transferSignedBatch = await provider.quickSignAll(transferCommands);
       } catch (error) {

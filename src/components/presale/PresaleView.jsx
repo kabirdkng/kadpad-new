@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+import { useState } from 'react';
 import usePresaleLogic from '../../hooks/usePresaleLogic';
 import PresaleHeader from './PresaleHeader';
 import TokenDetailsCard from './TokenDetailsCard';
@@ -14,6 +15,8 @@ import DeployerPanel from './DeployerPanel';
 import PostSalesStatusCard from './PostSalesStatusCard';
 
 const PresaleView = ({ namespace, moduleName }) => {
+  const [distributionComplete, setDistributionComplete] = useState(false);
+
   const {
     // Store data
     balance,
@@ -71,6 +74,11 @@ const PresaleView = ({ namespace, moduleName }) => {
 
   const phaseInfo = getPhaseInfo();
 
+  // Handle distribution status updates from PostSalesStatusCard
+  const handleDistributionStatusChange = (status) => {
+    setDistributionComplete(status);
+  };
+
   return (
     <div className="min-h-screen bg-primary-bg pt-24 pb-16">
       <div className="container mx-auto px-4 max-w-6xl">
@@ -103,6 +111,7 @@ const PresaleView = ({ namespace, moduleName }) => {
                 namespace={namespace}
                 moduleName={moduleName}
                 supplyChain={supplyChain}
+                onDistributionStatusChange={handleDistributionStatusChange}
               />
             )}
 
@@ -178,6 +187,7 @@ const PresaleView = ({ namespace, moduleName }) => {
               isPhase0={isPhase0}
               isPhase1={isPhase1}
               isSaleEnded={isSaleEnded}
+              distributionComplete={distributionComplete}
               safeRender={safeRender}
             />
 

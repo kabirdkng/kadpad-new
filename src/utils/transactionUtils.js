@@ -8,6 +8,27 @@ import transactionPollingService from '../services/transactionPollingService';
  */
 
 /**
+ * Show signing transaction toast
+ */
+export const showSigningToast = () => {
+  toast.info('Signing transaction...', { position: 'top-center', autoClose: 3000 });
+};
+
+/**
+ * Check if error is from user cancellation/rejection
+ */
+export const isUserRejectionError = (error) => {
+  const message = error.message || '';
+  return message.includes('rejected') || 
+         message.includes('cancelled') || 
+         message.includes('denied') ||
+         message.includes('User rejected') ||
+         message.includes('User canceled') ||
+         message.includes('signing was cancelled') ||
+         message.includes('signing failed');
+};
+
+/**
  * Create transaction metadata helper
  */
 export const createTransactionMetadata = (type, description, additionalData = {}) => {
@@ -31,6 +52,9 @@ export const transactionTypes = {
   MINT_TOKENS: 'mint-tokens',
   STAKE_TOKENS: 'stake-tokens',
   UNSTAKE_TOKENS: 'unstake-tokens',
+  DISTRIBUTE_TOKENS: 'distribute-tokens',
+  END_SALES: 'end-sales',
+  INIT_LIQUIDITY: 'init-liquidity',
   OTHER: 'other',
 };
 
@@ -105,8 +129,6 @@ export const handleTokenPurchase = async ({
   onError,
 }) => {
   try {
-    toast.info('Submitting transaction...', { position: 'top-center', autoClose: 2000 });
-    
     const result = await buyTokensSale(
       code, 
       supplyChain, 
@@ -117,6 +139,13 @@ export const handleTokenPurchase = async ({
       namespace, 
       moduleName
     );
+    
+    // Check if signing failed
+    if (result?.status === 'fail') {
+      // Signing failed, don't show additional error as it's already shown in signAndSubmitTx
+      onError && onError('Transaction was cancelled');
+      return { success: false, error: 'Transaction was cancelled' };
+    }
     
     if (result?.preflightResult?.result?.status === 'success') {
       const txKey = result.transactionDescriptor?.requestKey;
@@ -164,10 +193,18 @@ export const handleTokenPurchase = async ({
     }
   } catch (error) {
     console.error('Purchase error:', error);
-    const errorMessage = `Purchase failed: ${error.message}`;
-    toast.error(errorMessage, { position: 'top-center' });
-    onError && onError(errorMessage);
-    return { success: false, error: errorMessage };
+    
+    // Don't show duplicate error if it's already a signing failure
+    if (!isUserRejectionError(error)) {
+      const errorMessage = `Purchase failed: ${error.message}`;
+      toast.error(errorMessage, { position: 'top-center' });
+      onError && onError(errorMessage);
+    } else {
+      // For signing failures, just call onError without showing another toast
+      onError && onError('Transaction was cancelled');
+    }
+    
+    return { success: false, error: error.message };
   }
 };
 
@@ -193,8 +230,6 @@ export const handleTreasuryTransfer = async ({
   onError,
 }) => {
   try {
-    toast.info('Submitting transfer...', { position: 'top-center', autoClose: 2000 });
-    
     const res = await transferCoinTreasury(
       token, 
       code, 
@@ -207,6 +242,13 @@ export const handleTreasuryTransfer = async ({
       client, 
       session
     );
+    
+    // Check if signing failed
+    if (res?.status === 'fail') {
+      // Signing failed, don't show additional error as it's already shown in signAndSubmitTx
+      onError && onError('Transaction was cancelled');
+      return { success: false, error: 'Transaction was cancelled' };
+    }
     
     if (res?.preflightResult?.result?.status === 'success') {
       const txKey = res.transactionDescriptor?.requestKey;
@@ -253,10 +295,18 @@ export const handleTreasuryTransfer = async ({
     }
   } catch (error) {
     console.error('Transfer error:', error);
-    const errorMessage = `Transfer failed: ${error.message}`;
-    toast.error(errorMessage);
-    onError && onError(errorMessage);
-    return { success: false, error: errorMessage };
+    
+    // Don't show duplicate error if it's already a signing failure
+    if (!isUserRejectionError(error)) {
+      const errorMessage = `Transfer failed: ${error.message}`;
+      toast.error(errorMessage);
+      onError && onError(errorMessage);
+    } else {
+      // For signing failures, just call onError without showing another toast
+      onError && onError('Transaction was cancelled');
+    }
+    
+    return { success: false, error: error.message };
   }
 };
 
@@ -290,6 +340,13 @@ export const handleWhitelistOperation = async ({
       namespace, 
       moduleName
     );
+    
+    // Check if signing failed
+    if (result?.status === 'fail') {
+      // Signing failed, don't show additional error as it's already shown in signAndSubmitTx
+      onError && onError('Transaction was cancelled');
+      return { success: false, error: 'Transaction was cancelled' };
+    }
     
     if (result?.preflightResult?.result?.status === 'success') {
       const txKey = result.transactionDescriptor?.requestKey;
@@ -335,10 +392,18 @@ export const handleWhitelistOperation = async ({
     }
   } catch (error) {
     console.error('Whitelist operation error:', error);
-    const errorMessage = `Whitelist operation failed: ${error.message}`;
-    toast.error(errorMessage);
-    onError && onError(errorMessage);
-    return { success: false, error: errorMessage };
+    
+    // Don't show duplicate error if it's already a signing failure
+    if (!isUserRejectionError(error)) {
+      const errorMessage = `Whitelist operation failed: ${error.message}`;
+      toast.error(errorMessage);
+      onError && onError(errorMessage);
+    } else {
+      // For signing failures, just call onError without showing another toast
+      onError && onError('Transaction was cancelled');
+    }
+    
+    return { success: false, error: error.message };
   }
 };
 
@@ -358,8 +423,6 @@ export const handleTokenStaking = async ({
   onError,
 }) => {
   try {
-    toast.info('Submitting stake transaction...', { position: 'top-center', autoClose: 2000 });
-    
     const result = await pactCallsStakeTokens(
       code,
       chainId,
@@ -368,6 +431,13 @@ export const handleTokenStaking = async ({
       amount,
       lockerAccount
     );
+    
+    // Check if signing failed
+    if (result?.status === 'fail') {
+      // Signing failed, don't show additional error as it's already shown in signAndSubmitTx
+      onError && onError('Transaction was cancelled');
+      return { success: false, error: 'Transaction was cancelled' };
+    }
     
     if (result?.preflightResult?.result?.status === 'success' || result?.result?.status === 'success') {
       const txKey = result.transactionDescriptor?.requestKey || result.requestKey;
@@ -414,10 +484,18 @@ export const handleTokenStaking = async ({
     }
   } catch (error) {
     console.error('Staking error:', error);
-    const errorMessage = `Staking failed: ${error.message}`;
-    toast.error(errorMessage, { position: 'top-center' });
-    onError && onError(errorMessage);
-    return { success: false, error: errorMessage };
+    
+    // Don't show duplicate error if it's already a signing failure
+    if (!isUserRejectionError(error)) {
+      const errorMessage = `Staking failed: ${error.message}`;
+      toast.error(errorMessage, { position: 'top-center' });
+      onError && onError(errorMessage);
+    } else {
+      // For signing failures, just call onError without showing another toast
+      onError && onError('Transaction was cancelled');
+    }
+    
+    return { success: false, error: error.message };
   }
 };
 
@@ -438,8 +516,6 @@ export const handleTokenUnstaking = async ({
   onError,
 }) => {
   try {
-    toast.info('Submitting unstake transaction...', { position: 'top-center', autoClose: 2000 });
-    
     const result = await pactCallsUnstakeTokens(
       code,
       chainId,
@@ -450,6 +526,13 @@ export const handleTokenUnstaking = async ({
       lockerAccount,
       amount
     );
+    
+    // Check if signing failed
+    if (result?.status === 'fail') {
+      // Signing failed, don't show additional error as it's already shown in signAndSubmitTx
+      onError && onError('Transaction was cancelled');
+      return { success: false, error: 'Transaction was cancelled' };
+    }
     
     if (result?.preflightResult?.result?.status === 'success' || result?.result?.status === 'success') {
       const txKey = result.transactionDescriptor?.requestKey || result.requestKey;
@@ -497,10 +580,18 @@ export const handleTokenUnstaking = async ({
     }
   } catch (error) {
     console.error('Unstaking error:', error);
-    const errorMessage = `Unstaking failed: ${error.message}`;
-    toast.error(errorMessage, { position: 'top-center' });
-    onError && onError(errorMessage);
-    return { success: false, error: errorMessage };
+    
+    // Don't show duplicate error if it's already a signing failure
+    if (!isUserRejectionError(error)) {
+      const errorMessage = `Unstaking failed: ${error.message}`;
+      toast.error(errorMessage, { position: 'top-center' });
+      onError && onError(errorMessage);
+    } else {
+      // For signing failures, just call onError without showing another toast
+      onError && onError('Transaction was cancelled');
+    }
+    
+    return { success: false, error: error.message };
   }
 };
 
@@ -513,4 +604,6 @@ export default {
   createTransactionMetadata,
   transactionTypes,
   submitTransaction,
+  showSigningToast,
+  isUserRejectionError,
 };

@@ -3,7 +3,7 @@ import { pactCallsSig, pactCalls, fetchBalance, pactCallsStakeTokens, pactCallsU
 import useStakingStore from '../store/useStakingStore';
 import useWalletStore from '../wallet/walletStore';
 import { toast } from 'react-toastify';
-import { handleTokenStaking, handleTokenUnstaking } from '../utils/transactionUtils';
+import { handleTokenStaking, handleTokenUnstaking, isUserRejectionError } from '../utils/transactionUtils';
 import { formatAmountForPact } from '../utils/decimalUtils';
 
 const STAKING_NAMESPACE = 'n_b9880e372b7ec49d21ef4afe82ece29c3a536bde';
@@ -410,7 +410,11 @@ export const useStakingPactCalls = (options = {}) => {
       console.error('Error staking tokens:', error);
       const errorMsg = error.message || 'Failed to stake tokens';
       setError(errorMsg);
-      toast.error(errorMsg);
+      
+      // Don't show duplicate error if it's already a signing failure
+      if (!isUserRejectionError(error)) {
+        toast.error(errorMsg);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -470,7 +474,11 @@ export const useStakingPactCalls = (options = {}) => {
       console.error('Error unstaking tokens:', error);
       const errorMsg = error.message || 'Failed to unstake tokens';
       setError(errorMsg);
-      toast.error(errorMsg);
+      
+      // Don't show duplicate error if it's already a signing failure
+      if (!isUserRejectionError(error)) {
+        toast.error(errorMsg);
+      }
     } finally {
       setIsLoading(false);
     }

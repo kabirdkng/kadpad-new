@@ -240,6 +240,10 @@ export const transferTokensToContracts = async (
     const commands = transactions.map(tx => tx.command);
     let signedBatch;
 
+    // Show signing toast before batch signing
+    const { showSigningToast } = await import("../transactionUtils.js");
+    showSigningToast();
+
     if (providerName === "WC") {
       signedBatch = await provider.quickSignAll(commands, client, session);
     } else {

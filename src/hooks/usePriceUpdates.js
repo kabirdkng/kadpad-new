@@ -31,7 +31,6 @@ export const usePriceUpdates = (
       const formattedP0Price = formatPriceForPact(newP0Price);
       const formattedP1Price = formatPriceForPact(newP1Price);
       
-      toast.info('Submitting price update...', { position: 'top-center', autoClose: 2000 });
       const code = `(${namespace}.${salesModuleName}.set-price "phase-0" ${formattedP0Price}) (${namespace}.${salesModuleName}.set-price "phase-1" ${formattedP1Price})`;
       const res = await pactCallsSales(code, supplyChain, namespace, moduleName);
       
