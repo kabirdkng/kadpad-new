@@ -168,10 +168,18 @@ export const useStakingPactCalls = (options = {}) => {
         const balance = extractNumericValue(result);
         setUserBalance(balance);
         return balance;
+      } else {
+        // Handle case where account doesn't exist or has 0 balance
+        console.log('getUserBalance: Account has no balance or does not exist, setting balance to 0');
+        setUserBalance(0);
+        return 0;
       }
     } catch (error) {
       console.error('Error fetching user balance:', error);
+      // Still set balance to 0 even if there's an error, to indicate data was loaded
+      setUserBalance(0);
       setError('Failed to fetch balance');
+      return 0;
     }
   }, [account, setUserBalance, setError, extractNumericValue]);
 
@@ -228,11 +236,15 @@ export const useStakingPactCalls = (options = {}) => {
     } catch (error) {
       // If no lockup exists, return empty array
       if (error.message?.includes('row not found')) {
+        console.log('getUserStakes: No lockup found for account, setting empty stakes');
         setUserStakes([]);
         return [];
       }
       console.error('Error fetching user stakes:', error);
+      // Set empty stakes even on error to indicate data was loaded
+      setUserStakes([]);
       setError('Failed to fetch staking data');
+      return [];
     }
   }, [account, pubKey, createPactCode, setUserStakes, setError, calculatePenalty, calculatePenaltyFallback, extractNumericValue]);
 
