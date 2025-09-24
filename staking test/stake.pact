@@ -44,6 +44,11 @@
 (defun req-LOCKER (account:string)
 (require-capability (LOCKER account)))
 
+;; This can be simplified by creating a capability guard instead of a user guard.
+;  You could do something like this:
+; (create-capability (LOCKER account))
+
+; This we remove the need for the req-LOCKER function
 (defun LOCKER-guard ( account:string)
   (create-user-guard (req-LOCKER account)))
 
@@ -72,13 +77,18 @@
   (let ((locker-account (get-LOCKER-account account))
         (lg (LOCKER-guard account)))
 
+  ; This allows locking 0 tokens, why would we want that?
   (enforce (>= amount 0.0) "Amount must be positive")
 ;    (enforce (is-principal account) "Must be a principal Account")
+; Why is this enforcement turned off? I would think we want to enforce this. I would even replace this with (validate-principal ...) here.
+
 
   (with-default-read token-lock account
     { 'account: "", 'guard: guard, 'total: 0.0,  'unlockDate: EPOCH }
     { 'account:= acct, 'guard:= g, 'total:= total, 'unlockDate:= ud }
     (enforce (= guard g) "guards must match")
+    ; If i lock tokens and I already had some tokens locked, the unlock date isn't updated. So I can lock a small amount now, and in 10 months
+    ; lock a lot more but that part will be locked for 2 months only. Is that the intended behavior?
     (write token-lock account {'account: account, 'guard: g, 'total: (+ total amount), 'unlockDate: (if (= 0.0 total) (add-time (now) YEAR) ud)})
       (emit-event (ADD-TK account amount (+ total amount) (now))))
 
@@ -102,6 +112,7 @@
   ;; Calculate lock date (unlock date minus 1 year)
   (let ((lock-date (add-time ud (- YEAR)))
          (penalty-data (calculate-penalty amount lock-date))
+         ;; Turn the precision into a constant
          (return-amount (floor (at 'return-amount penalty-data) 12))
          (penalty-amount (floor (at 'penalty-amount penalty-data) 12)))
 
@@ -119,6 +130,7 @@
     ;; Transfer penalty amount to treasury
     (if (> penalty-amount 0.0)
       (do
+        ; THe treasury account shouldn't be a hardcoded string, even more I wouldn't use a 'vanity' account
         (install-capability (token1.TRANSFER locker-account "treasury" penalty-amount))
         (token1.transfer locker-account "treasury" penalty-amount))
       "No penalty applied"))) ; REPLACE WITH transfer-create and use the burn contract.  user.burn.BURN-ACCOUNT and ...BURN-GUARD

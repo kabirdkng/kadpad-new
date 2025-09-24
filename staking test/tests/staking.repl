@@ -14,6 +14,11 @@
 (expect "Alice locked 50000 tokens"
   50000.0
   (at 'total (staking.get-lockup "alice")))
+
+; Validate the unlock date
+(expect "Alice's unlock date is correct" (time "1971-01-01T00:00:00Z")
+  (at 'unlockDate (staking.get-lockup "alice")))
+
 (expect "Total tokens updated" 50000.0 (at 'total (staking.get-total-count)))
 (expect "Alice's token1 balance decreased" 50000.0 (token1.get-balance "alice"))
 (commit-tx)
@@ -78,10 +83,10 @@
   (let ((alice-after (token1.get-balance "alice"))
         (treasury-after (token1.get-balance "treasury")))
     ;; Alice should get only ~0.27% of 10000 = ~27 tokens
-    (expect "Alice received minimal tokens due to penalty" true 
+    (expect "Alice received minimal tokens due to penalty" true
       (< (- alice-after alice-before) 50.0))
     ;; Treasury should get ~99.73% of 10000 = ~9973 tokens
-    (expect "Treasury received most tokens as penalty" true 
+    (expect "Treasury received most tokens as penalty" true
       (> (- treasury-after treasury-before) 9950.0))))
 (expect "Alice has 50000 remaining locked" 50000.0 (at 'total (staking.get-lockup "alice")))
 (commit-tx)
