@@ -47,7 +47,7 @@ export const getStatusInfo = (status) => {
       icon: CheckCircle,
       title: 'Ready to Launch',
       description: 'Everything is set up and ready for launch.',
-      message: 'Your submission has been verified. You are ready to launch!',
+      message: 'Admin team will configure your project sales details shortly',
       bgColor: 'bg-purple-500/5',
       borderColor: 'border-purple-500/20',
       iconColor: 'text-purple-400'

@@ -103,7 +103,7 @@ const NextStepsCard = ({ existingProject }) => {
               <div className="text-xs text-secondary">
                 <p className="mb-1">• All fees have been paid</p>
                 <p className="mb-1">• Project verification complete</p>
-                <p>• Admin team will launch your project shortly</p>
+                <p>• Admin team will configure your project sales details shortly</p>
               </div>
             </div>
           </div>

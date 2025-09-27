@@ -88,6 +88,9 @@ const ProjectDetailsDisplay = ({ existingProject }) => {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs text-secondary mb-1">Amount:</label>
+                <p className="text-sm text-primary-text font-medium">
+                  ${existingProject.feeDetails.amount} USD
+                </p>
               </div>
               {existingProject.feeDetails.dueDate && (
                 <div>

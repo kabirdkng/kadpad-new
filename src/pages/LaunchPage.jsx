@@ -4,9 +4,20 @@ import StepIndicator from '../components/launch/StepIndicator';
 import CreateVerifyStep from '../components/launch/CreateVerifyStep';
 import ReviewSubmitStep from '../components/launch/ReviewSubmitStep';
 import LaunchTokenStep from '../components/launch/LaunchTokenStep';
-import { checkProjectByContract } from '../api';
+import useProjectSubmissionStatus from '../hooks/useProjectSubmissionStatus';
 
-const StepContent = ({ step, onNextStep, onPrevStep, isVerified, setIsVerified, tokenDetails, setTokenDetails, submissionStatus, setSubmissionStatus }) => {
+const StepContent = ({ 
+  step, 
+  onNextStep, 
+  onPrevStep, 
+  isVerified, 
+  setIsVerified, 
+  tokenDetails, 
+  setTokenDetails, 
+  submissionStatus,
+  project,
+  statusLoading
+}) => {
   const steps = [
     CreateVerifyStep,
     ReviewSubmitStep,
@@ -23,7 +34,8 @@ const StepContent = ({ step, onNextStep, onPrevStep, isVerified, setIsVerified, 
         tokenDetails={tokenDetails} 
         setTokenDetails={setTokenDetails}
         submissionStatus={submissionStatus}
-        setSubmissionStatus={setSubmissionStatus}
+        project={project}
+        statusLoading={statusLoading}
       />
       
       {/* Navigation Buttons */}
@@ -71,7 +83,20 @@ const LaunchPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVerified, setIsVerified] = useState(false);
   const [tokenDetails, setTokenDetails] = useState(null);
-  const [submissionStatus, setSubmissionStatus] = useState(null);
+
+  // Use the real-time project status hook
+  const { 
+    project, 
+    submissionStatus, 
+    isLoading: statusLoading,
+    lastUpdated,
+    getStatusDisplayName
+  } = useProjectSubmissionStatus(tokenDetails, {
+    pollingInterval: 8000, // Poll every 8 seconds
+    enablePolling: true,
+    pollingOnFocus: true,
+    showNotifications: true
+  });
 
   // Scroll to main content when step changes
   useEffect(() => {
@@ -87,34 +112,6 @@ const LaunchPage = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-
-  // Check submission status whenever tokenDetails changes
-  useEffect(() => {
-    const checkSubmissionStatus = async () => {
-      if (tokenDetails && tokenDetails.contractAddress) {
-        try {
-          const [namespace, moduleName] = tokenDetails.contractAddress.split('.');
-          const response = await checkProjectByContract(namespace, moduleName);
-          if (response.data.data.project) {
-            const existingProject = response.data.data.project;
-            setSubmissionStatus(existingProject.status);
-          } else {
-            setSubmissionStatus(null);
-          }
-        } catch (error) {
-          // If 404, no project exists
-          if (error.response && error.response.status === 404) {
-            setSubmissionStatus(null);
-          } else {
-            console.error('Error checking submission status:', error);
-          }
-        }
-      }
-    };
-
-    checkSubmissionStatus();
-    // Add currentStep as dependency so it can update step if needed
-  }, [tokenDetails, currentStep]);
 
   const handleNextStep = () => {
     // If on CreateVerify step and project has sales configured, skip Review and go to LaunchToken
@@ -189,6 +186,11 @@ const LaunchPage = () => {
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColorClasses(submissionStatus)}`}>
                     Status: {getStatusDisplayName(submissionStatus)}
                   </span>
+                  {lastUpdated && (
+                    <p className="text-xs text-secondary mt-1">
+                      Last updated: {lastUpdated.toLocaleTimeString()}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -213,7 +215,8 @@ const LaunchPage = () => {
             tokenDetails={tokenDetails}
             setTokenDetails={setTokenDetails}
             submissionStatus={submissionStatus}
-            setSubmissionStatus={setSubmissionStatus}
+            project={project}
+            statusLoading={statusLoading}
           />
         </div>
 
@@ -290,19 +293,6 @@ const getStatusColorClasses = (status) => {
     launched: 'bg-green-500/10 text-green-400 border border-green-500/20'
   };
   return colorMap[status] || 'bg-gray-500/10 text-gray-400 border border-gray-500/20';
-};
-
-const getStatusDisplayName = (status) => {
-  const nameMap = {
-    pending: 'Under Review',
-    approved: 'Approved',
-    rejected: 'Rejected',
-    awaiting_fees: 'Awaiting Fees',
-    ready_to_launch: 'Ready to Launch',
-    sales_configured: 'Sales Configured',
-    launched: 'Launched'
-  };
-  return nameMap[status] || status;
 };
 
 export default LaunchPage;
