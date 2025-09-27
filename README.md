@@ -99,8 +99,8 @@ KadPad's staking system rewards long-term commitment with exclusive IDO access. 
 2. **Launching a Token**:
    - Navigate to the "Launch" page
    - Fill in your token details
-   - Set up your sale parameters
    - Submit for review and approval
+   - Admin team will configure your sale parameters after approval
 
 3. **Participating in a Sale**:
    - Ensure you have staked $KPAD tokens
@@ -111,9 +111,9 @@ KadPad's staking system rewards long-term commitment with exclusive IDO access. 
 
 4. **Managing Your Project** (for project creators):
    - Access your project dashboard
-   - Monitor sale progress
-   - Manage whitelists
-   - Update project information
+   - Monitor sale progress (after admin configures sales)
+   - View whitelists and allocations
+   - Deploy your token contract when ready
 
 ## Contributing
 We welcome contributions to KadPad! Please follow these steps to contribute:

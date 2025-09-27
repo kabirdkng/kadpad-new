@@ -92,7 +92,7 @@ export const getLaunchedProject = (namespace, moduleName) => {
   return api.get(`/projects/launched/${namespace}/${moduleName}`);
 };
 
-// New: Configure sales details for launched project
+// Admin: Configure sales details for launched project
 export const configureSalesDetails = (projectId, salesData) => {
   return api.patch(`/projects/${projectId}/configure-sales`, salesData);
 };

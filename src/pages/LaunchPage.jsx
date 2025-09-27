@@ -145,13 +145,13 @@ const LaunchPage = () => {
   const stepTitles = [
     "Create & Verify Your Token",
     "Review & Submit",
-    "Configure Sales"
+    "Launch Your Token"
   ];
 
   const stepDescriptions = [
     "Create your token using our tools and verify ownership with your wallet",
     "Review your details and submit for our approval process",
-    "Configure your presale details and launch your token"
+    "Deploy your token contract after admin configures your sales"
   ];
 
   return (

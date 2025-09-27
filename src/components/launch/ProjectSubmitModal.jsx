@@ -279,7 +279,7 @@ const ProjectSubmitModal = ({ tokenDetails, onClose, onSubmit }) => {
                   <div>
                     <h4 className="font-semibold text-yellow-400 mb-2">Important Note</h4>
                     <p className="text-sm text-secondary">
-                      After your project is approved, you'll be able to configure your sales contract details 
+                      After your project is approved, our admin team will configure your sales contract details 
                       including presale phases, pricing, and whitelist settings in the next step.
                     </p>
                   </div>

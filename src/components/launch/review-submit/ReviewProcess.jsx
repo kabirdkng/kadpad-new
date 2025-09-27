@@ -34,7 +34,7 @@ const ReviewProcess = ({ existingProject }) => {
           </div>
           <div>
             <p className="text-sm text-primary-text font-medium">Approval & Sales Setup</p>
-            <p className="text-xs text-secondary">Once approved, you'll configure your sales contract details</p>
+            <p className="text-xs text-secondary">Once approved, our admin team will configure your sales contract details</p>
           </div>
         </div>
       </div>
