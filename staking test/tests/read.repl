@@ -53,12 +53,12 @@
           (tier-3-account-names (map (at 'account) tier-3-accounts)))
 
       ;; Test expectations
-      (expect "3 accounts above 50000" 3 above-50000)
+      (expect "4 accounts above 50000" 4 above-50000)
       (expect "2 accounts above 150000" 2 above-150000)
       (expect "1 account above 350000" 1 above-350000)
 
       ;; Check specific accounts using individual tier lists
-      (expect "alice is NOT above 50000" false 
+      (expect "alice is NOW above 50000" true 
         (or (contains "alice" tier-1-account-names)
             (or (contains "alice" tier-2-account-names)
                 (contains "alice" tier-3-account-names))))
@@ -98,8 +98,8 @@
     }))
 
 
-(expect "Alice not eligible for any tier (40k staked)"
-  { 'account: "alice", 'total-staked: 40000.0, 'tier-1-eligible: false, 'tier-2-eligible: false, 'tier-3-eligible: false }
+(expect "Alice now eligible for tier 1 (50k staked)"
+  { 'account: "alice", 'total-staked: 50000.0, 'tier-1-eligible: true, 'tier-2-eligible: false, 'tier-3-eligible: false }
   (check-eligibility "alice"))
 
 (expect "Carol eligible for all tiers"

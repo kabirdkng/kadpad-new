@@ -15,6 +15,9 @@
   50000.0
   (at 'total (staking.get-lockup "alice")))
 (expect "Total tokens updated" 50000.0 (at 'total (staking.get-total-count)))
+(expect "Alice's unlock date set after one year"
+  (time "1971-01-01T00:00:00Z")
+  (at 'unlockDate (staking.get-lockup "alice")))
 (expect "Alice's token1 balance decreased" 50000.0 (token1.get-balance "alice"))
 (commit-tx)
 
@@ -32,6 +35,9 @@
 (staking.lock-tokens "alice" (read-keyset "alice") 10000.0)
 (expect "Alice now has 60000 locked" 60000.0 (at 'total (staking.get-lockup "alice")))
 (expect "Total tokens updated" 60000.0 (at 'total (staking.get-total-count)))
+(expect "Alice's unlock date should remain unchanged when adding more tokens"
+  (time "1971-01-01T00:00:00Z")
+  (at 'unlockDate (staking.get-lockup "alice")))
 (commit-tx)
 
 (begin-tx "Test lock tokens - Bob")
@@ -48,6 +54,9 @@
 (staking.lock-tokens "bob" (read-keyset "bob") 150000.0)
 (expect "Bob locked 150000 tokens" 150000.0 (at 'total (staking.get-lockup "bob")))
 (expect "Total tokens updated" 210000.0 (at 'total (staking.get-total-count)))
+(expect "Bob's unlock date set after one year"
+  (time "1971-01-01T00:00:00Z")
+  (at 'unlockDate (staking.get-lockup "bob")))
 (commit-tx)
 
 ;; Security Tests
@@ -84,6 +93,9 @@
     (expect "Burn most tokens as penalty" true 
       (> (- burn-after burn-before) 9950.0))))
 (expect "Alice has 50000 remaining locked" 50000.0 (at 'total (staking.get-lockup "alice")))
+(expect "Alice's unlock date should remain unchanged after partial withdrawal"
+  (time "1971-01-01T00:00:00Z")
+  (at 'unlockDate (staking.get-lockup "alice")))
 (commit-tx)
 
 ;; Test successful withdrawal after maturity
@@ -105,6 +117,9 @@
     (expect "Burn nothing (no penalty)" 0.0 (- burn-after burn-before))))
 (expect "Alice withdrew 10000, 40000 remaining" 40000.0 (at 'total (staking.get-lockup "alice")))
 (expect "Total tokens updated" 190000.0 (at 'total (staking.get-total-count)))
+(expect "Alice's unlock date should remain unchanged after mature withdrawal"
+  (time "1971-01-01T00:00:00Z")
+  (at 'unlockDate (staking.get-lockup "alice")))
 (commit-tx)
 
 ;; Test overdraw prevention
@@ -132,10 +147,14 @@
   }})
 (env-sigs [{ 'key: "carol-key", 'caps: [
   (token1.TRANSFER "carol" (staking.get-LOCKER-account "carol") 350000.0)]}])
+(env-chain-data { 'block-time: (time "1970-01-01T00:00:00Z")})
 
 (staking.lock-tokens "carol" (read-keyset "carol") 350000.0)
 (expect "Carol locked 350000 tokens" 350000.0 (at 'total (staking.get-lockup "carol")))
 (expect "Total tokens updated" 540000.0 (at 'total (staking.get-total-count)))
+(expect "Carol's unlock date set after one year"
+  (time "1971-01-01T00:00:00Z")
+  (at 'unlockDate (staking.get-lockup "carol")))
 (commit-tx)
 
 ;; Test Dave with moderate stake
@@ -149,10 +168,14 @@
   }})
 (env-sigs [{ 'key: "dave-key", 'caps: [
   (token1.TRANSFER "dave" (staking.get-LOCKER-account "dave") 100000.0)]}])
+(env-chain-data { 'block-time: (time "1970-01-01T00:00:00Z")})
 
 (staking.lock-tokens "dave" (read-keyset "dave") 100000.0)
 (expect "Dave locked 100000 tokens" 100000.0 (at 'total (staking.get-lockup "dave")))
 (expect "Total tokens updated" 640000.0 (at 'total (staking.get-total-count)))
+(expect "Dave's unlock date set after one year"
+  (time "1971-01-01T00:00:00Z")
+  (at 'unlockDate (staking.get-lockup "dave")))
 (commit-tx)
 
 ;; Test get all lockup accounts
@@ -165,5 +188,37 @@
   (expect "Bob is in lockups" true (contains "bob" lockups))
   (expect "Carol is in lockups" true (contains "carol" lockups))
   (expect "Dave is in lockups" true (contains "dave" lockups)))
+(commit-tx)
+
+;; Test unlock date reset after expiry
+(begin-tx "Test unlock date reset after lockup expiry - Alice")
+(namespace 'STAKE_NS)
+(use staking)
+
+(env-data {
+  "alice": {
+    "keys": ["alice-key"],
+    "pred": "keys-all"
+  }})
+;; Advance time to after Alice's unlock date has expired (1972) and lock more tokens
+(env-chain-data { 'block-time: (time "1972-01-01T00:00:00Z")})
+(env-sigs [{ 'key: "alice-key", 'caps: [
+  (token1.TRANSFER "alice" (staking.get-LOCKER-account "alice") 10000.0)]}])
+
+;; Alice had 40000 locked from previous tests
+(let ((alice-lockup-before (staking.get-lockup "alice")))
+  (expect "Alice had 40000 locked before" 40000.0 (at 'total alice-lockup-before))
+  (expect "Alice's unlock date was from 1971" 
+    (time "1971-01-01T00:00:00Z")
+    (at 'unlockDate alice-lockup-before))
+  
+  ;; Lock more tokens after expiry
+  (staking.lock-tokens "alice" (read-keyset "alice") 10000.0)
+  
+  (let ((alice-lockup-after (staking.get-lockup "alice")))
+    (expect "Alice now has 50000 locked" 50000.0 (at 'total alice-lockup-after))
+    (expect "Alice's unlock date should reset to new year from current time"
+      (time "1972-12-31T00:00:00Z")
+      (at 'unlockDate alice-lockup-after))))
 (commit-tx)
 

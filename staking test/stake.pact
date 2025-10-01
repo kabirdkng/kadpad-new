@@ -3,6 +3,7 @@
     (enforce-keyset "STAKE_NS.gov"))
 
 (use free.util-fungible)
+(use free.util-time)
 
 ; Data Structures
 
@@ -81,7 +82,7 @@
     { 'account: "", 'guard: guard, 'total: 0.0,  'unlockDate: EPOCH }
     { 'account:= acct, 'guard:= g, 'total:= total, 'unlockDate:= ud }
     (enforce (= guard g) "guards must match")
-    (write token-lock account {'account: account, 'guard: g, 'total: (+ total amount), 'unlockDate: (if (= 0.0 total) (add-time (now) YEAR) ud)})
+    (write token-lock account {'account: account, 'guard: g, 'total: (+ total amount), 'unlockDate: (if (is-future ud) ud (add-time (now) YEAR))})
       (emit-event (ADD-TK account amount (+ total amount) (now))))
 
   (with-capability (UPDATES)
@@ -131,7 +132,7 @@
 
     (emit-event (REMOVE-TK account amount (- total amount))))))
 
-    ; Internal Functions
+; Internal Functions
 
 (defun update-tokens (amount:decimal)
     @doc "Update total tokens account"

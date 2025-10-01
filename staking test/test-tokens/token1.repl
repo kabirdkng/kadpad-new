@@ -26,6 +26,12 @@
   ],
   "pred": "keys-all"
 },
+"eve": {
+  "keys": [
+    "eve-key"
+  ],
+  "pred": "keys-all"
+},
  "init-data": {
       "initial-supply": 10000000.0,
       "accounts": [
@@ -43,6 +49,7 @@
 (create-tokens  "alice" (read-keyset 'alice) 100000.0)
 (create-tokens  "carol" (read-keyset 'carol) 500000.0)
 (create-tokens  "dave" (read-keyset 'dave) 1000000.0)
+(create-tokens  "eve" (read-keyset 'eve) 100000.0)
 
 ;; Create burn account for penalty burning
 (create-account BURN_NS.burn.BURN-ACCOUNT BURN_NS.burn.BURN-GUARD)
