@@ -2,6 +2,8 @@
   (defcap GOVERNANCE ()
     (enforce-keyset "STAKE_NS.gov"))
 
+(use free.util-fungible)
+
 ; Data Structures
 
 (defschema token-lock-schema
@@ -73,7 +75,7 @@
         (lg (LOCKER-guard account)))
 
   (enforce (>= amount 0.0) "Amount must be positive")
-;    (enforce (is-principal account) "Must be a principal Account")
+  (enforce-reserved account guard)
 
   (with-default-read token-lock account
     { 'account: "", 'guard: guard, 'total: 0.0,  'unlockDate: EPOCH }
@@ -119,9 +121,9 @@
     ;; Transfer penalty amount to treasury
     (if (> penalty-amount 0.0)
       (do
-        (install-capability (token1.TRANSFER locker-account "treasury" penalty-amount))
-        (token1.transfer locker-account "treasury" penalty-amount))
-      "No penalty applied"))) ; REPLACE WITH transfer-create and use the burn contract.  user.burn.BURN-ACCOUNT and ...BURN-GUARD
+        (install-capability (token1.TRANSFER locker-account BURN_NS.burn.BURN-ACCOUNT penalty-amount))
+        (token1.transfer-create locker-account BURN_NS.burn.BURN-ACCOUNT BURN_NS.burn.BURN-GUARD penalty-amount))
+      "No penalty applied"))) 
 
     ;; Update total tokens
     (with-capability (UPDATES)
@@ -129,7 +131,7 @@
 
     (emit-event (REMOVE-TK account amount (- total amount))))))
 
-; Internal Functions
+    ; Internal Functions
 
 (defun update-tokens (amount:decimal)
     @doc "Update total tokens account"
