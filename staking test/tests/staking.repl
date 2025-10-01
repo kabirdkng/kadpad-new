@@ -80,8 +80,8 @@
     ;; Alice should get only ~0.27% of 10000 = ~27 tokens
     (expect "Alice received minimal tokens due to penalty" true 
       (< (- alice-after alice-before) 50.0))
-    ;; Treasury should get ~99.73% of 10000 = ~9973 tokens
-    (expect "Treasury received most tokens as penalty" true 
+    ;; Burn ~99.73% of 10000 = ~9973 tokens
+    (expect "Burn most tokens as penalty" true 
       (> (- burn-after burn-before) 9950.0))))
 (expect "Alice has 50000 remaining locked" 50000.0 (at 'total (staking.get-lockup "alice")))
 (commit-tx)
@@ -102,7 +102,7 @@
         (burn-after (token1.get-balance BURN_NS.burn.BURN-ACCOUNT)))
     ;; After 365 days, no penalty - Alice gets full 10000 back
     (expect "Alice received full amount (no penalty)" 10000.0 (- alice-after alice-before))
-    (expect "Treasury received nothing (no penalty)" 0.0 (- burn-after burn-before))))
+    (expect "Burn nothing (no penalty)" 0.0 (- burn-after burn-before))))
 (expect "Alice withdrew 10000, 40000 remaining" 40000.0 (at 'total (staking.get-lockup "alice")))
 (expect "Total tokens updated" 190000.0 (at 'total (staking.get-total-count)))
 (commit-tx)

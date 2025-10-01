@@ -44,8 +44,7 @@
 (create-tokens  "carol" (read-keyset 'carol) 500000.0)
 (create-tokens  "dave" (read-keyset 'dave) 1000000.0)
 
-;; Create treasury account for penalty collection
-(env-data { "treasury": { "keys": ["treasury-key"], "pred": "keys-all" }})
-(create-account "treasury" (read-keyset 'treasury))
+;; Create burn account for penalty burning
+(create-account BURN_NS.burn.BURN-ACCOUNT BURN_NS.burn.BURN-GUARD)
 
 (commit-tx)

@@ -1,4 +1,3 @@
-(namespace 'BURN_NS)
 (module burn GOVERNANCE
 
 (defcap GOVERNANCE ()

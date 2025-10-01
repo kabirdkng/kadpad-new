@@ -14,6 +14,8 @@
 
 (begin-tx)
 (define-namespace "BURN_NS" basic-guards.GUARD_SUCCESS basic-guards.GUARD_SUCCESS)
+
+(namespace "BURN_NS")
 (load "burn.pact")
 (commit-tx)
 
