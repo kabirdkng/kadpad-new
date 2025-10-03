@@ -2,6 +2,9 @@
   (defcap GOVERNANCE ()
     (enforce-keyset "STAKE_NS.gov"))
 
+(use free.util-fungible)
+(use free.util-time)
+
 ; Data Structures
 
 (defschema token-lock-schema
@@ -73,13 +76,13 @@
         (lg (LOCKER-guard account)))
 
   (enforce (>= amount 0.0) "Amount must be positive")
-;    (enforce (is-principal account) "Must be a principal Account")
+  (enforce-reserved account guard)
 
   (with-default-read token-lock account
     { 'account: "", 'guard: guard, 'total: 0.0,  'unlockDate: EPOCH }
     { 'account:= acct, 'guard:= g, 'total:= total, 'unlockDate:= ud }
     (enforce (= guard g) "guards must match")
-    (write token-lock account {'account: account, 'guard: g, 'total: (+ total amount), 'unlockDate: (if (= 0.0 total) (add-time (now) YEAR) ud)})
+    (write token-lock account {'account: account, 'guard: g, 'total: (+ total amount), 'unlockDate: (if (is-future ud) ud (add-time (now) YEAR))})
       (emit-event (ADD-TK account amount (+ total amount) (now))))
 
   (with-capability (UPDATES)
@@ -119,9 +122,9 @@
     ;; Transfer penalty amount to treasury
     (if (> penalty-amount 0.0)
       (do
-        (install-capability (token1.TRANSFER locker-account "treasury" penalty-amount))
-        (token1.transfer locker-account "treasury" penalty-amount))
-      "No penalty applied"))) ; REPLACE WITH transfer-create and use the burn contract.  user.burn.BURN-ACCOUNT and ...BURN-GUARD
+        (install-capability (token1.TRANSFER locker-account BURN_NS.burn.BURN-ACCOUNT penalty-amount))
+        (token1.transfer-create locker-account BURN_NS.burn.BURN-ACCOUNT BURN_NS.burn.BURN-GUARD penalty-amount))
+      "No penalty applied"))) 
 
     ;; Update total tokens
     (with-capability (UPDATES)

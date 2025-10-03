@@ -1,4 +1,4 @@
-;; Test withdrawal with penalty distribution to treasury
+;; Test withdrawal with penalty distribution to burn account
 ;; Alice should have 40000 remaining balance from earlier tests
 ;; Bob should have 50000 remaining balance
 ;; Carol should have 150000 remaining balance
@@ -22,18 +22,18 @@
 (env-sigs [{ 'key: "test1-key", 'caps: [(staking.VERIFY-LOCKER "test1")]}])
 
 (let ((test1-before (token1.get-balance "test1"))
-      (treasury-before (token1.get-balance "treasury")))
+      (burn-before (token1.get-balance BURN_NS.burn.BURN-ACCOUNT)))
   (staking.remove-tokens "test1" 50000.0)
   (let ((test1-after (token1.get-balance "test1"))
-        (treasury-after (token1.get-balance "treasury"))
+        (burn-after (token1.get-balance BURN_NS.burn.BURN-ACCOUNT))
         (test1-gained (- test1-after test1-before))
-        (treasury-gained (- treasury-after treasury-before)))
+        (burn-gained (- burn-after burn-before)))
 
-    ;; Expected: ~4109.59 returned to test1, ~45890.41 to treasury
+    ;; Expected: ~4109.59 returned to test1, ~45890.41 to burn account
     (expect "test1 received ~8.22% of tokens" true
       (and (> test1-gained 4000.0) (< test1-gained 4300.0)))
-    (expect "Treasury received ~91.78% as penalty" true
-      (and (> treasury-gained 45700.0) (< treasury-gained 46000.0)))))
+    (expect "Burn account received ~91.78% as penalty" true
+      (and (> burn-gained 45700.0) (< burn-gained 46000.0)))))
 
 (commit-tx)
 
@@ -56,18 +56,18 @@
 (env-sigs [{ 'key: "test2-key", 'caps: [(staking.VERIFY-LOCKER "test2")]}])
 
 (let ((test2-before (token1.get-balance "test2"))
-      (treasury-before (token1.get-balance "treasury")))
+      (burn-before (token1.get-balance BURN_NS.burn.BURN-ACCOUNT)))
   (staking.remove-tokens "test2" 150000.0)
   (let ((test2-after (token1.get-balance "test2"))
-        (treasury-after (token1.get-balance "treasury"))
+        (burn-after (token1.get-balance BURN_NS.burn.BURN-ACCOUNT))
         (test2-gained (- test2-after test2-before))
-        (treasury-gained (- treasury-after treasury-before)))
+        (burn-gained (- burn-after burn-before)))
 
-    ;; Expected: ~74794 returned to test2, ~75206 to treasury
+    ;; Expected: ~74794 returned to test2, ~75206 to burn account
     (expect "test2 received ~50% of tokens" true
       (and (> test2-gained 74000.0) (< test2-gained 75500.0)))
-    (expect "Treasury received ~50% as penalty" true
-      (and (> treasury-gained 74500.0) (< treasury-gained 76000.0)))))
+    (expect "Burn account received ~50% as penalty" true
+      (and (> burn-gained 74500.0) (< burn-gained 76000.0)))))
 
 (commit-tx)
 
@@ -90,16 +90,16 @@
 (env-sigs [{ 'key: "test3-key", 'caps: [(staking.VERIFY-LOCKER "test3")]}])
 
 (let ((test3-before (token1.get-balance "test3"))
-      (treasury-before (token1.get-balance "treasury")))
+      (burn-before (token1.get-balance BURN_NS.burn.BURN-ACCOUNT)))
   (staking.remove-tokens "test3" 350000.0)
   (let ((test3-after (token1.get-balance "test3"))
-        (treasury-after (token1.get-balance "treasury"))
+        (burn-after (token1.get-balance BURN_NS.burn.BURN-ACCOUNT))
         (test3-gained (- test3-after test3-before))
-        (treasury-gained (- treasury-after treasury-before)))
+        (burn-gained (- burn-after burn-before)))
 
-    ;; Expected: 350000 returned to test3, 0 to treasury
+    ;; Expected: 350000 returned to test3, 0 to burn account
     (expect "test3 received 100% of tokens" 350000.0 test3-gained)
-    (expect "Treasury received no penalty" 0.0 treasury-gained)))
+    (expect "Burn account received no penalty" 0.0 burn-gained)))
 
 (commit-tx)
 
