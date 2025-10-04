@@ -75,7 +75,7 @@
   (let ((locker-account (get-LOCKER-account account))
         (lg (LOCKER-guard account)))
 
-  (enforce (>= amount 0.0) "Amount must be positive")
+  (enforce (>= amount 0.01) "Amount must be more than or equal to 0.01")
   (enforce-reserved account guard)
 
   (with-default-read token-lock account
@@ -207,5 +207,6 @@
 (defun get-staker-count:integer ()
   @doc "Get total number of stakers"
   (length (keys token-lock)))
+
 
 )
