@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Settings } from 'lucide-react';
 import TokenInfoCard from './TokenInfoCard';
@@ -13,6 +14,17 @@ const SalesConfiguredView = ({
   onDeploy,
   onDeploymentComplete
 }) => {
+
+  useEffect(() => {
+      const mainContent = document.querySelector('.main-content');
+      if (mainContent) {
+        mainContent.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }
+    }, []);
+    
   const handleDeploymentComplete = () => {
     console.log('Deployment completed, transitioning to launched state');
     // Call the parent's completion handler

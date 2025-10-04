@@ -3,7 +3,7 @@ import { formatPrice } from './formatUtils';
 
 const SalesOverview = ({ salesDetails }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
       <div className="card bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-500/20">
         <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
@@ -42,6 +42,21 @@ const SalesOverview = ({ salesDetails }) => {
         </p>
         <p className="text-sm text-secondary mt-1">Total tokens</p>
       </div>
+
+      {salesDetails.platformShare > 0 && (
+        <div className="card bg-gradient-to-br from-orange-500/10 to-orange-600/10 border-orange-500/20">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-orange-400" />
+            </div>
+            <h4 className="font-semibold text-orange-400">Platform Share</h4>
+          </div>
+          <p className="text-2xl font-bold text-primary-text">
+            {(salesDetails.platformShare || 0).toLocaleString()}
+          </p>
+          <p className="text-sm text-secondary mt-1">Platform tokens</p>
+        </div>
+      )}
 
       <div className="card bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 border-emerald-500/20">
         <div className="flex items-center gap-3 mb-3">

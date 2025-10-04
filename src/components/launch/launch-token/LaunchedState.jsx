@@ -148,7 +148,7 @@ const LaunchedState = ({ tokenDetails, project }) => {
                   <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
                   Token Distribution Summary
                 </label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {project.tokenDistribution.presalesAmount > 0 && (
                     <div className="text-center p-3 bg-orange-500/10 rounded border border-orange-500/20">
                       <div className="text-lg font-bold text-orange-400">
@@ -156,6 +156,15 @@ const LaunchedState = ({ tokenDetails, project }) => {
                       </div>
                       <div className="text-xs text-gray-400">Presale Tokens</div>
                       <div className="text-xs text-orange-300 mt-1">→ Sales Contract</div>
+                    </div>
+                  )}
+                  {project.tokenDistribution.platformAmount > 0 && (
+                    <div className="text-center p-3 bg-purple-500/10 rounded border border-purple-500/20">
+                      <div className="text-lg font-bold text-purple-400">
+                        {Number(project.tokenDistribution.platformAmount).toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-400">Platform Share</div>
+                      <div className="text-xs text-purple-300 mt-1">→ Platform Account</div>
                     </div>
                   )}
                   {project.tokenDistribution.liquidityAmount > 0 && (
@@ -270,7 +279,8 @@ LaunchedState.propTypes = {
     tokenDistribution: PropTypes.shape({
       presalesAmount: PropTypes.number,
       liquidityAmount: PropTypes.number,
-      treasuryAmount: PropTypes.number
+      treasuryAmount: PropTypes.number,
+      platformAmount: PropTypes.number
     })
   })
 };

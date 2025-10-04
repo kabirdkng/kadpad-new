@@ -62,6 +62,7 @@ export const useSalesContractDeployment = () => {
       // Prepare token distribution data
       const tokenDistribution = {
         presalesAmount: salesConfig.presalesAmount || ((salesConfig.totalBatches || 0) * (salesConfig.amountPerBatch || salesConfig.tokensPerBatch || 0)),
+        platformAmount: Number(salesConfig.platformShare) || 0, // platformShare is already the amount, not percentage
         liquidityAmount: salesConfig.liquidityLockupAmount || 0,
         treasuryAmount: salesConfig.treasuryAmount || 0
       };
