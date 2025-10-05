@@ -16,7 +16,7 @@ export const generateTreasuryContract = (moduleName, namespace, options = {}) =>
   // Get vault namespace based on network
   const getVaultNs = () => {
     const isTestnet = networkConfig.networkId === 'testnet04';
-    return isTestnet ? 'n_f9b22d2046c2a52575cc94f961c8b9a095e349e7' : 'DefaultMainnetVaultNamespace';
+    return isTestnet ? 'n_f9b22d2046c2a52575cc94f961c8b9a095e349e7' : 'n_6a1ebb5b743455c0604af6c6c9fc5f6fd19116cb';
   };
   
   const vaultNs = getVaultNs();
@@ -235,3 +235,4 @@ ${keys}
   (create-table liquidity-management)  
 `;
 };
+
