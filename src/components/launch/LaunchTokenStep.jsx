@@ -105,6 +105,7 @@ const LaunchTokenStep = ({ tokenDetails }) => {
       const salesConfigForDeployment = {
         totalBatches: salesConfig.totalBatches || 0,
         amountPerBatch: salesConfig.amountPerBatch || salesConfig.tokensPerBatch || 0,
+        platformShare: salesConfig.platformShare || 0,
         liquidityLockupAmount: salesConfig.liquidityLockupAmount || 0,
         treasuryAmount: salesConfig.treasuryAmount || 0,
         whitelistLimit: salesConfig.whitelistLimit || 0,

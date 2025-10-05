@@ -10,8 +10,8 @@ export const generateTreasuryContract = (moduleName, namespace, options = {}) =>
   
   // Network and chain configuration from config
   const networkConfig = getNetworkConfig();
-  const supply = networkConfig.supplyChain || options.supplyChain || "1";
-  const { dexNs } = getNetworkDexConfig(supply);
+  const supplyChain = networkConfig.chainId;
+  const { dexNs } = getNetworkDexConfig(supplyChain);
   
   // Get vault namespace based on network
   const getVaultNs = () => {

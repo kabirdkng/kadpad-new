@@ -1,0 +1,57 @@
+(begin-tx "test create")
+(namespace "STAKE_NS")
+
+(env-data {
+  "ks": {
+    "keys": [
+      "bob-key"
+    ],
+    "pred": "keys-all"
+},
+"alice": {
+  "keys": [
+    "alice-key"
+  ],
+  "pred": "keys-all"
+},
+"carol": {
+  "keys": [
+    "carol-key"
+  ],
+  "pred": "keys-all"
+},
+"dave": {
+  "keys": [
+    "dave-key"
+  ],
+  "pred": "keys-all"
+},
+"eve": {
+  "keys": [
+    "eve-key"
+  ],
+  "pred": "keys-all"
+},
+ "init-data": {
+      "initial-supply": 10000000.0,
+      "accounts": [
+        { "account": "ROOT", "percent": 0.2, "guard": { "keys": ["root-key"], "pred": "=" } }
+        { "account": "LIQUIDITY", "percent": 0.8, "guard": { "keys": ["liquidity-key"], "pred": "=" } }
+      ]
+    }
+})
+(load "token1.pact")
+(create-table coin-table)
+(init-token (read-msg "init-data"))
+
+(use token1)
+(create-tokens  "bob" (read-keyset 'ks) 200000.0)
+(create-tokens  "alice" (read-keyset 'alice) 100000.0)
+(create-tokens  "carol" (read-keyset 'carol) 500000.0)
+(create-tokens  "dave" (read-keyset 'dave) 1000000.0)
+(create-tokens  "eve" (read-keyset 'eve) 100000.0)
+
+;; Create burn account for penalty burning
+(create-account BURN_NS.burn.BURN-ACCOUNT BURN_NS.burn.BURN-GUARD)
+
+(commit-tx)

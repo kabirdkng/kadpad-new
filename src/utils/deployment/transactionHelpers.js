@@ -51,6 +51,65 @@ export const createTx = async (code, chain, account, pubKey, providerName, netwo
 };
 
 /**
+ * Creates a Pact transaction with additional keyset for platform transfers
+ */
+export const createTxWithKeyset = async (code, chain, account, pubKey, providerName, networkApi, network, capabilities = [], platformGuard) => {
+  let provider = providers[providerName];
+
+  if (!provider) {
+    throw new Error(`Provider not found: ${providerName}. Available providers: ${Object.keys(providers).join(', ')}`);
+  }
+
+  let builder = Pact.builder
+    .execution(code)
+    .setMeta({
+      chainId: String(chain),
+      gasLimit: 90000,
+      gasPrice: 0.00000001,
+      sender: account,
+      ttl: 28800,
+    })
+    .setNetworkId(network);
+
+  if (providerName === 'magic') {
+    // Extract namespace and keyset name from account for magic wallet
+    const accountParts = account.split(':')[1].split('.');
+    const namespace = accountParts[0];
+    const keysetName = accountParts[1];
+    
+    builder = builder.addKeyset("ks", {
+      keysetref: {
+        ns: namespace,
+        ksn: keysetName
+      }
+    });
+  } else {
+    builder = builder.addKeyset("ks", "keys-all", pubKey);
+  }
+
+  // Add platform keyset
+  if (platformGuard) {
+    try {
+      const parsedGuard = JSON.parse(platformGuard);
+      builder = builder.addKeyset("platformGuard", parsedGuard.pred || "keys-all", ...(parsedGuard.keys || []));
+    } catch (error) {
+      console.error('Error parsing platform guard:', error);
+      throw new Error('Invalid platform guard format');
+    }
+  }
+
+  builder = builder.addSigner(pubKey, (signFor) => {
+    return capabilities.flatMap((cap) => {
+      const { name, values } = cap;
+      return signFor(name, ...values);
+    });
+  });
+  
+  const command = builder.createTransaction();
+  return { command, txHash: command.hash };
+};
+
+/**
  * Checks if an error is a wallet rejection error
  */
 export const isWalletRejectionError = (error) => {

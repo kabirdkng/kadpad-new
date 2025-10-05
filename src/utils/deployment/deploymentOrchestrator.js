@@ -71,6 +71,10 @@ export const deploySalesAndTreasuryContracts = async (
         ...salesTransactions.map(tx => tx.command)
       ];
 
+      // Show signing toast before batch signing
+      const { showSigningToast } = await import("../transactionUtils.js");
+      showSigningToast();
+
       let signedBatch;
       if (providerName === "WC") {
         signedBatch = await provider.quickSignAll(allCommands, client, session);

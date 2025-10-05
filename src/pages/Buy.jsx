@@ -45,7 +45,8 @@ const Buy = () => {
       const launchedProjects = response.data.data.projects?.filter(project => 
         project.status === 'launched' && 
         project.namespace && 
-        project.moduleName
+        project.moduleName &&
+        project.enabled !== false 
       ) || [];
       
       console.log('Launched Projects:', launchedProjects);

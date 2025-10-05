@@ -1,0 +1,105 @@
+;; Test withdrawal with penalty distribution to burn account
+;; Alice should have 40000 remaining balance from earlier tests
+;; Bob should have 50000 remaining balance
+;; Carol should have 150000 remaining balance
+
+(begin-tx "Test early withdrawal with penalty - Day 30")
+(namespace 'STAKE_NS)
+(use staking)
+
+;; Create fresh test account "test1" with initial tokens
+(env-data { "test1": { "keys": ["test1-key"], "pred": "keys-all" }})
+(token1.create-tokens "test1" (read-keyset "test1") 50000.0)
+
+;; test1 locks 50000 tokens
+(env-sigs [{ 'key: "test1-key", 'caps: [(token1.TRANSFER "test1" (staking.get-LOCKER-account "test1") 50000.0)]}])
+(env-chain-data { 'block-time: (time "2024-01-01T00:00:00Z")})
+
+(staking.lock-tokens "test1" (read-keyset "test1") 50000.0)
+
+;; Withdraw at day 30 (should have ~91.78% penalty)
+(env-chain-data { 'block-time: (time "2024-01-31T00:00:00Z")}) ; 30 days later
+(env-sigs [{ 'key: "test1-key", 'caps: [(staking.VERIFY-LOCKER "test1")]}])
+
+(let ((test1-before (token1.get-balance "test1"))
+      (burn-before (token1.get-balance BURN_NS.burn.BURN-ACCOUNT)))
+  (staking.remove-tokens "test1" 50000.0)
+  (let ((test1-after (token1.get-balance "test1"))
+        (burn-after (token1.get-balance BURN_NS.burn.BURN-ACCOUNT))
+        (test1-gained (- test1-after test1-before))
+        (burn-gained (- burn-after burn-before)))
+
+    ;; Expected: ~4109.59 returned to test1, ~45890.41 to burn account
+    (expect "test1 received ~8.22% of tokens" true
+      (and (> test1-gained 4000.0) (< test1-gained 4300.0)))
+    (expect "Burn account received ~91.78% as penalty" true
+      (and (> burn-gained 45700.0) (< burn-gained 46000.0)))))
+
+(commit-tx)
+
+(begin-tx "Test withdrawal at day 182 (6 months)")
+(namespace 'STAKE_NS)
+(use staking)
+
+;; Create fresh test account "test2" with initial tokens
+(env-data { "test2": { "keys": ["test2-key"], "pred": "keys-all" }})
+(token1.create-tokens "test2" (read-keyset "test2") 150000.0)
+
+;; test2 locks 150000 tokens
+(env-sigs [{ 'key: "test2-key", 'caps: [(token1.TRANSFER "test2" (staking.get-LOCKER-account "test2") 150000.0)]}])
+(env-chain-data { 'block-time: (time "2024-01-01T00:00:00Z")})
+
+(staking.lock-tokens "test2" (read-keyset "test2") 150000.0)
+
+;; Withdraw at day 182 (should have ~50% penalty)
+(env-chain-data { 'block-time: (time "2024-07-01T00:00:00Z")}) ; 182 days later
+(env-sigs [{ 'key: "test2-key", 'caps: [(staking.VERIFY-LOCKER "test2")]}])
+
+(let ((test2-before (token1.get-balance "test2"))
+      (burn-before (token1.get-balance BURN_NS.burn.BURN-ACCOUNT)))
+  (staking.remove-tokens "test2" 150000.0)
+  (let ((test2-after (token1.get-balance "test2"))
+        (burn-after (token1.get-balance BURN_NS.burn.BURN-ACCOUNT))
+        (test2-gained (- test2-after test2-before))
+        (burn-gained (- burn-after burn-before)))
+
+    ;; Expected: ~74794 returned to test2, ~75206 to burn account
+    (expect "test2 received ~50% of tokens" true
+      (and (> test2-gained 74000.0) (< test2-gained 75500.0)))
+    (expect "Burn account received ~50% as penalty" true
+      (and (> burn-gained 74500.0) (< burn-gained 76000.0)))))
+
+(commit-tx)
+
+(begin-tx "Test withdrawal at day 365 (full maturity)")
+(namespace 'STAKE_NS)
+(use staking)
+
+;; Create fresh test account "test3" with initial tokens
+(env-data { "test3": { "keys": ["test3-key"], "pred": "keys-all" }})
+(token1.create-tokens "test3" (read-keyset "test3") 350000.0)
+
+;; test3 locks 350000 tokens
+(env-sigs [{ 'key: "test3-key", 'caps: [(token1.TRANSFER "test3" (staking.get-LOCKER-account "test3") 350000.0)]}])
+(env-chain-data { 'block-time: (time "2024-01-01T00:00:00Z")})
+
+(staking.lock-tokens "test3" (read-keyset "test3") 350000.0)
+
+;; Withdraw at day 365 (should have 0% penalty)
+(env-chain-data { 'block-time: (time "2025-01-01T00:00:00Z")}) ; 365 days later
+(env-sigs [{ 'key: "test3-key", 'caps: [(staking.VERIFY-LOCKER "test3")]}])
+
+(let ((test3-before (token1.get-balance "test3"))
+      (burn-before (token1.get-balance BURN_NS.burn.BURN-ACCOUNT)))
+  (staking.remove-tokens "test3" 350000.0)
+  (let ((test3-after (token1.get-balance "test3"))
+        (burn-after (token1.get-balance BURN_NS.burn.BURN-ACCOUNT))
+        (test3-gained (- test3-after test3-before))
+        (burn-gained (- burn-after burn-before)))
+
+    ;; Expected: 350000 returned to test3, 0 to burn account
+    (expect "test3 received 100% of tokens" 350000.0 test3-gained)
+    (expect "Burn account received no penalty" 0.0 burn-gained)))
+
+(commit-tx)
+

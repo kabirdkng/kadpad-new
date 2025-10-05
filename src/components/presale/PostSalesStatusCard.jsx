@@ -8,7 +8,8 @@ const PostSalesStatusCard = ({
   isLoading,
   namespace,
   moduleName,
-  supplyChain
+  supplyChain,
+  onDistributionStatusChange
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -33,6 +34,13 @@ const PostSalesStatusCard = ({
       checkBackendStatus();
     }
   }, [supplyChain, namespace, moduleName, checkDistributionStatus, checkBackendStatus]);
+
+  // Notify parent about distribution status changes
+  useEffect(() => {
+    if (onDistributionStatusChange) {
+      onDistributionStatusChange(distributionComplete);
+    }
+  }, [distributionComplete, onDistributionStatusChange]);
 
   // Helper function to get current status
   const getCurrentStatus = () => {
@@ -257,7 +265,8 @@ PostSalesStatusCard.propTypes = {
   isLoading: PropTypes.bool,
   namespace: PropTypes.string.isRequired,
   moduleName: PropTypes.string.isRequired,
-  supplyChain: PropTypes.string.isRequired
+  supplyChain: PropTypes.string.isRequired,
+  onDistributionStatusChange: PropTypes.func
 };
 
 PostSalesStatusCard.defaultProps = {

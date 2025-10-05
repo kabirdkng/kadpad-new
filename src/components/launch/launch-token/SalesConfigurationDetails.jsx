@@ -60,6 +60,15 @@ const SalesConfigurationDetails = ({ salesDetails, project }) => {
                 >
                   {(((salesDetails.presalesAmount || ((salesDetails.totalBatches || 0) * (salesDetails.amountPerBatch || salesDetails.tokensPerBatch || 0))) / project.tokendetails.totalSupply) * 100) > 12 && 'Sales'}
                 </div>
+                {salesDetails.platformShare > 0 && (
+                  <div 
+                    className="bg-orange-500 h-full flex items-center justify-center text-white text-xs font-medium transition-all duration-300"
+                    style={{ width: `${((salesDetails.platformShare || 0) / project.tokendetails.totalSupply) * 100}%` }}
+                    title={`Platform Share: ${(((salesDetails.platformShare || 0) / project.tokendetails.totalSupply) * 100).toFixed(2)}%`}
+                  >
+                    {(((salesDetails.platformShare || 0) / project.tokendetails.totalSupply) * 100) > 8 && 'Platform'}
+                  </div>
+                )}
                 <div 
                   className="bg-purple-500 h-full flex items-center justify-center text-white text-xs font-medium transition-all duration-300"
                   style={{ width: `${((salesDetails.liquidityLockupAmount || 0) / project.tokendetails.totalSupply) * 100}%` }}
@@ -91,6 +100,20 @@ const SalesConfigurationDetails = ({ salesDetails, project }) => {
                 }
               </p>
             </div>
+            {salesDetails.platformShare > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-secondary mb-1">Platform Share</label>
+                <p className="text-xl font-bold text-primary-text">
+                  {(salesDetails.platformShare || 0).toLocaleString()}
+                </p>
+                <p className="text-xs text-orange-400 mt-1">
+                  {project?.tokendetails?.totalSupply ? 
+                    (((salesDetails.platformShare || 0) / project.tokendetails.totalSupply) * 100).toFixed(2) + '%' 
+                    : '0%'
+                  }
+                </p>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-secondary mb-1">Liquidity Amount</label>
               <p className="text-xl font-bold text-primary-text">

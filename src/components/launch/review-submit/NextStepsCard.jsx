@@ -103,7 +103,7 @@ const NextStepsCard = ({ existingProject }) => {
               <div className="text-xs text-secondary">
                 <p className="mb-1">• All fees have been paid</p>
                 <p className="mb-1">• Project verification complete</p>
-                <p>• Admin team will launch your project shortly</p>
+                <p>• Admin team will configure your project sales details shortly</p>
               </div>
             </div>
           </div>
@@ -118,12 +118,12 @@ const NextStepsCard = ({ existingProject }) => {
             <div>
               <h4 className="font-semibold text-green-400 mb-2">🎉 Project Launched!</h4>
               <p className="text-secondary text-sm mb-3">
-                Your project has been successfully launched! You can now configure your sales details to start your presale.
+                Your project has been successfully launched! Our admin team will configure your sales details for you.
               </p>
               <div className="bg-green-500/10 p-3 rounded-lg">
-                <p className="text-green-400 font-medium text-sm mb-2">Ready for Sales Configuration</p>
+                <p className="text-green-400 font-medium text-sm mb-2">Waiting for Admin Configuration</p>
                 <p className="text-secondary text-xs">
-                  Proceed to the next step to configure your presale phases, pricing, and whitelist settings.
+                  Our team will set up your presale phases, pricing, and whitelist settings, then notify you to proceed.
                 </p>
               </div>
             </div>

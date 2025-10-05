@@ -1,2 +1,0 @@
-# kad-staking
-kadpad staking

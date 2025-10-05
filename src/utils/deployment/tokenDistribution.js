@@ -4,10 +4,70 @@ import providers from "../../wallet/providers/providers";
 import { formatAmountForPact } from "../decimalUtils.js";
 import { 
   createTx, 
+  createTxWithKeyset,
   isWalletRejectionError, 
   extractSignedTransactionData
 } from "./transactionHelpers.js";
 import { pollForTransactionResult } from "../../pactcalls/kadena";
+
+/**
+ * Checks if an account already has sufficient token balance
+ */
+export const checkAccountBalance = async (networkApi, network, chain, namespace, moduleName, accountName, requiredAmount) => {
+  const pactClient = createClient(`${networkApi}/chainweb/0.0/${network}/chain/${chain}/pact`);
+  
+  try {
+    console.log(`🔍 Checking balance for account: ${accountName}, required: ${requiredAmount}`);
+    
+    const pactCode = `(${namespace}.${moduleName}.get-balance "${accountName}")`;
+    console.log(`Executing Pact code: ${pactCode}`);
+    
+    const balanceCommand = Pact.builder
+      .execution(pactCode)
+      .setMeta({
+        chainId: String(chain),
+        gasLimit: 1000,
+        gasPrice: 0.00000001,
+        sender: "",
+        ttl: 600,
+      })
+      .setNetworkId(network)
+      .createTransaction();
+
+    const balanceResult = await pactClient.dirtyRead(balanceCommand);
+    console.log(`Balance check result for ${accountName}:`, JSON.stringify(balanceResult, null, 2));
+    
+    if (balanceResult.result.status === 'success') {
+      const currentBalance = parseFloat(balanceResult.result.data);
+      const required = parseFloat(requiredAmount);
+      
+      console.log(`Current balance: ${currentBalance}, Required: ${required}`);
+      
+      // If current balance is greater than or equal to required amount, skip transfer
+      const shouldSkip = currentBalance >= required;
+      console.log(`Should skip transfer for ${accountName}: ${shouldSkip}`);
+      return shouldSkip;
+    } else if (balanceResult.result.status === 'failure') {
+      console.log(`Balance check failed for ${accountName}, error:`, balanceResult.result.error);
+      
+      // Try alternative balance check approach - maybe account doesn't exist yet
+      if (balanceResult.result.error && balanceResult.result.error.message) {
+        const errorMsg = balanceResult.result.error.message.toLowerCase();
+        if (errorMsg.includes('account does not exist') || errorMsg.includes('row not found') || errorMsg.includes('no such key')) {
+          console.log(`Account ${accountName} does not exist, proceeding with transfer`);
+          return false; // Account doesn't exist, need to create it with transfer
+        }
+      }
+    }
+    
+    console.log(`Balance check inconclusive for ${accountName}, proceeding with transfer`);
+    // If we can't get balance (account doesn't exist or other error), proceed with transfer
+    return false;
+  } catch (error) {
+    console.log(`Could not check balance for ${accountName}, proceeding with transfer:`, error.message);
+    return false;
+  }
+};
 
 /**
  * Fetches contract account addresses after deployment
@@ -110,6 +170,15 @@ export const createTokenTransferTransaction = async (
                         RESERVE-GUARD
                         ${formattedAmount})`;
     toAccount = contractAccounts.reserveAccount;
+  } else if (transferType === 'platform') {
+    // Platform share goes to a predefined platform account
+    const platformAccount = import.meta.env.VITE_PLATFORM_ACCOUNT
+    transferCode = `(${namespace}.${moduleName}.transfer-create 
+                     "${account}"
+                     "${platformAccount}"
+                      (read-keyset "platformGuard")
+                     ${formattedAmount})`;
+    toAccount = platformAccount;
   } else if (transferType === 'liquidity') {
     transferCode = `(namespace '${namespace}) 
                      (use ${moduleName}-treasury)
@@ -136,6 +205,12 @@ export const createTokenTransferTransaction = async (
     { name: `${namespace}.${moduleName}.TRANSFER`, values: [account, toAccount, { decimal: String(formattedAmount) }] },
     { name: 'coin.GAS', values: [] }
   ];
+
+  // For platform transfers, we need to add the platform keyset
+  if (transferType === 'platform') {
+    const platformGuard = import.meta.env.VITE_PLATFORM_GUARD;
+    return await createTxWithKeyset(transferCode, chain, account, pubKey, providerName, networkApi, network, capabilities, platformGuard);
+  }
 
   return await createTx(transferCode, chain, account, pubKey, providerName, networkApi, network, capabilities);
 };
@@ -175,29 +250,62 @@ export const transferTokensToContracts = async (
     const transfers = [];
     const transactions = [];
     
-    // Define the transfers based on token distribution
+    // Check balances and define the transfers based on token distribution
     if (tokenDistribution.presalesAmount && tokenDistribution.presalesAmount > 0) {
-      transfers.push({
-        transferType: 'reserve',
-        amount: tokenDistribution.presalesAmount,
-        description: "Presale allocation"
-      });
+      const hasBalance = await checkAccountBalance(networkApi, network, chain, namespace, moduleName, contractAccounts.reserveAccount, tokenDistribution.presalesAmount);
+      if (!hasBalance) {
+        transfers.push({
+          transferType: 'reserve',
+          amount: tokenDistribution.presalesAmount,
+          description: "Presale allocation",
+          toAccount: contractAccounts.reserveAccount
+        });
+      } else {
+        console.log(`Reserve account ${contractAccounts.reserveAccount} already has sufficient balance, skipping transfer`);
+      }
+    }
+
+    if (tokenDistribution.platformAmount && tokenDistribution.platformAmount > 0) {
+      const platformAccount = import.meta.env.VITE_PLATFORM_ACCOUNT;
+      const hasBalance = await checkAccountBalance(networkApi, network, chain, namespace, moduleName, platformAccount, tokenDistribution.platformAmount);
+      if (!hasBalance) {
+        transfers.push({
+          transferType: 'platform',
+          amount: tokenDistribution.platformAmount,
+          description: "Platform share allocation",
+          toAccount: platformAccount
+        });
+      } else {
+        console.log(`Platform account ${platformAccount} already has sufficient balance, skipping transfer`);
+      }
     }
 
     if (tokenDistribution.liquidityAmount && tokenDistribution.liquidityAmount > 0) {
-      transfers.push({
-        transferType: 'liquidity',
-        amount: tokenDistribution.liquidityAmount,
-        description: "DEX liquidity allocation"
-      });
+      const hasBalance = await checkAccountBalance(networkApi, network, chain, namespace, moduleName, contractAccounts.liquidityAccount, tokenDistribution.liquidityAmount);
+      if (!hasBalance) {
+        transfers.push({
+          transferType: 'liquidity',
+          amount: tokenDistribution.liquidityAmount,
+          description: "DEX liquidity allocation",
+          toAccount: contractAccounts.liquidityAccount
+        });
+      } else {
+        console.log(`Liquidity account ${contractAccounts.liquidityAccount} already has sufficient balance, skipping transfer`);
+      }
     }
 
     if (tokenDistribution.treasuryAmount && tokenDistribution.treasuryAmount > 0) {
-      transfers.push({
-        transferType: 'treasury',
-        amount: tokenDistribution.treasuryAmount,
-        description: "Treasury allocation"
-      });
+      const hasBalance = await checkAccountBalance(networkApi, network, chain, namespace, moduleName, contractAccounts.treasuryAccount, tokenDistribution.treasuryAmount);
+      if (!hasBalance) {
+        transfers.push({
+          transferType: 'treasury',
+          amount: tokenDistribution.treasuryAmount,
+          description: "Treasury allocation",
+          toAccount: contractAccounts.treasuryAccount
+        });
+      } else {
+        console.log(`Treasury account ${contractAccounts.treasuryAccount} already has sufficient balance, skipping transfer`);
+      }
     }
 
     if (transfers.length === 0) {
@@ -239,6 +347,10 @@ export const transferTokensToContracts = async (
     // Sign all transfer transactions at once
     const commands = transactions.map(tx => tx.command);
     let signedBatch;
+
+    // Show signing toast before batch signing
+    const { showSigningToast } = await import("../transactionUtils.js");
+    showSigningToast();
 
     if (providerName === "WC") {
       signedBatch = await provider.quickSignAll(commands, client, session);

@@ -23,6 +23,26 @@ const TransactionTracker = ({ isOpen, onClose }) => {
 
   const { checkPendingTransactions } = useTransactionManager();
 
+  // Function to get human-readable transaction type names
+  const getTransactionDisplayName = (type) => {
+    const typeMap = {
+      'buy-tokens': 'Buy Tokens',
+      'transfer-treasury': 'Transfer Treasury',
+      'whitelist-address': 'Whitelist Address',
+      'update-price': 'Update Price',
+      'deploy-contract': 'Deploy Contract',
+      'mint-tokens': 'Mint Tokens',
+      'stake-tokens': 'Stake Tokens',
+      'unstake-tokens': 'Unstake Tokens',
+      'distribute-tokens': 'Distribute Tokens',
+      'end-sales': 'End Sales',
+      'init-liquidity': 'Initialize Liquidity',
+      'other': 'Other Transaction'
+    };
+    
+    return typeMap[type] || 'Transaction';
+  };
+
   const stats = getTransactionStats();
   const allTransactions = getAllTransactions();
   const activeTransactions = getActiveTransactions();
@@ -133,7 +153,7 @@ const TransactionTracker = ({ isOpen, onClose }) => {
             <div className="flex-1 min-w-0">
               <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                 <span className="font-medium text-primary-text text-sm md:text-base">
-                  {transaction.type || 'Transaction'}
+                  {getTransactionDisplayName(transaction.type || transaction.operation)}
                 </span>
                 <span className={`px-2 py-1 rounded text-xs font-medium border ${getStatusColor(transaction.status)} self-start`}>
                   {transaction.status}

@@ -71,9 +71,14 @@ const signAndSubmitTx = async (tx, pactClient) => {
   let cmd, sigs, outcomeHash;
   
   try {
+    // Show signing toast before calling wallet
+    const { showSigningToast } = await import('../utils/transactionUtils.js');
+    showSigningToast();
+    
     signedTx = await provider.quickSign(tx);
     if(signedTx.status === 'fail'){
-      toast.error(`Error: ${signedTx.message}`, { position: 'top-center' });
+      // Show a clean error message for signing failure
+      toast.error('Transaction signing was cancelled or failed', { position: 'top-center' });
       return signedTx;
     }
     
@@ -88,7 +93,17 @@ const signAndSubmitTx = async (tx, pactClient) => {
       outcomeHash = signedTx.responses[0].outcome.hash;
     }
   } catch (error) {
-    console.error(error);
+    console.error('Signing error:', error);
+    // Check if it's a user rejection/cancellation
+    if (error.message?.includes('rejected') || 
+        error.message?.includes('cancelled') || 
+        error.message?.includes('denied') ||
+        error.message?.includes('User rejected') ||
+        error.message?.includes('User canceled')) {
+      toast.error('Transaction signing was cancelled', { position: 'top-center' });
+    } else {
+      toast.error('Transaction signing failed', { position: 'top-center' });
+    }
     throw error;
   }
 

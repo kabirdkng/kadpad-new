@@ -4,6 +4,7 @@ import { pactCallsSales, pactCalls, initLiquidityTreasury } from '../pactcalls/k
 import useTransactionManager from './useTransactionManager';
 import useWalletStore from '../wallet/walletStore';
 import { markSalesEnded, markInitLiquidityDone, incrementDistributionRound, getLaunchedProject } from '../api';
+import { isUserRejectionError } from '../utils/transactionUtils';
 
 export const usePostSalesOperations = (
   namespace,
@@ -164,7 +165,6 @@ export const usePostSalesOperations = (
     try {
       const code = `(${namespace}.${salesModuleName}.distribute-tokens)`;
       
-      toast.info('Submitting token distribution...', { position: 'top-center', autoClose: 2000 });
       const result = await pactCallsSales(
         code,
         supplyChain,
@@ -172,12 +172,18 @@ export const usePostSalesOperations = (
         moduleName
       );
 
+      // Check if signing failed
+      if (result?.status === 'fail') {
+        // Signing failed, don't show additional error as it's already shown in signAndSubmitTx
+        return false;
+      }
+
       if (result?.preflightResult?.result?.status === 'success') {
         const txKey = result.transactionDescriptor?.requestKey;
         
         // Create transaction metadata
         const metadata = createTransactionMetadata(
-          transactionTypes.OTHER,
+          transactionTypes.DISTRIBUTE_TOKENS,
           'Distribute tokens to participants',
           {
             operation: 'distribute-tokens',
@@ -229,7 +235,12 @@ export const usePostSalesOperations = (
       }
     } catch (error) {
       console.error('Error distributing tokens:', error);
-      toast.error('Error distributing tokens');
+      
+      // Don't show duplicate error if it's already a signing failure
+      if (!isUserRejectionError(error)) {
+        toast.error('Error distributing tokens');
+      }
+      
       return false;
     } finally {
       setIsDistributing(false);
@@ -246,7 +257,6 @@ export const usePostSalesOperations = (
     try {
       const code = `(${namespace}.${salesModuleName}.end-sales)`;
       
-      toast.info('Submitting sales end transaction...', { position: 'top-center', autoClose: 2000 });
       const result = await pactCallsSales(
         code,
         supplyChain,
@@ -254,12 +264,18 @@ export const usePostSalesOperations = (
         moduleName
       );
 
+      // Check if signing failed
+      if (result?.status === 'fail') {
+        // Signing failed, don't show additional error as it's already shown in signAndSubmitTx
+        return false;
+      }
+
       if (result?.preflightResult?.result?.status === 'success') {
         const txKey = result.transactionDescriptor?.requestKey;
         
         // Create transaction metadata
         const metadata = createTransactionMetadata(
-          transactionTypes.OTHER,
+          transactionTypes.END_SALES,
           'End sales contract',
           {
             operation: 'end-sales',
@@ -308,7 +324,12 @@ export const usePostSalesOperations = (
       }
     } catch (error) {
       console.error('Error ending sales:', error);
-      toast.error('Error ending sales');
+      
+      // Don't show duplicate error if it's already a signing failure
+      if (!isUserRejectionError(error)) {
+        toast.error('Error ending sales');
+      }
+      
       return false;
     } finally {
       setIsEndingSales(false);
@@ -326,7 +347,6 @@ export const usePostSalesOperations = (
       const { account, pubKey } = useWalletStore.getState();
       const code = `(${namespace}.${moduleName}-treasury.init-liquidity)`;
       
-      toast.info('Submitting liquidity initialization...', { position: 'top-center', autoClose: 2000 });
       const result = await initLiquidityTreasury(
         `${namespace}.${moduleName}`,
         code,
@@ -335,12 +355,18 @@ export const usePostSalesOperations = (
         account
       );
 
+      // Check if signing failed
+      if (result?.status === 'fail') {
+        // Signing failed, don't show additional error as it's already shown in signAndSubmitTx
+        return false;
+      }
+
       if (result?.preflightResult?.result?.status === 'success') {
         const txKey = result.transactionDescriptor?.requestKey;
         
         // Create transaction metadata
         const metadata = createTransactionMetadata(
-          transactionTypes.OTHER,
+          transactionTypes.INIT_LIQUIDITY,
           'Initialize DEX liquidity',
           {
             operation: 'init-liquidity',
@@ -389,7 +415,12 @@ export const usePostSalesOperations = (
       }
     } catch (error) {
       console.error('Error initializing liquidity:', error);
-      toast.error('Error initializing liquidity');
+      
+      // Don't show duplicate error if it's already a signing failure
+      if (!isUserRejectionError(error)) {
+        toast.error('Error initializing liquidity');
+      }
+      
       return false;
     } finally {
       setIsInitializingLiquidity(false);
