@@ -12,11 +12,10 @@ import { getDexConfiguration } from './dexUtils.js';
  */
 export const getNetworkConfig = () => {
   return {
-    networkId: config.networkId, // testnet04 or mainnet01
-    chainId: config.chainId,     // Chain ID (1 for testnet, 2 for mainnet typically)
+    networkId: config.networkId, 
+    chainId: config.chainId,
     apiUrl: config.apiUrl,
     client: config.client,
-    spireKeyUrl: config.spireKeyUrl,
     isMainnet: config.networkId === 'mainnet01',
     isTestnet: config.networkId === 'testnet04'
   };
