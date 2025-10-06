@@ -336,7 +336,9 @@
         (if (< sold TOTAL-BATCHES)
             (with-capability (RESERVE)
               (install-capability (token.TRANSFER RESERVE-ACCOUNT BURN_NS.burn.BURN-ACCOUNT (to-token-amount (- TOTAL-BATCHES sold)))) ;; Variable
-              (token.transfer-create RESERVE-ACCOUNT BURN_NS.burn.BURN-ACCOUNT BURN_NS.burn.BURN-GUARD (to-token-amount (- TOTAL-BATCHES sold)))) ;; Variable
+              (let ((burn-guard (BURN_NS.burn.create-BURN-guard)))
+                (token.transfer-create RESERVE-ACCOUNT BURN_NS.burn.BURN-ACCOUNT burn-guard (to-token-amount (- TOTAL-BATCHES sold)))) ;; Variable
+              )
             "")
 
       ; Transfer the income (in KDA) to treasury (for DEX liquidity)

@@ -12,8 +12,8 @@
     (require-capability (BURN)))
 (defun create-BURN-guard ()
     (create-user-guard (burn)))
-(defconst BURN-GUARD (create-BURN-guard))
-(defconst BURN-ACCOUNT (create-principal BURN-GUARD))
+;  (defconst BURN-GUARD (create-BURN-guard))
+(defconst BURN-ACCOUNT (create-principal (create-BURN-guard)))
 (defconst LOCKDATE:time (time "2024-11-30T00:00:00Z"))
 
 ; Functions

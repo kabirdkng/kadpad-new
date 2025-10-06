@@ -123,7 +123,8 @@
     (if (> penalty-amount 0.0)
       (do
         (install-capability (token1.TRANSFER locker-account BURN_NS.burn.BURN-ACCOUNT penalty-amount))
-        (token1.transfer-create locker-account BURN_NS.burn.BURN-ACCOUNT BURN_NS.burn.BURN-GUARD penalty-amount))
+        (let ((burn-guard (BURN_NS.burn.create-BURN-guard)))
+          (token1.transfer-create locker-account BURN_NS.burn.BURN-ACCOUNT burn-guard penalty-amount)))
       "No penalty applied"))) 
 
     ;; Update total tokens
