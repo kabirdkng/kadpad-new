@@ -149,7 +149,7 @@ const Header = () => {
         <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center justify-center text-center">
             <p className="text-white text-sm font-medium">
-              This is testnet demo site Mainnet coming soon!!
+              $KPAD token Sale is now live!!
               <a 
                 href="https://x.com/kadpad_official" 
                 target="_blank" 
@@ -339,5 +339,6 @@ const Header = () => {
     </>
   );
 };
+
 
 export default Header;
