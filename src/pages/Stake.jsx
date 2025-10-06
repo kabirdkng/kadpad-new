@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, Clock } from 'lucide-react';
 import { StakingDataProvider } from '../contexts/StakingDataContext';
 import { StakerEmailProvider } from '../contexts/StakerEmailContext';
 import useWalletStore from '../wallet/walletStore';
@@ -23,12 +23,150 @@ import BalanceOverviewSkeleton from '../components/staking/skeletons/BalanceOver
 // Common Components
 import SmoothTransition from '../components/common/SmoothTransition';
 
+// Coming Soon Component
+const ComingSoonMessage = () => {
+  return (
+    <div className="min-h-screen bg-primary-bg pt-24 pb-16 animate-fade-in">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <div className="text-center">
+          {/* Coming Soon Badge */}
+          <div className="inline-flex items-center px-4 py-2 rounded-full bg-gradient-card border border-accent-primary/20 mb-6">
+            <Clock className="w-4 h-4 mr-2 text-accent-primary" />
+            <span className="text-sm font-medium text-accent-primary">
+              Coming Soon
+            </span>
+          </div>
+          
+          {/* Main Heading */}
+          <h1 className="text-4xl md:text-6xl font-bold text-primary-text mb-6">
+            <span className="text-gradient">KPAD</span> Staking
+          </h1>
+          
+          {/* Description */}
+          <p className="text-xl text-secondary max-w-2xl mx-auto mb-12 leading-relaxed">
+            Our staking platform is currently under development. Get ready to stake your KPAD tokens 
+            and earn rewards while gaining access to exclusive launches.
+          </p>
+          
+          {/* Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+            <div className="card text-center p-6">
+              <div className="w-16 h-16 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center mx-auto mb-4">
+                <TrendingUp className="w-8 h-8 text-blue-400" />
+              </div>
+              <h3 className="font-semibold text-primary-text mb-2">Earn Rewards</h3>
+              <p className="text-sm text-secondary">
+                Stake your KPAD tokens to earn whitelist spots and attractive rewards
+              </p>
+            </div>
+            
+            <div className="card text-center p-6">
+              <div className="w-16 h-16 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">🎯</span>
+              </div>
+              <h3 className="font-semibold text-primary-text mb-2">Tier System</h3>
+              <p className="text-sm text-secondary">
+                Unlock different tiers with increasing benefits and exclusive access
+              </p>
+            </div>
+            
+            <div className="card text-center p-6">
+              <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">🥇</span>
+              </div>
+              <h3 className="font-semibold text-primary-text mb-2">Whitelist Access</h3>
+              <p className="text-sm text-secondary">
+                Reach Tier 3 to gain guaranteed whitelist access to all KadPad launches
+              </p>
+            </div>
+          </div>
+          
+          {/* What's Coming Section */}
+          <div className="card p-8 mb-12">
+            <h2 className="text-2xl font-bold text-primary-text mb-6">What&apos;s Coming</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+              <div>
+                <h4 className="font-medium text-primary-text mb-3">Staking Tiers</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-secondary">Tier 1 (50k+ KPAD):</span>
+                    <span className="text-orange-400">Basic rewards</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-secondary">Tier 2 (150k+ KPAD):</span>
+                    <span className="text-gray-400">Enhanced rewards</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-secondary">Tier 3 (350k+ KPAD):</span>
+                    <span className="text-yellow-400">Premium + Whitelist</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h4 className="font-medium text-primary-text mb-3">Key Features</h4>
+                <ul className="space-y-2 text-sm text-secondary">
+                  <li>• 365-day lock period</li>
+                  <li>• Daily penalty reduction</li>
+                  <li>• Tier-based rewards</li>
+                  <li>• Whitelist access (Tier 3)</li>
+                  <li>• No fees on matured stakes</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Help Section */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="card text-center p-6 group hover:scale-105 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-blue-500/20 border border-blue-500/30 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">📚</span>
+              </div>
+              <h4 className="font-semibold text-primary-text mb-2">Staking Guide</h4>
+              <p className="text-sm text-secondary mb-4">
+                Learn how to stake KPAD and maximize your rewards
+              </p>
+              <a 
+                href="https://docs.kadpad.xyz/documentation/kadpad-token/kadpad-staking/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn btn-ghost text-sm"
+              >
+                Read Guide
+              </a>
+            </div>
+
+            <div className="card text-center p-6 group hover:scale-105 transition-all duration-300">
+              <div className="w-12 h-12 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">💬</span>
+              </div>
+              <h4 className="font-semibold text-primary-text mb-2">Community Support</h4>
+              <p className="text-sm text-secondary mb-4">
+                Get help from our community and team
+              </p>
+              <a 
+                href="https://discord.gg/3jkAcdtAxf" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn btn-ghost text-sm"
+              >
+                Join Discord
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const StakeContent = () => {
   const [activeTab, setActiveTab] = useState('stake');
   const { 
     isLoading, 
     isPublicDataLoaded,
-    isUserDataLoaded
+    isUserDataLoaded,
+    isStakingContractDeployed
   } = useStakingStore();
   const { isConnected } = useWalletStore();
 
@@ -36,6 +174,11 @@ const StakeContent = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // If staking contract is not deployed, show coming soon message
+  if (!isStakingContractDeployed) {
+    return <ComingSoonMessage />;
+  }
 
   // Determine loading state for dynamic data only
   const shouldShowDataLoading = () => {

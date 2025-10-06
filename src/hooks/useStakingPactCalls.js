@@ -5,11 +5,12 @@ import useWalletStore from '../wallet/walletStore';
 import { toast } from 'react-toastify';
 import { handleTokenStaking, handleTokenUnstaking, isUserRejectionError } from '../utils/transactionUtils';
 import { formatAmountForPact } from '../utils/decimalUtils';
+import config from '../wallet/config';
 
 const STAKING_NAMESPACE = 'n_b9880e372b7ec49d21ef4afe82ece29c3a536bde';
-const STAKING_MODULE = 'kadpad-staking';
-const TOKEN_MODULE = 'kadpad';
-const CHAIN_ID = 1;
+const STAKING_MODULE = 'Kadpad-staking';
+const TOKEN_MODULE = 'Kadpad';
+const CHAIN_ID = config.chainId;
 
 export const useStakingPactCalls = (options = {}) => {
   const { disableAutoRefresh = false } = options;

@@ -21,6 +21,9 @@ const useStakingStore = create(
       isPublicDataLoaded: false,
       isUserDataLoaded: false,
       
+      // Contract deployment status
+      isStakingContractDeployed: false, // Set to false to show coming soon page
+      
       // Error handling
       error: null,
       
@@ -45,6 +48,7 @@ const useStakingStore = create(
       setUnstaking: (unstaking) => set({ isUnstaking: unstaking }),
       setClaiming: (claiming) => set({ isClaiming: claiming }),
       setError: (error) => set({ error: error }),
+      setStakingContractDeployed: (deployed) => set({ isStakingContractDeployed: deployed }),
       
       // Add stake
       addStake: (stake) => {
@@ -96,6 +100,7 @@ const useStakingStore = create(
         error: null,
         isPublicDataLoaded: false,
         isUserDataLoaded: false,
+        isStakingContractDeployed: false,
         stakingStats: {
           totalStaked: 0,
           totalStakers: 0,
