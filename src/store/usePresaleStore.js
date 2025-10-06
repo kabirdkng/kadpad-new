@@ -1,6 +1,7 @@
 // src/store/usePresaleStore.js
 import { create } from 'zustand';
 import { pactCalls, fetchBalance, pactCallsSig } from '../pactcalls/kadena';
+import config from '../wallet/config';
 
 const usePresaleStore = create((set, get) => ({
   balance: 0,
@@ -16,7 +17,7 @@ const usePresaleStore = create((set, get) => ({
   tokenSymbol: '',
   salesAccount: '',
   availableBatches: 0,
-  supplyChain: '1',
+  supplyChain: config.chainId,
   deployer: '' ,
   p0Price: null,
   p1Price: null,
