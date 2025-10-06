@@ -17,7 +17,7 @@ const usePresaleStore = create((set, get) => ({
   tokenSymbol: '',
   salesAccount: '',
   availableBatches: 0,
-  supplyChain: null,
+  supplyChain: config.chainId,
   deployer: '' ,
   p0Price: null,
   p1Price: null,
