@@ -56,10 +56,21 @@ const useWalletStore = create((set) => ({
     }
   },
 
-  connectWallet: async (providerId, connectWithWalletConnect) => {
+  connectWallet: async (providerId, connectWithWalletConnectOrAccountName) => {
     let connectResult = {};
     const { sethideConnectWalletModal } = walletConnectStore.getState();
     console.log("providerId", providerId);
+    
+    // Handle different parameter types based on provider
+    let connectWithWalletConnect = null;
+    let accountName = null;
+    
+    if (providerId === "WC") {
+      connectWithWalletConnect = connectWithWalletConnectOrAccountName;
+    } else if (providerId === "CHAINWEAVER_LEGACY") {
+      accountName = connectWithWalletConnectOrAccountName;
+    }
+    
     try {
       if (providerId === "WC") {
         console.log("Connecting with WalletConnect...");
@@ -149,6 +160,84 @@ const useWalletStore = create((set) => ({
           set({ messages: `Magic Wallet connection error: ${errorMessage}` });
           return;
         }
+      } else if (providerId === "CHAINWEAVER") {
+        console.log("Connecting with Chainweaver...");
+        try {
+          const { default: providers } = await import("./providers/providers");
+          const provider = providers[providerId];
+          connectResult = await provider.connect();
+          
+          if (connectResult.status === "success") {
+            const newWalletState = {
+              provider: providerId,
+              account: connectResult.account.account,
+              pubKey: connectResult.account.publicKey,
+              isConnected: true,
+              messages: "Successfully connected to Chainweaver.",
+            };
+            
+            set(newWalletState);
+            
+            // Save to sessionStorage
+            if (isWalletStorageAvailable()) {
+              saveWalletToStorage(newWalletState);
+            }
+            
+            sethideConnectWalletModal();
+            return;
+          } else {
+            // Show toast error message for Chainweaver issues
+            toast.error(connectResult.message);
+            console.error("Chainweaver connection error:", connectResult.message);
+            set({ messages: `Chainweaver connection error: ${connectResult.message}` });
+            return;
+          }
+        } catch (error) {
+          const errorMessage = error.message || "Failed to connect to Chainweaver";
+          toast.error(errorMessage);
+          console.error("Error connecting to Chainweaver:", error);
+          set({ messages: `Chainweaver connection error: ${errorMessage}` });
+          return;
+        }
+      } else if (providerId === "CHAINWEAVER_LEGACY") {
+        console.log("Connecting with Chainweaver Legacy...");
+        try {
+          const { default: providers } = await import("./providers/providers");
+          const provider = providers[providerId];
+          connectResult = await provider.connect(accountName);
+          
+          if (connectResult.status === "success") {
+            const newWalletState = {
+              provider: providerId,
+              account: connectResult.account.account,
+              pubKey: connectResult.account.publicKey,
+              isConnected: true,
+              messages: "Successfully connected to Chainweaver Legacy.",
+            };
+            
+            set(newWalletState);
+            
+            // Save to sessionStorage
+            if (isWalletStorageAvailable()) {
+              saveWalletToStorage(newWalletState);
+            }
+            
+            sethideConnectWalletModal();
+            return;
+          } else {
+            // Show toast error message for Chainweaver Legacy issues
+            toast.error(connectResult.message);
+            console.error("Chainweaver Legacy connection error:", connectResult.message);
+            set({ messages: `Chainweaver Legacy connection error: ${connectResult.message}` });
+            return;
+          }
+        } catch (error) {
+          const errorMessage = error.message || "Failed to connect to Chainweaver Legacy";
+          toast.error(errorMessage);
+          console.error("Error connecting to Chainweaver Legacy:", error);
+          set({ messages: `Chainweaver Legacy connection error: ${errorMessage}` });
+          return;
+        }
       } else {
         // Dynamically import providers to avoid circular dependency
         const { default: providers } = await import("./providers/providers");
@@ -229,6 +318,40 @@ const useWalletStore = create((set) => ({
           }
         } catch (error) {
           console.error("Error disconnecting Magic Wallet:", error);
+        }
+      } else if (providerName === "CHAINWEAVER") {
+        // Handle Chainweaver disconnection through adapter system
+        try {
+          const { createChainweaverAdapter } = await import('@kadena/wallet-adapter-chainweaver');
+          const chainweaverAdapterFactory = createChainweaverAdapter({
+            chainId: config.chainId,
+            chainwebApiUrl: config.apiUrl,
+            networkId: config.networkId,
+          });
+          const provider = await chainweaverAdapterFactory.detect();
+          if (provider) {
+            const adapter = await chainweaverAdapterFactory.adapter(provider);
+            await adapter.disconnect();
+          }
+        } catch (error) {
+          console.error("Error disconnecting Chainweaver:", error);
+        }
+      } else if (providerName === "CHAINWEAVER_LEGACY") {
+        // Handle Chainweaver Legacy disconnection through adapter system
+        try {
+          const { createChainweaverLegacyAdapter } = await import('@kadena/wallet-adapter-chainweaver-legacy');
+          const chainweaverLegacyAdapterFactory = createChainweaverLegacyAdapter({
+            chainId: config.chainId,
+            chainwebApiUrl: config.apiUrl,
+            networkId: config.networkId,
+          });
+          const provider = await chainweaverLegacyAdapterFactory.detect();
+          if (provider) {
+            const adapter = await chainweaverLegacyAdapterFactory.adapter(provider);
+            await adapter.disconnect();
+          }
+        } catch (error) {
+          console.error("Error disconnecting Chainweaver Legacy:", error);
         }
       } else {
         // Dynamically import providers to avoid circular dependency

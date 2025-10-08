@@ -556,6 +556,15 @@
     "@kadena/pactjs" "0.4.3"
     cross-fetch "~3.1.5"
 
+"@kadena/chainweb-node-client@0.9.4":
+  version "0.9.4"
+  resolved "https://registry.yarnpkg.com/@kadena/chainweb-node-client/-/chainweb-node-client-0.9.4.tgz#386c5e433f0ec416546f60bdf770086d3f3ccfa3"
+  integrity sha512-RIRDkKdVqD6QxN9+dfJ3xmpOs0pzy2GNj+3wosg/X5mJJEPkJh2MpADFm14jyjZ1MQa3mINQhODCmIiPBQnjgw==
+  dependencies:
+    "@kadena/cryptography-utils" "0.4.4"
+    "@kadena/pactjs" "0.5.0"
+    cross-fetch "~3.1.5"
+
 "@kadena/client-utils@^0.13.0":
   version "0.13.0"
   resolved "https://registry.npmjs.org/@kadena/client-utils/-/client-utils-0.13.0.tgz"
@@ -580,6 +589,18 @@
     "@kadena/chainweb-node-client" "0.9.1"
     "@kadena/cryptography-utils" "0.4.4"
     "@kadena/pactjs" "0.4.3"
+    "@walletconnect/sign-client" "~2.8.1"
+    cross-fetch "~3.1.5"
+    debug "4.3.4"
+
+"@kadena/client@1.18.2":
+  version "1.18.2"
+  resolved "https://registry.yarnpkg.com/@kadena/client/-/client-1.18.2.tgz#0a2d11902a41db429a892d16ffbf0275752e97ad"
+  integrity sha512-kZ8xl7uvK8TFSwvUB2CBwfRQnO15jFEKVdTolyPLsZY+8osKNx53jZSEktGTPTXbMbUEYtk4JmiYGHAsOwmu2Q==
+  dependencies:
+    "@kadena/chainweb-node-client" "0.9.4"
+    "@kadena/cryptography-utils" "0.4.4"
+    "@kadena/pactjs" "0.5.0"
     "@walletconnect/sign-client" "~2.8.1"
     cross-fetch "~3.1.5"
     debug "4.3.4"
@@ -624,6 +645,13 @@
   dependencies:
     bignumber.js "^9.1.2"
 
+"@kadena/pactjs@0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@kadena/pactjs/-/pactjs-0.5.0.tgz#c0b118f35bbe4961577244944221791864227688"
+  integrity sha512-pC7kJeC0HcrTTmSAQpEIq/ufrSQWXDF3wNgbz8yFHsHUxcz/X8Yolny4jowskCqcE4N8c5r6RMqQbyRKTge0Tg==
+  dependencies:
+    bignumber.js "^9.1.2"
+
 "@kadena/spirekey-sdk@^1.0.1":
   version "1.0.1"
   resolved "https://registry.npmjs.org/@kadena/spirekey-sdk/-/spirekey-sdk-1.0.1.tgz"
@@ -637,12 +665,40 @@
   resolved "https://registry.npmjs.org/@kadena/types/-/types-0.7.0.tgz"
   integrity sha512-CDPuIcF/AyhqXawfIlqel3kew8UA6rEBX81PMltN8eqaVS9nXTvA1SbU6d9qzFPzEgynoJ5N3QZht8BCr2oFVQ==
 
+"@kadena/wallet-adapter-chainweaver-legacy@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@kadena/wallet-adapter-chainweaver-legacy/-/wallet-adapter-chainweaver-legacy-0.0.5.tgz#af986c20afd4375b10ed859812c496d7b6453fab"
+  integrity sha512-fD+lpfW90iU842iLqvl7bnWT7AAATymy70rDlDaZDW/g0ScZkh7WQQDEDzri3hKww3V+uu9+njxbpaiieO6iSg==
+  dependencies:
+    "@kadena/client" "1.18.2"
+    "@kadena/wallet-adapter-core" "0.1.2"
+    valibot "^1.0.0"
+
+"@kadena/wallet-adapter-chainweaver@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@kadena/wallet-adapter-chainweaver/-/wallet-adapter-chainweaver-0.0.5.tgz#9e3a3292ad75bd09b763aa359b117942a336d713"
+  integrity sha512-GswhO0wNGSog02uyohC7aVMZEvUCp1tgd9QiODun69JDPzm9e33H3OcGBqZkPmfA2dcYPi7awPhkv4AWJ95v2Q==
+  dependencies:
+    "@kadena/client" "1.18.2"
+    "@kadena/wallet-adapter-core" "0.1.2"
+    valibot "^1.0.0"
+
 "@kadena/wallet-adapter-core@0.1.0", "@kadena/wallet-adapter-core@^0.1.0":
   version "0.1.0"
   resolved "https://registry.npmjs.org/@kadena/wallet-adapter-core/-/wallet-adapter-core-0.1.0.tgz"
   integrity sha512-vs6vTmViwdnwUwp4eSJQpOUcoMWNzaMkhyIVyahb4iV369IideVJUBIwCg69/vwzd3Ozt03kAeiCtShUIHMCCQ==
   dependencies:
     "@kadena/client" "1.18.0"
+    "@standard-schema/spec" "^1.0.0"
+    eventemitter3 "^5.0.1"
+    valibot "^1.0.0"
+
+"@kadena/wallet-adapter-core@0.1.2":
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/@kadena/wallet-adapter-core/-/wallet-adapter-core-0.1.2.tgz#d482add6e989f4d2cbce6537278019a08b6f6fdc"
+  integrity sha512-ggbbsOABoEamzMa3HBh6vmbRnvdLINnnzhsheYtzeuTTVT30KZJ6XJke3Fsphf5NXVesNvx+pRGI0E1632t3qw==
+  dependencies:
+    "@kadena/client" "1.18.2"
     "@standard-schema/spec" "^1.0.0"
     eventemitter3 "^5.0.1"
     valibot "^1.0.0"

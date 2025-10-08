@@ -16,6 +16,8 @@
     "@kadena/client": "^1.18.0",
     "@kadena/client-utils": "^0.13.0",
     "@kadena/spirekey-sdk": "^1.0.1",
+    "@kadena/wallet-adapter-chainweaver": "^0.0.5",
+    "@kadena/wallet-adapter-chainweaver-legacy": "^0.0.5",
     "@kadena/wallet-adapter-core": "^0.1.0",
     "@kadena/wallet-adapter-magic": "^0.0.4",
     "@kadena/wallet-adapter-metamask-snap": "^0.1.1",
