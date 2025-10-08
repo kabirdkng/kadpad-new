@@ -43,7 +43,7 @@ const chainweaverLegacy = {
         params: {
           accountName: accountName,
           chainIds: [config.chainId],
-          tokenContract: "coin" // Default to coin contract
+          tokenContract: "coin"
         }
       });
 

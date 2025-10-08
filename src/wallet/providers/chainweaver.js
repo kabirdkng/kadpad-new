@@ -97,12 +97,6 @@ const chainweaver = {
       
       const adapter = await chainweaverAdapterFactory.adapter(provider);
 
-      // First ensure we're connected
-      const connectResponse = await adapter.request({
-        id: 1,
-        method: 'kadena_connect'
-      });
-
       const commandObj = JSON.parse(signingCommand.cmd);
       const signers = commandObj.payload.exec.data.ks.keys.map(pubKey => {
         return {
@@ -149,12 +143,6 @@ const chainweaver = {
       }
       
       const adapter = await chainweaverAdapterFactory.adapter(provider);
-
-      // First ensure we're connected
-      const connectResponse = await adapter.request({
-        id: 1,
-        method: 'kadena_connect'
-      });
 
       const commandObj = JSON.parse(signingCommand.cmd);
       const signers = commandObj.payload.exec.data.ks.keys.map(pubKey => {
@@ -203,12 +191,6 @@ const chainweaver = {
       }
       
       const adapter = await chainweaverAdapterFactory.adapter(provider);
-
-      // First ensure we're connected
-      const connectResponse = await adapter.request({
-        id: 1,
-        method: 'kadena_connect'
-      });
 
       const commandSigDatas = signingCommands.map(command => {
         const commandObj = JSON.parse(command.cmd);
