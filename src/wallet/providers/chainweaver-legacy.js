@@ -1,4 +1,5 @@
 import config from '../config';
+import { toast } from 'react-toastify';
 
 export const CHAINWEAVER_LEGACY = 'CHAINWEAVER_LEGACY';
 
@@ -22,17 +23,32 @@ const makeChainweaverRequest = async (endpoint, data) => {
 
     return await response.json();
   } catch (error) {
-    // Enhanced error handling with specific ad blocker guidance
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('❌ Cannot connect to Chainweaver Legacy desktop application.\n\n📋 Please check:\n• Chainweaver desktop app is installed and running\n• The application is running on your local machine\n• Your firewall is not blocking port 9467');
+    // Enhanced error handling with ad blocker check prioritized
+    if (error.message.includes('ERR_BLOCKED_BY_CLIENT') || error.message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
+      const errorMsg = '🚫 Connection blocked by browser or ad blocker!\n\n🛠️ To fix this issue:\n• DISABLE ad blockers (uBlock Origin, AdBlock Plus, etc.)\n• Disable browser extensions that block requests\n• Add this site to your ad blocker whitelist\n• Try using a different browser\n• Ensure Chainweaver Legacy desktop app is running\n\n💡 Ad blockers often block localhost requests for security';
+      toast.error('🚫 Ad blocker is blocking Chainweaver connection! Please disable ad blockers and try again.', { 
+        position: 'top-center',
+        autoClose: 10000 
+      });
+      throw new Error(errorMsg);
     }
     
-    if (error.message.includes('ERR_BLOCKED_BY_CLIENT') || error.message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
-      throw new Error('🚫 Connection blocked by browser or ad blocker!\n\n🛠️ To fix this issue:\n• DISABLE ad blockers (uBlock Origin, AdBlock Plus, etc.)\n• Disable browser extensions that block requests\n• Add this site to your ad blocker whitelist\n• Try using a different browser\n• Ensure Chainweaver Legacy desktop app is running\n\n💡 Ad blockers often block localhost requests for security');
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      const errorMsg = '❌ Cannot connect to Chainweaver Legacy desktop application.\n\n📋 Please check:\n• Chainweaver desktop app is installed and running\n• The application is running on your local machine\n• Your firewall is not blocking port 9467';
+      toast.error('Cannot connect to Chainweaver Legacy. Please ensure the desktop app is running.', { 
+        position: 'top-center',
+        autoClose: 8000 
+      });
+      throw new Error(errorMsg);
     }
     
     if (error.message.includes('NetworkError') || error.message.includes('ERR_CONNECTION_REFUSED')) {
-      throw new Error('🔌 Cannot reach Chainweaver Legacy.\n\n📋 Please ensure:\n• Chainweaver Legacy desktop application is running\n• The app is not blocked by your firewall\n• Port 9467 is not being used by another application');
+      const errorMsg = '🔌 Cannot reach Chainweaver Legacy.\n\n📋 Please ensure:\n• Chainweaver Legacy desktop application is running\n• The app is not blocked by your firewall\n• Port 9467 is not being used by another application';
+      toast.error('🔌 Cannot reach Chainweaver Legacy. Please ensure the desktop app is running.', { 
+        position: 'top-center',
+        autoClose: 8000 
+      });
+      throw new Error(errorMsg);
     }
     
     throw error;
@@ -116,6 +132,10 @@ const chainweaverLegacy = {
       
       // Check for ad blocker interference
       if (error.message.includes('ERR_BLOCKED_BY_CLIENT') || error.message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
+        toast.error('🚫 Ad blocker is blocking Chainweaver connection! Please disable ad blockers and try again.', { 
+          position: 'top-center',
+          autoClose: 10000 
+        });
         return {
           status: "error",
           message: "🚫 Connection blocked by ad blocker!\n\n🛠️ To fix this:\n• DISABLE ad blockers (uBlock Origin, AdBlock Plus, etc.)\n• Add this site to your ad blocker whitelist\n• Try a different browser\n• Ensure Chainweaver Legacy desktop app is running"
@@ -157,10 +177,18 @@ const chainweaverLegacy = {
     } catch (error) {
       console.error("Error in Chainweaver Legacy sign function:", error);
       
-      // Provide helpful error messages
-      if (error.message.includes('Cannot connect to Chainweaver Legacy')) {
-        throw error; // Re-throw our custom connection message
+      // Provide helpful error messages and toast notifications
+      if (error.message.includes('Cannot connect to Chainweaver Legacy') || 
+          error.message.includes('🚫 Connection blocked') || 
+          error.message.includes('🔌 Cannot reach')) {
+        // Toast already shown in makeChainweaverRequest, just re-throw
+        throw error;
       }
+      
+      toast.error('Failed to sign transaction. Please ensure Chainweaver Legacy is running and try again.', {
+        position: 'top-center',
+        autoClose: 6000
+      });
       
       throw new Error("Failed to sign transaction. Please ensure Chainweaver Legacy is running and try again.");
     }
@@ -192,13 +220,25 @@ const chainweaverLegacy = {
       console.error("Error in Chainweaver Legacy quickSign function:", error);
       
       // Provide helpful error messages based on the error type
-      if (error.message.includes('Cannot connect to Chainweaver Legacy')) {
-        throw error; // Re-throw our custom connection message
+      if (error.message.includes('Cannot connect to Chainweaver Legacy') || 
+          error.message.includes('🚫 Connection blocked') || 
+          error.message.includes('🔌 Cannot reach')) {
+        // Toast already shown in makeChainweaverRequest, just re-throw
+        throw error;
       }
       
       if (error.message.includes('HTTP 4') || error.message.includes('HTTP 5')) {
+        toast.error('Chainweaver Legacy rejected the signing request. Please check the transaction details and try again.', {
+          position: 'top-center',
+          autoClose: 6000
+        });
         throw new Error("Chainweaver Legacy rejected the signing request. Please check the transaction details and try again.");
       }
+      
+      toast.error('Failed to sign transaction. Please ensure Chainweaver Legacy is running and try again.', {
+        position: 'top-center',
+        autoClose: 6000
+      });
       
       throw new Error("Failed to sign transaction. Please ensure Chainweaver Legacy is running and try again.");
     }
@@ -232,13 +272,25 @@ const chainweaverLegacy = {
       console.error("Error in Chainweaver Legacy quickSignAll function:", error);
       
       // Provide helpful error messages
-      if (error.message.includes('Cannot connect to Chainweaver Legacy')) {
-        throw error; // Re-throw our custom connection message
+      if (error.message.includes('Cannot connect to Chainweaver Legacy') || 
+          error.message.includes('🚫 Connection blocked') || 
+          error.message.includes('🔌 Cannot reach')) {
+        // Toast already shown in makeChainweaverRequest, just re-throw
+        throw error;
       }
       
       if (error.message.includes('HTTP 4') || error.message.includes('HTTP 5')) {
+        toast.error('Chainweaver Legacy rejected the signing request. Please check the transaction details and try again.', {
+          position: 'top-center',
+          autoClose: 6000
+        });
         throw new Error("Chainweaver Legacy rejected the signing request. Please check the transaction details and try again.");
       }
+      
+      toast.error('Failed to sign transactions. Please ensure Chainweaver Legacy is running and try again.', {
+        position: 'top-center',
+        autoClose: 6000
+      });
       
       throw new Error("Failed to sign transactions. Please ensure Chainweaver Legacy is running and try again.");
     }
@@ -270,13 +322,25 @@ const chainweaverLegacy = {
       console.error("Error in Chainweaver Legacy quickSignCont function:", error);
       
       // Provide helpful error messages
-      if (error.message.includes('Cannot connect to Chainweaver Legacy')) {
-        throw error; // Re-throw our custom connection message
+      if (error.message.includes('Cannot connect to Chainweaver Legacy') || 
+          error.message.includes('🚫 Connection blocked') || 
+          error.message.includes('🔌 Cannot reach')) {
+        // Toast already shown in makeChainweaverRequest, just re-throw
+        throw error;
       }
       
       if (error.message.includes('HTTP 4') || error.message.includes('HTTP 5')) {
+        toast.error('Chainweaver Legacy rejected the continuation signing request. Please check the transaction details and try again.', {
+          position: 'top-center',
+          autoClose: 6000
+        });
         throw new Error("Chainweaver Legacy rejected the continuation signing request. Please check the transaction details and try again.");
       }
+      
+      toast.error('Failed to sign continuation transaction. Please ensure Chainweaver Legacy is running and try again.', {
+        position: 'top-center',
+        autoClose: 6000
+      });
       
       throw new Error("Failed to sign continuation transaction. Please ensure Chainweaver Legacy is running and try again.");
     }
