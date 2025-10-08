@@ -9,6 +9,8 @@ import { useWalletConnection } from "../wcStore";
 import Ecko from "../../assets/Ecko.svg?react"
 import wc from "../../assets/WC.svg?react"
 import magic from "../../assets/magic.svg?react"
+import chainweaverl from "../../assets/chainweaver-legacy.png?react"
+import chainweaver from "../../assets/chainweaver.svg?react"
 import { toast } from "react-toastify";
 
 const ConnectWalletModal = ({ onWalletConnected }) => {
@@ -157,19 +159,14 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
               
               <button onClick={connectChainweaverClicked} className="btn btn-secondary wallet-row">
                 <span className="wallet-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z"/>
-                  </svg>
+                  <img src={chainweaver} alt="Chainweaver" />
                 </span>
                 <span className="wallet-name">Chainweaver(V3)</span>
               </button>
               
               <button onClick={connectChainweaverLegacyClicked} className="btn btn-secondary wallet-row">
                 <span className="wallet-icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L2 7v10c0 5.55 3.84 9.74 9 11 5.16-1.26 9-5.45 9-11V7l-10-5z"/>
-                    <circle cx="12" cy="12" r="3" fill="white"/>
-                  </svg>
+                  <img src={chainweaverl} alt="Chainweaver Legacy" />
                 </span>
                 <span className="wallet-name">Chainweaver(Legacy)</span>
               </button>
