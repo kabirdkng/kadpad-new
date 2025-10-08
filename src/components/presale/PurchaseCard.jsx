@@ -65,6 +65,16 @@ const PurchaseCard = ({
             className="w-full px-4 py-3 text-xl font-bold text-center bg-white/10 border-2 border-accent-primary/50 rounded-lg text-primary-text focus:outline-none focus:border-accent-primary"
             placeholder="Number of batches"
           />
+          
+          {/* Error message when trying to buy more than available */}
+          {batchCount > safeRender(availableBatches) && (
+            <div className="mt-2 p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <p className="text-sm text-red-400 text-center">
+                ⚠️ Cannot buy {batchCount} batches. Only {safeRender(availableBatches)} batches available.
+              </p>
+            </div>
+          )}
+          
           <p className="text-sm text-secondary text-center mt-2">
             Available: <span className="text-accent-primary font-semibold">{safeRender(availableBatches)} batches</span>
           </p>
@@ -92,7 +102,7 @@ const PurchaseCard = ({
         ) : (
           <button
             onClick={() => handleBuy()}
-            disabled={isLoading || availableBatches <= 0 || !batchCount || batchCount <= 0}
+            disabled={isLoading || availableBatches <= 0 || !batchCount || batchCount <= 0 || batchCount > safeRender(availableBatches)}
             className="w-full btn btn-primary"
           >
             {isLoading ? 'Processing...' : `Buy ${tokenSymbol} Tokens`}

@@ -303,6 +303,18 @@ const usePresaleLogic = (namespace, moduleName) => {
         return;
       }
 
+      // Check if trying to buy more batches than available
+      const availableBatchesNum = safeRender(availableBatches);
+      if (batchCount > availableBatchesNum) {
+        toast.error(`Cannot buy ${batchCount} batches. Only ${availableBatchesNum} batches available.`);
+        return;
+      }
+
+      if (availableBatchesNum <= 0) {
+        toast.error('No batches available for purchase');
+        return;
+      }
+
       const code = `(${namespace}.${SALES_MODULE_NAME}.buy "${account}" (read-keyset 'ks) ${batchCount})`;
       const result = await buyTokensSale(code, supplyChain, salesAccount, amount);
       
