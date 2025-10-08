@@ -34,10 +34,10 @@ const makeChainweaverRequest = async (endpoint, data) => {
     }
     
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      const errorMsg = '❌ Cannot connect to Chainweaver Legacy desktop application.\n\n📋 Please check:\n• Chainweaver desktop app is installed and running\n• The application is running on your local machine\n• Your firewall is not blocking port 9467';
-      toast.error('Cannot connect to Chainweaver Legacy. Please ensure the desktop app is running.', { 
+      const errorMsg = '🚫 Connection blocked by browser or ad blocker!\n\n🛠️ To fix this issue:\n• DISABLE ad blockers (uBlock Origin, AdBlock Plus, etc.)\n• Disable browser extensions that block requests\n• Add this site to your ad blocker whitelist\n• Try using a different browser\n• Ensure Chainweaver Legacy desktop app is running\n\n💡 Ad blockers often block localhost requests for security';
+      toast.error('🚫 Ad blocker is blocking Chainweaver connection! Please disable ad blockers and try again.', { 
         position: 'top-center',
-        autoClose: 8000 
+        autoClose: 10000 
       });
       throw new Error(errorMsg);
     }
