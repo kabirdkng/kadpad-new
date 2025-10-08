@@ -2,6 +2,43 @@ import config from '../config';
 
 export const CHAINWEAVER_LEGACY = 'CHAINWEAVER_LEGACY';
 
+// Custom HTTP requests for signing operations
+const CHAINWEAVER_URL = 'http://127.0.0.1:9467';
+
+// Helper function to make direct requests to Chainweaver for signing
+const makeChainweaverRequest = async (endpoint, data) => {
+  try {
+    const response = await fetch(`${CHAINWEAVER_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    // Enhanced error handling with specific ad blocker guidance
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('❌ Cannot connect to Chainweaver Legacy desktop application.\n\n📋 Please check:\n• Chainweaver desktop app is installed and running\n• The application is running on your local machine\n• Your firewall is not blocking port 9467');
+    }
+    
+    if (error.message.includes('ERR_BLOCKED_BY_CLIENT') || error.message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
+      throw new Error('🚫 Connection blocked by browser or ad blocker!\n\n🛠️ To fix this issue:\n• DISABLE ad blockers (uBlock Origin, AdBlock Plus, etc.)\n• Disable browser extensions that block requests\n• Add this site to your ad blocker whitelist\n• Try using a different browser\n• Ensure Chainweaver Legacy desktop app is running\n\n💡 Ad blockers often block localhost requests for security');
+    }
+    
+    if (error.message.includes('NetworkError') || error.message.includes('ERR_CONNECTION_REFUSED')) {
+      throw new Error('🔌 Cannot reach Chainweaver Legacy.\n\n📋 Please ensure:\n• Chainweaver Legacy desktop application is running\n• The app is not blocked by your firewall\n• Port 9467 is not being used by another application');
+    }
+    
+    throw error;
+  }
+};
+
 const chainweaverLegacy = {
   name: 'Chainweaver Legacy',
   connect: async function(accountName = null) {
@@ -76,6 +113,15 @@ const chainweaverLegacy = {
       }
     } catch (error) {
       console.error("Chainweaver Legacy connection error:", error);
+      
+      // Check for ad blocker interference
+      if (error.message.includes('ERR_BLOCKED_BY_CLIENT') || error.message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
+        return {
+          status: "error",
+          message: "🚫 Connection blocked by ad blocker!\n\n🛠️ To fix this:\n• DISABLE ad blockers (uBlock Origin, AdBlock Plus, etc.)\n• Add this site to your ad blocker whitelist\n• Try a different browser\n• Ensure Chainweaver Legacy desktop app is running"
+        };
+      }
+      
       return {
         status: "error",
         message: error.message || "Failed to connect to Chainweaver Legacy"
@@ -84,29 +130,12 @@ const chainweaverLegacy = {
   },
   
   disconnect: async function() {
-    // For direct HTTP approach, we don't need to maintain persistent connections
-    // Disconnection is handled at the UI level
+    // Disconnection is handled at the UI level for Chainweaver Legacy
     return { status: "success" };
   },
   
   sign: async function(signingCommand) {
     try {
-      const { createChainweaverLegacyAdapter } = await import('@kadena/wallet-adapter-chainweaver-legacy');
-      
-      const chainweaverLegacyAdapterFactory = createChainweaverLegacyAdapter({
-        chainId: config.chainId,
-        chainwebApiUrl: config.apiUrl,
-        networkId: config.networkId,
-      });
-      
-      const provider = await chainweaverLegacyAdapterFactory.detect();
-      
-      if (!provider) {
-        throw new Error("Chainweaver Legacy not available");
-      }
-      
-      const adapter = await chainweaverLegacyAdapterFactory.adapter(provider);
-
       const commandObj = JSON.parse(signingCommand.cmd);
       const signers = commandObj.payload.exec.data.ks.keys.map(pubKey => {
         return {
@@ -121,45 +150,24 @@ const chainweaverLegacy = {
         sigs: signers,
       };
 
-      const response = await adapter.request({
-        id: 1,
-        method: 'kadena_sign_v1',
-        params: commandSigData
-      });
+      // Use our custom HTTP request for regular signing
+      const response = await makeChainweaverRequest('/v1/sign', commandSigData);
 
-      return response.result;
+      return response;
     } catch (error) {
       console.error("Error in Chainweaver Legacy sign function:", error);
       
-      // Provide specific error handling for browser blocking
-      if (error.message.includes('ERR_BLOCKED_BY_CLIENT') || 
-          error.message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
-        throw new Error('Browser is blocking the connection to Chainweaver Legacy. This may be due to:\n• Ad blocker or browser extension blocking localhost requests\n• Browser security policy preventing remote sites from accessing localhost\n• Try disabling ad blockers or using the application on localhost');
+      // Provide helpful error messages
+      if (error.message.includes('Cannot connect to Chainweaver Legacy')) {
+        throw error; // Re-throw our custom connection message
       }
       
-      return null;
+      throw new Error("Failed to sign transaction. Please ensure Chainweaver Legacy is running and try again.");
     }
   },
   
   quickSign: async function(signingCommand) {
     try {
-      // Use the original library for signing as well
-      const { createChainweaverLegacyAdapter } = await import('@kadena/wallet-adapter-chainweaver-legacy');
-      
-      const chainweaverLegacyAdapterFactory = createChainweaverLegacyAdapter({
-        chainId: config.chainId,
-        chainwebApiUrl: config.apiUrl,
-        networkId: config.networkId,
-      });
-      
-      const provider = await chainweaverLegacyAdapterFactory.detect();
-      
-      if (!provider) {
-        throw new Error("Chainweaver Legacy not available");
-      }
-      
-      const adapter = await chainweaverLegacyAdapterFactory.adapter(provider);
-
       const commandObj = JSON.parse(signingCommand.cmd);
       const signers = commandObj.payload.exec.data.ks.keys.map(pubKey => {
         return {
@@ -174,29 +182,22 @@ const chainweaverLegacy = {
         sigs: signers,
       };
 
-      // Use the adapter's request method with kadena_quicksign_v1
-      const response = await adapter.request({
-        id: 1,
-        method: 'kadena_quicksign_v1',
-        params: {
-          commandSigDatas: [commandSigData]
-        }
+      // Use our custom HTTP request to bypass adapter CORS issues
+      const response = await makeChainweaverRequest('/v1/quicksign', {
+        cmdSigDatas: [commandSigData]
       });
 
-      return response.result;
+      return response;
     } catch (error) { 
       console.error("Error in Chainweaver Legacy quickSign function:", error);
       
-      // Provide specific error handling for browser blocking
-      if (error.message.includes('ERR_BLOCKED_BY_CLIENT') || 
-          error.message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
-        throw new Error('Browser is blocking the connection to Chainweaver Legacy. This may be due to:\n• Ad blocker or browser extension blocking localhost requests\n• Browser security policy preventing remote sites from accessing localhost\n• Try disabling ad blockers or using the application on localhost');
+      // Provide helpful error messages based on the error type
+      if (error.message.includes('Cannot connect to Chainweaver Legacy')) {
+        throw error; // Re-throw our custom connection message
       }
       
-      if (error.message.includes('Failed to fetch') || 
-          error.message.includes('NetworkError') ||
-          error.message.includes('ERR_CONNECTION_REFUSED')) {
-        throw new Error('Cannot connect to Chainweaver Legacy desktop application. Please ensure:\n• Chainweaver desktop app is installed and running\n• The application is running on your local machine\n• No firewall is blocking port 9467');
+      if (error.message.includes('HTTP 4') || error.message.includes('HTTP 5')) {
+        throw new Error("Chainweaver Legacy rejected the signing request. Please check the transaction details and try again.");
       }
       
       throw new Error("Failed to sign transaction. Please ensure Chainweaver Legacy is running and try again.");
@@ -205,22 +206,6 @@ const chainweaverLegacy = {
   
   quickSignAll: async function(signingCommands) {
     try {
-      const { createChainweaverLegacyAdapter } = await import('@kadena/wallet-adapter-chainweaver-legacy');
-      
-      const chainweaverLegacyAdapterFactory = createChainweaverLegacyAdapter({
-        chainId: config.chainId,
-        chainwebApiUrl: config.apiUrl,
-        networkId: config.networkId,
-      });
-      
-      const provider = await chainweaverLegacyAdapterFactory.detect();
-      
-      if (!provider) {
-        throw new Error("Chainweaver Legacy not available");
-      }
-      
-      const adapter = await chainweaverLegacyAdapterFactory.adapter(provider);
-
       const commandSigDatas = signingCommands.map(command => {
         const commandObj = JSON.parse(command.cmd);
         const signers = commandObj.payload.exec.data.ks.keys.map(pubKey => {
@@ -237,47 +222,30 @@ const chainweaverLegacy = {
         };
       });
 
-      // Use the adapter's request method with kadena_quicksign_v1 for multiple commands
-      const response = await adapter.request({
-        id: 1,
-        method: 'kadena_quicksign_v1',
-        params: {
-          commandSigDatas: commandSigDatas
-        }
+      // Use our custom HTTP request to bypass adapter CORS issues
+      const response = await makeChainweaverRequest('/v1/quicksign', {
+        cmdSigDatas: commandSigDatas
       });
 
-      return response.result;
+      return response;
     } catch (error) {
       console.error("Error in Chainweaver Legacy quickSignAll function:", error);
       
-      // Provide specific error handling for browser blocking
-      if (error.message.includes('ERR_BLOCKED_BY_CLIENT') || 
-          error.message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
-        throw new Error('Browser is blocking the connection to Chainweaver Legacy. This may be due to:\n• Ad blocker or browser extension blocking localhost requests\n• Browser security policy preventing remote sites from accessing localhost\n• Try disabling ad blockers or using the application on localhost');
+      // Provide helpful error messages
+      if (error.message.includes('Cannot connect to Chainweaver Legacy')) {
+        throw error; // Re-throw our custom connection message
       }
       
-      throw error;
+      if (error.message.includes('HTTP 4') || error.message.includes('HTTP 5')) {
+        throw new Error("Chainweaver Legacy rejected the signing request. Please check the transaction details and try again.");
+      }
+      
+      throw new Error("Failed to sign transactions. Please ensure Chainweaver Legacy is running and try again.");
     }
   },
   
   quickSignCont: async function(signingCommand) {
     try {
-      const { createChainweaverLegacyAdapter } = await import('@kadena/wallet-adapter-chainweaver-legacy');
-      
-      const chainweaverLegacyAdapterFactory = createChainweaverLegacyAdapter({
-        chainId: config.chainId,
-        chainwebApiUrl: config.apiUrl,
-        networkId: config.networkId,
-      });
-      
-      const provider = await chainweaverLegacyAdapterFactory.detect();
-      
-      if (!provider) {
-        throw new Error("Chainweaver Legacy not available");
-      }
-      
-      const adapter = await chainweaverLegacyAdapterFactory.adapter(provider);
-
       const commandObj = JSON.parse(signingCommand.cmd);
       const signers = commandObj.payload.cont.data.ks.keys.map(pubKey => {
         return {
@@ -292,26 +260,25 @@ const chainweaverLegacy = {
         sigs: signers,
       };
 
-      // Use the adapter's request method with kadena_quicksign_v1
-      const response = await adapter.request({
-        id: 1,
-        method: 'kadena_quicksign_v1',
-        params: {
-          commandSigDatas: [commandSigData]
-        }
+      // Use our custom HTTP request to bypass adapter CORS issues
+      const response = await makeChainweaverRequest('/v1/quicksign', {
+        cmdSigDatas: [commandSigData]
       });
 
-      return response.result;
+      return response;
     } catch (error) { 
       console.error("Error in Chainweaver Legacy quickSignCont function:", error);
       
-      // Provide specific error handling for browser blocking
-      if (error.message.includes('ERR_BLOCKED_BY_CLIENT') || 
-          error.message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
-        throw new Error('Browser is blocking the connection to Chainweaver Legacy. This may be due to:\n• Ad blocker or browser extension blocking localhost requests\n• Browser security policy preventing remote sites from accessing localhost\n• Try disabling ad blockers or using the application on localhost');
+      // Provide helpful error messages
+      if (error.message.includes('Cannot connect to Chainweaver Legacy')) {
+        throw error; // Re-throw our custom connection message
       }
       
-      return null;
+      if (error.message.includes('HTTP 4') || error.message.includes('HTTP 5')) {
+        throw new Error("Chainweaver Legacy rejected the continuation signing request. Please check the transaction details and try again.");
+      }
+      
+      throw new Error("Failed to sign continuation transaction. Please ensure Chainweaver Legacy is running and try again.");
     }
   }
 };
