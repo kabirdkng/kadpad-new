@@ -52,6 +52,7 @@
 (create-tokens  "eve" (read-keyset 'eve) 100000.0)
 
 ;; Create burn account for penalty burning
-(create-account BURN_NS.burn.BURN-ACCOUNT BURN_NS.burn.BURN-GUARD)
+(let ((burn-guard (BURN_NS.burn.create-BURN-guard)))
+(create-account BURN_NS.burn.BURN-ACCOUNT burn-guard))
 
 (commit-tx)

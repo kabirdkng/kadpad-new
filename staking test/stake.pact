@@ -44,13 +44,10 @@
   @doc "cap for locker guard"
   (enforce-guard (at 'guard (read token-lock account))))
 
-(defun req-LOCKER (account:string)
-(require-capability (LOCKER account)))
+(defun LOCKER-guard (account:string)
+  (create-capability-guard (LOCKER account)))
 
-(defun LOCKER-guard ( account:string)
-  (create-user-guard (req-LOCKER account)))
-
-(defun get-LOCKER-account ( account:string)
+(defun get-LOCKER-account (account:string)
   (create-principal (LOCKER-guard account)))
 
 ; Constants
