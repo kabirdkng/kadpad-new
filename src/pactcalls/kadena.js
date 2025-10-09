@@ -193,10 +193,20 @@ export const fetchBalance = async(code, chain) => {
              
   try{
     const res = await pactClient.dirtyRead(tx)
-    return res.result.data;
+    console.log('fetchBalance response:', res);
+    
+    if (res.result && res.result.status === 'success') {
+      return res.result.data;
+    } else if (res.result && res.result.status === 'failure') {
+      console.log('Account does not exist or balance fetch failed:', res.result.error);
+      return 0;
+    } else {
+      console.log('Unexpected response format:', res);
+      return 0;
+    }
   } catch (error) {
     console.error('❌ Error fetching account details:', error)
-    return null;
+    return 0;
   }
 }
 

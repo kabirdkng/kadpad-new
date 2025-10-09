@@ -36,7 +36,7 @@ const PurchaseCard = ({
             Your KDA Balance
           </label>
           <p className="text-lg font-semibold text-primary-text">
-            {balance ? `${addComma(safeRender(balance))} KDA` : !account ? 'Connect Wallet' : 'Loading...'}
+            {balance !== null && balance !== undefined ? `${addComma(safeRender(balance))} KDA` : !account ? 'Connect Wallet' : 'Loading...'}
           </p>
         </div>
 

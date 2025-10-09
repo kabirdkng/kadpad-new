@@ -4,7 +4,7 @@ import { pactCalls, fetchBalance, pactCallsSig } from '../pactcalls/kadena';
 import config from '../wallet/config';
 
 const usePresaleStore = create((set, get) => ({
-  balance: 0,
+  balance: null,
   phase0startTime: null,
   phase1startTime: null,
   salesEndTime: null,
@@ -23,7 +23,7 @@ const usePresaleStore = create((set, get) => ({
   p1Price: null,
   totalSales: 0,
   counters: {},
-  imageUrl: '', // Add imageUrl to the state
+  imageUrl: '',
   totalSupply: null,
   tokenName: '',
   contractNamespace: '',
@@ -54,9 +54,16 @@ const usePresaleStore = create((set, get) => ({
     try {
       const code = `(coin.get-balance "${account}")`;
       const balance = await fetchBalance(code, chain);
-      set({ balance });
+      console.log("Balance fetch result:", { account, chain, balance, type: typeof balance });
+      
+      // Ensure we always set a number, defaulting to 0 if undefined/null
+      const finalBalance = (balance !== null && balance !== undefined) ? balance : 0;
+      console.log("Setting final balance:", finalBalance);
+      
+      set({ balance: finalBalance });
     } catch (err) {
-      console.error(err);
+      console.error("fetchBalance error:", err);
+      set({ balance: 0 }); // Set to 0 on error
     }
   },
   fetchPhase0StartTime: async (NS, SALES_MODULE_NAME, chain, pubKey) => {

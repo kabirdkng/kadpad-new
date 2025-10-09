@@ -22,20 +22,10 @@ const makeChainweaverRequest = async (endpoint, data) => {
     }
 
     return await response.json();
-  } catch (error) {
-    // Enhanced error handling with ad blocker check prioritized
-    if (error.message.includes('ERR_BLOCKED_BY_CLIENT') || error.message.includes('net::ERR_BLOCKED_BY_CLIENT')) {
-      const errorMsg = '🚫 Connection blocked by browser or ad blocker!\n\n🛠️ To fix this issue:\n• DISABLE ad blockers (uBlock Origin, AdBlock Plus, etc.)\n• Disable browser extensions that block requests\n• Add this site to your ad blocker whitelist\n• Try using a different browser\n• Ensure Chainweaver Legacy desktop app is running\n\n💡 Ad blockers often block localhost requests for security';
-      toast.error('🚫 Ad blocker is blocking Chainweaver connection! Please disable ad blockers and try again.', { 
-        position: 'top-center',
-        autoClose: 10000 
-      });
-      throw new Error(errorMsg);
-    }
-    
+  } catch (error) {    
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      const errorMsg = '🚫 Connection blocked by browser or ad blocker!\n\n🛠️ To fix this issue:\n• DISABLE ad blockers (uBlock Origin, AdBlock Plus, etc.)\n• Disable browser extensions that block requests\n• Add this site to your ad blocker whitelist\n• Try using a different browser\n• Ensure Chainweaver Legacy desktop app is running\n\n💡 Ad blockers often block localhost requests for security';
-      toast.error('🚫 Ad blocker is blocking Chainweaver connection! Please disable ad blockers and try again.', { 
+      const errorMsg = 'Connection blocked by browser or ad blocker!\n\n🛠️ To fix this issue:\n• DISABLE ad blockers (uBlock Origin, AdBlock Plus, etc.)\n• Disable browser extensions that block requests\n• Add this site to your ad blocker whitelist\n• Try using a different browser\n• Ensure Chainweaver Legacy desktop app is running\n\n💡 Ad blockers often block localhost requests for security';
+      toast.error('Chainweaver desktop app is not running or Ad blocker is blocking Chainweaver connection! Please disable ad blockers and try again.', { 
         position: 'top-center',
         autoClose: 10000 
       });

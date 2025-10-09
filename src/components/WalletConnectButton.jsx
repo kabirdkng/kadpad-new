@@ -56,6 +56,12 @@ const WalletConnectButton = () => {
         return 'SpireKey';
       case 'METAMASK':
         return 'MetaMask';
+      case 'MAGIC':
+        return 'Magic';
+      case 'CHAINWEAVER':
+        return 'Chainweaver';
+      case 'CHAINWEAVER_LEGACY':
+        return 'Chainweaver Legacy';
       default:
         return 'Wallet';
     }
