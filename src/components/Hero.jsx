@@ -93,8 +93,7 @@ const Hero = () => {
         <div className={`flex flex-col sm:flex-row gap-4 justify-center items-center mb-12 transition-all duration-1000 delay-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <Link 
             to="/launch" 
-            className={`btn btn-primary group flex items-center gap-2 text-lg px-8 py-4 relative overflow-hidden backdrop-blur-sm bg-gradient-to-r from-accent-dark/90 to-accent-secondary/90 border border-accent-primary/30 shadow-lg shadow-accent-primary/20 transition-all duration-500 hover:shadow-xl hover:shadow-accent-primary/40 hover:scale-105 ${visible ? 'animate-fade-in-up' : 'opacity-0 translate-y-10'}`}
-            style={{ animationDelay: '800ms' }}
+            className={`btn btn-primary group flex items-center gap-2 text-lg px-8 py-4 relative overflow-hidden backdrop-blur-sm bg-gradient-to-r from-accent-dark/90 to-accent-secondary/90 border border-accent-primary/30 shadow-lg shadow-accent-primary/20 transition-all duration-500 hover:shadow-xl hover:shadow-accent-primary/40 hover:scale-105 ${visible ? 'animate-fade-in-up-delay-800' : 'opacity-0 translate-y-10'}`}
           >
             {/* Glass overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -102,11 +101,7 @@ const Hero = () => {
             <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1 relative z-10" />
             {/* Auto glass sweep after appearance */}
             <div 
-              className="absolute top-0 w-8 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none z-20 transform skew-x-12 opacity-0"
-              style={{
-                animation: visible ? 'glass-sweep 2.5s ease-out' : 'none',
-                animationDelay: '2s'
-              }}
+              className={`absolute top-0 w-8 h-full bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none z-20 transform skew-x-12 opacity-0 ${visible ? 'animate-glass-sweep-delay-2s' : ''}`}
             ></div>
             {/* Hover shimmer effect */}
             <div className="absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
@@ -114,8 +109,7 @@ const Hero = () => {
           
           <Link 
             to="/sales" 
-            className={`btn btn-secondary group flex items-center gap-2 text-lg px-8 py-4 relative overflow-hidden backdrop-blur-sm bg-transparent border-2 border-accent-primary/50 shadow-lg shadow-accent-primary/10 transition-all duration-500 hover:shadow-xl hover:shadow-accent-primary/30 hover:scale-105 hover:bg-accent-primary/10 ${visible ? 'animate-fade-in-up' : 'opacity-0 translate-y-10'}`}
-            style={{ animationDelay: '900ms' }}
+            className={`btn btn-secondary group flex items-center gap-2 text-lg px-8 py-4 relative overflow-hidden backdrop-blur-sm bg-transparent border-2 border-accent-primary/50 shadow-lg shadow-accent-primary/10 transition-all duration-500 hover:shadow-xl hover:shadow-accent-primary/30 hover:scale-105 hover:bg-accent-primary/10 ${visible ? 'animate-fade-in-up-delay-900' : 'opacity-0 translate-y-10'}`}
           >
             {/* Glass overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-accent-primary/10 to-accent-secondary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -123,11 +117,7 @@ const Hero = () => {
             <TrendingUp className="w-5 h-5 transition-transform group-hover:scale-110 relative z-10" />
             {/* Auto glass sweep after appearance */}
             <div 
-              className="absolute top-0 w-8 h-full bg-gradient-to-r from-transparent via-accent-primary/50 to-transparent pointer-events-none z-20 transform skew-x-12 opacity-0"
-              style={{
-                animation: visible ? 'glass-sweep 2.5s ease-out' : 'none',
-                animationDelay: '2.5s'
-              }}
+              className={`absolute top-0 w-8 h-full bg-gradient-to-r from-transparent via-accent-primary/50 to-transparent pointer-events-none z-20 transform skew-x-12 opacity-0 ${visible ? 'animate-glass-sweep-delay-2-5s' : ''}`}
             ></div>
             {/* Hover shimmer effect */}
             <div className="absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-accent-primary/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
@@ -135,8 +125,7 @@ const Hero = () => {
 
           <Link 
             to="/staking" 
-            className={`btn btn-primary group flex items-center gap-2 text-lg px-8 py-4 relative overflow-hidden backdrop-blur-sm bg-gradient-to-r from-accent-primary/90 to-accent-light/90 border border-accent-primary/40 shadow-lg shadow-accent-primary/25 transition-all duration-500 hover:shadow-xl hover:shadow-accent-primary/50 hover:scale-105 ${visible ? 'animate-fade-in-up' : 'opacity-0 translate-y-10'}`}
-            style={{ animationDelay: '1000ms' }}
+            className={`btn btn-primary group flex items-center gap-2 text-lg px-8 py-4 relative overflow-hidden backdrop-blur-sm bg-gradient-to-r from-accent-primary/90 to-accent-light/90 border border-accent-primary/40 shadow-lg shadow-accent-primary/25 transition-all duration-500 hover:shadow-xl hover:shadow-accent-primary/50 hover:scale-105 ${visible ? 'animate-fade-in-up-delay-1000' : 'opacity-0 translate-y-10'}`}
           >
             {/* Glass overlay */}
             <div className="absolute inset-0 bg-gradient-to-r from-white/15 to-accent-primary/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -148,11 +137,7 @@ const Hero = () => {
             <div className="absolute inset-0 bg-accent-primary/20 rounded-xl blur-xl group-hover:bg-accent-primary/40 transition-all duration-300"></div>
             {/* Auto glass sweep after appearance */}
             <div 
-              className="absolute top-0 w-8 h-full bg-gradient-to-r from-transparent via-white/45 to-transparent pointer-events-none z-20 transform skew-x-12 opacity-0"
-              style={{
-                animation: visible ? 'glass-sweep 2.5s ease-out' : 'none',
-                animationDelay: '2.9s'
-              }}
+              className={`absolute top-0 w-8 h-full bg-gradient-to-r from-transparent via-white/45 to-transparent pointer-events-none z-20 transform skew-x-12 opacity-0 ${visible ? 'animate-glass-sweep-delay-2-9s' : ''}`}
             ></div>
             {/* Hover shimmer effect */}
             <div className="absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>

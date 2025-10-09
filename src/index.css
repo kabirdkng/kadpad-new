@@ -317,8 +317,38 @@ input::placeholder, textarea::placeholder {
   animation: fade-in-up 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
 
+.animate-fade-in-up-delay-800 {
+  animation: fade-in-up 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation-delay: 800ms;
+}
+
+.animate-fade-in-up-delay-900 {
+  animation: fade-in-up 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation-delay: 900ms;
+}
+
+.animate-fade-in-up-delay-1000 {
+  animation: fade-in-up 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  animation-delay: 1000ms;
+}
+
 .animate-glass-sweep {
   animation: glass-sweep 3s ease-in-out;
+}
+
+.animate-glass-sweep-delay-2s {
+  animation: glass-sweep 2.5s ease-out;
+  animation-delay: 2s;
+}
+
+.animate-glass-sweep-delay-2-5s {
+  animation: glass-sweep 2.5s ease-out;
+  animation-delay: 2.5s;
+}
+
+.animate-glass-sweep-delay-2-9s {
+  animation: glass-sweep 2.5s ease-out;
+  animation-delay: 2.9s;
 }
 
 .animate-slide-in-right {
