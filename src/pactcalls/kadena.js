@@ -1,6 +1,6 @@
 import { Pact, createClient } from '@kadena/client';
 import config from '../wallet/config';
-import useWalletStore from "../wallet/walletStore";
+import useWalletStore from "../wallet/walletStore.jsx";
 import providers from "../wallet/providers/providers";
 import { toast } from "react-toastify";
 
@@ -19,7 +19,9 @@ const createTx = (code, chain, options = {}) => {
     addKeyset = true 
   } = options;
 
-  const providerName = useWalletStore.getState().provider;
+  // Get provider from store state
+  const storeState = useWalletStore.getState();
+  const providerName = storeState.provider;
   
   let txBuilder = Pact.builder
     .execution(code)
@@ -59,8 +61,10 @@ const createTx = (code, chain, options = {}) => {
 };
 
 // Utility function for signing and submitting transactions
-const signAndSubmitTx = async (tx, pactClient) => {
-  const providerName = useWalletStore.getState().provider;
+const signAndSubmitTx = async (tx, pactClient, client, session) => {
+  // Get provider from store state
+  const storeState = useWalletStore.getState();
+  const providerName = storeState.provider;
   const provider = providers[providerName];
   
   if (providerName === null) {
@@ -75,7 +79,7 @@ const signAndSubmitTx = async (tx, pactClient) => {
     const { showSigningToast } = await import('../utils/transactionUtils.js');
     showSigningToast();
     
-    signedTx = await provider.quickSign(tx);
+    signedTx = await provider.quickSign(tx, client, session);
     if(signedTx.status === 'fail'){
       // Show a clean error message for signing failure
       toast.error('Transaction signing was cancelled or failed', { position: 'top-center' });
@@ -127,7 +131,8 @@ const signAndSubmitTx = async (tx, pactClient) => {
 
 export const pactCallsSig = async(code, chain) => {
   try  {
-    const { account, pubKey } = useWalletStore.getState();
+    const storeState = useWalletStore.getState();
+    const { account, pubKey } = storeState;
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
 
     const tx = createTx(code, chain, {
@@ -145,7 +150,8 @@ export const pactCallsSig = async(code, chain) => {
 
 export const pactCallsSales = async(code, chain, namespace, moduleName) => {
   try  {
-    const { account, pubKey } = useWalletStore.getState();
+    const storeState = useWalletStore.getState();
+    const { account, pubKey } = storeState;
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
 
     const tx = createTx(code, chain, {
@@ -210,9 +216,10 @@ export const fetchBalance = async(code, chain) => {
   }
 }
 
-export const buyTokensSale = async(code, chain, salesAccount, amount) => {
+export const buyTokensSale = async(code, chain, salesAccount, amount, client, session) => {
   try {
-    const { account, pubKey } = useWalletStore.getState();
+    const storeState = useWalletStore.getState();
+    const { account, pubKey } = storeState;
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
 
     const receiver = salesAccount;
@@ -227,7 +234,7 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
       ]
     });
 
-    return await signAndSubmitTx(tx, pactClient);
+    return await signAndSubmitTx(tx, pactClient, client, session);
   } catch (error) {
     console.error(error);
   }
@@ -236,7 +243,8 @@ export const buyTokensSale = async(code, chain, salesAccount, amount) => {
 export const transferCoinTreasury = async (token, code, chain, pubKey, sender) => {
   try {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
-    const { account } = useWalletStore.getState();
+    const storeState = useWalletStore.getState();
+    const { account } = storeState;
 
     const tx = createTx(code, chain, {
       pubKey,
@@ -258,7 +266,8 @@ export const transferCoinTreasury = async (token, code, chain, pubKey, sender) =
 export const initLiquidityTreasury = async (token, code, chain, pubKey, sender) => {
   try {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
-    const { account } = useWalletStore.getState();
+    const storeState = useWalletStore.getState();
+    const { account } = storeState;
 
     const tx = createTx(code, chain, {
       pubKey,
@@ -352,7 +361,8 @@ export const checkTransactionStatus = async (requestKey, chainId = '1') => {
 // Staking-specific Pact calls
 export const pactCallsStakeTokens = async(code, chain, stakingNamespace, tokenModule, amount, lockerAccount) => {
   try {
-    const { account, pubKey } = useWalletStore.getState();
+    const storeState = useWalletStore.getState();
+    const { account, pubKey } = storeState;
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
 
     const tx = createTx(code, chain, {
@@ -374,7 +384,8 @@ export const pactCallsStakeTokens = async(code, chain, stakingNamespace, tokenMo
 
 export const pactCallsUnstakeTokens = async(code, chain, stakingNamespace, stakingModule, tokenModule, account, lockerAccount, amount) => {
   try {
-    const { account: userAccount, pubKey } = useWalletStore.getState();
+    const storeState = useWalletStore.getState();
+    const { account: userAccount, pubKey } = storeState;
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
 
     // Determine burn account based on network

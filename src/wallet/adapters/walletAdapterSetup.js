@@ -6,16 +6,6 @@ import { createChainweaverLegacyAdapter } from '@kadena/wallet-adapter-chainweav
 import config from '../config'
 
 export const adapters = [
-  createWalletConnectAdapter({
-    projectId: import.meta.env.VITE_APP_projectId,
-    relayUrl: import.meta.env.VITE_APP_relayUrl || 'wss://relay.walletconnect.com',
-    metadata: {
-      name: "Kad-Pad",
-      description: "The home of token launches on Kadena",
-      url: "kadpad.xyz",
-      icons: ["https://kadpad.xyz/favicon.ico"],
-    },
-  }),
   createSnapAdapter({
     silent: true, 
   }),

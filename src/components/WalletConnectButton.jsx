@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Wallet, LogOut, Copy, Check, ExternalLink } from 'lucide-react';
-import useWalletStore from "../wallet/walletStore";
+import useWalletStore from "../wallet/walletStore.jsx";
 import walletConnectStore from "../wallet/providers/connectWalletModalSlice";
 
 const WalletConnectButton = () => {
@@ -10,7 +10,6 @@ const WalletConnectButton = () => {
 
   const setshowConnectWalletModal = walletConnectStore((state) => state.setshowConnectWalletModal);
   const sethideConnectWalletModal = walletConnectStore((state) => state.sethideConnectWalletModal);
-
   const handleClick = () => {
     if (isConnected) {
       setShowDropdown(!showDropdown);

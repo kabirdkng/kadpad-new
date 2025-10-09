@@ -18,7 +18,7 @@ import GlobalTransactionIndicator from './components/GlobalTransactionIndicator'
 // Wallet Components
 import ConnectWalletModal from './wallet/providers/ConnectWalletModal';
 import walletConnectStore from './wallet/providers/connectWalletModalSlice';
-import useWalletStore from './wallet/walletStore';
+import useWalletStore from './wallet/walletStore.jsx';
 
 // Utils
 import { preloadImages } from './utils/imagePreloader';

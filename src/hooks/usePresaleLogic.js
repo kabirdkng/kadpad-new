@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import usePresaleStore from '../store/usePresaleStore';
-import useWalletStore from '../wallet/walletStore';
+import useWalletStore from '../wallet/walletStore.jsx';
 import { buyTokensSale, pactCalls } from '../pactcalls/kadena';
 import useTransactionManager from '../hooks/useTransactionManager';
 import { preciseMultiply, formatDecimal } from '../utils/decimalUtils';
@@ -287,7 +287,7 @@ const usePresaleLogic = (namespace, moduleName) => {
   }, [phase0startTime, phase1startTime, salesEndTime]);
 
   // Buy tokens handler
-  const handleBuy = async () => {
+  const handleBuy = async (client, session) => {
     try {
       setIsLoading(true);
       
@@ -316,7 +316,7 @@ const usePresaleLogic = (namespace, moduleName) => {
       }
 
       const code = `(${namespace}.${SALES_MODULE_NAME}.buy "${account}" (read-keyset 'ks) ${batchCount})`;
-      const result = await buyTokensSale(code, supplyChain, salesAccount, amount);
+      const result = await buyTokensSale(code, supplyChain, salesAccount, amount, client, session);
       
       // Check if signing failed
       if (result?.status === 'fail') {

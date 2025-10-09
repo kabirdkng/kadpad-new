@@ -3,6 +3,7 @@ import { Info } from 'lucide-react';
 import { addComma } from '../../utils/numberUtils';
 import { preciseMultiply } from '../../utils/decimalUtils';
 import WalletConnectButton from '../WalletConnectButton';
+import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
 
 const PurchaseCard = ({ 
   isPhase0, 
@@ -25,6 +26,8 @@ const PurchaseCard = ({
   if ((!isPhase0 && !isPhase1) || isSaleEnded) {
     return null;
   }
+
+  const { client, session } = useWalletConnectClient();
 
   return (
     <div className="card border-2 border-accent-primary/30 bg-accent-primary/5">
@@ -101,7 +104,7 @@ const PurchaseCard = ({
           </div>
         ) : (
           <button
-            onClick={() => handleBuy()}
+            onClick={() => handleBuy(client, session)}
             disabled={isLoading || availableBatches <= 0 || !batchCount || batchCount <= 0 || batchCount > safeRender(availableBatches)}
             className="w-full btn btn-primary"
           >

@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { pactCallsSig, pactCalls, fetchBalance, pactCallsStakeTokens, pactCallsUnstakeTokens } from '../pactcalls/kadena';
 import useStakingStore from '../store/useStakingStore';
-import useWalletStore from '../wallet/walletStore';
+import useWalletStore from '../wallet/walletStore.jsx';
 import { toast } from 'react-toastify';
 import { handleTokenStaking, handleTokenUnstaking, isUserRejectionError } from '../utils/transactionUtils';
 import { formatAmountForPact } from '../utils/decimalUtils';

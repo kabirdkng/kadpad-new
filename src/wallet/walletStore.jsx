@@ -36,7 +36,7 @@ const getInitialState = () => {
   };
 };
 
-const useWalletStore = create((set) => ({
+const useWalletStore = create((set, get) => ({
   ...getInitialState(),
 
   setSessionData: ({ provider, account, pubKey, isConnected }) => {
@@ -277,7 +277,8 @@ const useWalletStore = create((set) => ({
   },
 
   disconnectWallet: async () => {
-    const providerName = useWalletStore.getState().provider;
+    // Get the current state using the get parameter
+    const { provider: providerName } = get();
 
     if (!providerName) {
       console.log("No provider connected, skipping disconnection.");
@@ -408,7 +409,6 @@ const useWalletStore = create((set) => ({
   },
 
   setProvider: (newProvider) => set({ provider: newProvider }),
-  getState: () => ({ /* return the current state */ }),
 }));
 
 export default useWalletStore;

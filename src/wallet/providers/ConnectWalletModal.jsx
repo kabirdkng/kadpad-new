@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
 import { X_WALLET, WC, KOALA, METAMASK, MAGIC, CHAINWEAVER, CHAINWEAVER_LEGACY } from "./providers";
-import useWalletStore from "../walletStore";
+import useWalletStore from "../walletStore.jsx";
 import walletConnectStore from "./connectWalletModalSlice";
 import "./wallet.css";
 import { useWalletConnection } from "../wcStore";
