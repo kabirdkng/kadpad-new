@@ -159,7 +159,7 @@ export const pactCallsSales = async(code, chain, namespace, moduleName, client, 
       account,
       sender: account,
       signers: [
-        [`${namespace}.${moduleName}-sales.ADMIN`],
+        [`${namespace}.${moduleName}-sales.SALES-OPERATOR`],
         ['coin.GAS']
       ]
     });
