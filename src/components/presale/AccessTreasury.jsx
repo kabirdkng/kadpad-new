@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Vault, Send, RefreshCw } from 'lucide-react';
 import { fetchBalance, pactCalls, transferCoinTreasury } from '../../pactcalls/kadena';
 import useWalletStore from '../../wallet/walletStore';
+import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
 import useTransactionManager from '../../hooks/useTransactionManager';
 import { addComma } from '../../utils/numberUtils';
 import { toast } from 'react-toastify';
@@ -15,6 +16,7 @@ const AccessTreasury = ({
 }) => {
   const TREASURY_MODULE_NAME = `${moduleName}-treasury`;
   const { pubKey, account } = useWalletStore();
+  const { client, session } = useWalletConnectClient();
   const { 
     submitTransaction, 
     createTransactionMetadata, 
@@ -86,7 +88,9 @@ const AccessTreasury = ({
         code, 
         supplyChain, 
         pubKey, 
-        account
+        account,
+        client,
+        session
       );
       
       if (res?.preflightResult?.result?.status === 'success') {

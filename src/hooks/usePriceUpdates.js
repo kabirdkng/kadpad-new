@@ -19,9 +19,15 @@ export const usePriceUpdates = (
     transactionTypes 
   } = useTransactionManager();
 
-  const updatePrices = async (newP0Price, newP1Price, onSuccess) => {
+  const updatePrices = async (newP0Price, newP1Price, client, session, onSuccess) => {
     try {
       setIsUpdatingPrices(true);
+      
+      if (!client || !session) {
+        toast.error('Wallet connection required');
+        setIsUpdatingPrices(false);
+        return;
+      }
       
       const formatPriceForPact = (price) => {
         const numPrice = parseFloat(price);
@@ -32,7 +38,7 @@ export const usePriceUpdates = (
       const formattedP1Price = formatPriceForPact(newP1Price);
       
       const code = `(${namespace}.${salesModuleName}.set-price "phase-0" ${formattedP0Price}) (${namespace}.${salesModuleName}.set-price "phase-1" ${formattedP1Price})`;
-      const res = await pactCallsSales(code, supplyChain, namespace, moduleName);
+      const res = await pactCallsSales(code, supplyChain, namespace, moduleName, client, session);
       
       if (res?.preflightResult?.result?.status === 'success') {
         const txKey = res.transactionDescriptor?.requestKey;

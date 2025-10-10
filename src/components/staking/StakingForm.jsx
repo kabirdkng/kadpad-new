@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Coins, Info, ArrowUp, AlertTriangle } from 'lucide-react';
 import { useStakingPactCalls } from '../../hooks/useStakingPactCalls';
 import { useStakingDataContext } from '../../contexts/StakingDataContext';
+import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
 import useWalletStore from '../../wallet/walletStore';
 import useStakingStore from '../../store/useStakingStore';
 import { extractNumericValue, getTierByAmount } from '../../utils/stakingUtils';
@@ -13,6 +14,9 @@ const StakingForm = () => {
   
   // Get wallet connection status from wallet store
   const { isConnected } = useWalletStore();
+  
+  // Get client and session for wallet connect
+  const { client, session } = useWalletConnectClient();
   
   // Get cached data from staking store
   const { userBalance, userStakes, isLoading } = useStakingStore();
@@ -49,7 +53,7 @@ const StakingForm = () => {
     if (!amount || numericAmount <= 0) return;
     
     setShowConfirm(false);
-    const result = await stakeTokens(numericAmount);
+    const result = await stakeTokens(numericAmount, client, session);
     
     if (result) {
       setAmount('');

@@ -14,7 +14,9 @@ const WhitelistForm = ({
   moduleName,
   reservations = [],
   onBack,
-  onSuccess
+  onSuccess,
+  client,
+  session
 }) => {
   const [walletsToWhitelist, setWalletsToWhitelist] = useState([]);
   const [newWallet, setNewWallet] = useState('');
@@ -233,7 +235,7 @@ const WhitelistForm = ({
       return;
     }
 
-    await whitelistAddresses(walletsToWhitelist, async (transactionResult) => {
+    await whitelistAddresses(walletsToWhitelist, client, session, async (transactionResult) => {
       // Check if any of the whitelisted addresses are lottery wallets
       const lotteryWalletsInBatch = walletsToWhitelist.filter(wallet => availableSelectedWallets.includes(wallet));
       
@@ -557,7 +559,9 @@ WhitelistForm.propTypes = {
     account: PropTypes.string.isRequired,
     reserved: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     bought: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
-  })).isRequired
+  })).isRequired,
+  client: PropTypes.object,
+  session: PropTypes.object
 };
 
 export default WhitelistForm;

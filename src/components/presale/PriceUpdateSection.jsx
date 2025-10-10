@@ -13,7 +13,9 @@ const PriceUpdateSection = ({
   p1Price,
   fetchP0Price,
   fetchP1Price,
-  pubKey
+  pubKey,
+  client,
+  session
 }) => {
   const [showPriceChange, setShowPriceChange] = useState(false);
   const [newP0Price, setNewP0Price] = useState(safeRender(p0Price));
@@ -36,7 +38,7 @@ const PriceUpdateSection = ({
   };
 
   const handleUpdatePrices = async () => {
-    await updatePrices(newP0Price, newP1Price, () => {
+    await updatePrices(newP0Price, newP1Price, client, session, () => {
       setPriceResult('Prices updated successfully!');
       setShowPriceChange(false);
     });
@@ -117,7 +119,9 @@ PriceUpdateSection.propTypes = {
   p1Price: PropTypes.oneOfType([PropTypes.number, PropTypes.object]),
   fetchP0Price: PropTypes.func.isRequired,
   fetchP1Price: PropTypes.func.isRequired,
-  pubKey: PropTypes.string
+  pubKey: PropTypes.string,
+  client: PropTypes.object,
+  session: PropTypes.object
 };
 
 export default PriceUpdateSection;

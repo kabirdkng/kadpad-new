@@ -23,11 +23,11 @@ const PurchaseCard = ({
   userBoughtBatches,
   safeRender 
 }) => {
+  const { client, session } = useWalletConnectClient();
+
   if ((!isPhase0 && !isPhase1) || isSaleEnded) {
     return null;
   }
-
-  const { client, session } = useWalletConnectClient();
 
   return (
     <div className="card border-2 border-accent-primary/30 bg-accent-primary/5">

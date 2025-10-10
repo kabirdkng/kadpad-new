@@ -24,7 +24,9 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
   providerName,
   tokenDistribution,
   chain = config.chainId,
-  progressCallback = null
+  progressCallback = null,
+  client = null,
+  session = null
 ) => {
   try {
     const networkApi = config.apiUrl;
@@ -84,15 +86,10 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
 
       let deploymentSignedBatch;
       try {
-        if (providerName === "WC") {
-          const { getClientStatus } = await import("../../wallet/providers/wc.js");
-          getClientStatus();
-        }
-        
         const { showSigningToast } = await import("../transactionUtils.js");
         showSigningToast();
         
-        deploymentSignedBatch = await provider.quickSignAll(deploymentCommands);
+        deploymentSignedBatch = await provider.quickSignAll(deploymentCommands, client, session);
       } catch (error) {
         console.error("Deployment signing error:", error);
         if (isWalletRejectionError(error)) {
@@ -267,15 +264,10 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
           
           let transferSignedBatch;
           try {
-            if (providerName === "WC") {
-              const { getClientStatus } = await import("../../wallet/providers/wc.js");
-              getClientStatus();
-            }
-            
             const { showSigningToast } = await import("../transactionUtils.js");
             showSigningToast();
             
-            transferSignedBatch = await provider.quickSignAll(transferCommands);
+            transferSignedBatch = await provider.quickSignAll(transferCommands, client, session);
           } catch (error) {
             console.error("Transfer signing error:", error);
             if (isWalletRejectionError(error)) {

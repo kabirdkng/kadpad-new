@@ -10,11 +10,15 @@ import PendingConfiguration from './launch-token/PendingConfiguration';
 import SalesConfiguredView from './launch-token/SalesConfiguredView';
 import LaunchedState from './launch-token/LaunchedState';
 
-const LaunchTokenStep = ({ tokenDetails }) => {
+const LaunchTokenStep = ({ tokenDetails, project: globalProject, statusLoading: globalStatusLoading }) => {
   const [salesConfig, setSalesConfig] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [project, setProject] = useState(null);
+  const [localProject, setLocalProject] = useState(null);
   const containerRef = useRef(null);
+  
+  // Use global project state when available, otherwise use local state  
+  const currentProject = globalProject || localProject;
+  const isLoading = globalStatusLoading !== undefined ? globalStatusLoading : loading;
   
   // Use the sales contract deployment hook
   const { deploymentState, deploySalesAndTreasury, resetDeploymentState } = useSalesContractDeployment();
@@ -25,7 +29,7 @@ const LaunchTokenStep = ({ tokenDetails }) => {
         const [namespace, moduleName] = tokenDetails.contractAddress.split('.');
         const response = await checkProjectByContract(namespace, moduleName);
         const projectData = response.data.data.project;
-        setProject(projectData);
+        setLocalProject(projectData);
         
         // Set sales config if available
         if (projectData.salesDetails && projectData.salesDetails.totalTokensToSale) {
@@ -49,7 +53,7 @@ const LaunchTokenStep = ({ tokenDetails }) => {
 
   // Scroll management to prevent view jumping
   useEffect(() => {
-    if (containerRef.current && project?.status === 'launched') {
+    if (containerRef.current && currentProject?.status === 'launched') {
       // Smooth scroll to top of container when transitioning to launched state
       containerRef.current.scrollIntoView({ 
         behavior: 'smooth', 
@@ -57,7 +61,7 @@ const LaunchTokenStep = ({ tokenDetails }) => {
         inline: 'nearest'
       });
     }
-  }, [project?.status]);
+  }, [currentProject?.status]);
 
   const handleDeploy = async () => {
     // Store current scroll position
@@ -66,12 +70,17 @@ const LaunchTokenStep = ({ tokenDetails }) => {
     try {
       console.log('=== Starting deployment process ===');
       console.log('Token details:', tokenDetails);
-      console.log('Sales config:', salesConfig);
-      console.log('Project:', project);
+      console.log('Current project:', currentProject);
       
-      if (!tokenDetails || !salesConfig) {
+      // Get sales configuration from current project or local state
+      const currentSalesConfig = currentProject?.salesDetails || salesConfig;
+      console.log('Sales config:', currentSalesConfig);
+      
+      if (!tokenDetails || !currentSalesConfig) {
         const errorMsg = 'Token details or sales configuration missing';
         console.error(errorMsg);
+        console.error('Missing tokenDetails:', !tokenDetails);
+        console.error('Missing salesConfig:', !currentSalesConfig);
         toast.error(errorMsg);
         return;
       }
@@ -96,25 +105,25 @@ const LaunchTokenStep = ({ tokenDetails }) => {
       const tokenData = {
         namespace: contractParts[0],
         moduleName: contractParts[1],
-        totalSupply: project?.tokendetails?.totalSupply || salesConfig.totalTokensToSale || 0
+        totalSupply: currentProject?.tokendetails?.totalSupply || currentSalesConfig.totalTokensToSale || 0
       };
 
       console.log('Token data prepared:', tokenData);
 
       // Prepare sales configuration for deployment - using actual salesDetails from project
       const salesConfigForDeployment = {
-        totalBatches: salesConfig.totalBatches || 0,
-        amountPerBatch: salesConfig.amountPerBatch || salesConfig.tokensPerBatch || 0,
-        platformShare: salesConfig.platformShare || 0,
-        liquidityLockupAmount: salesConfig.liquidityLockupAmount || 0,
-        treasuryAmount: salesConfig.treasuryAmount || 0,
-        whitelistLimit: salesConfig.whitelistLimit || 0,
-        phase0Price: salesConfig.phase0Price || salesConfig.phase0price || 0,
-        phase0StartDate: salesConfig.phase0StartDate || salesConfig.phase0startDate,
-        phase1Price: salesConfig.phase1Price || 0,
-        phase1StartDate: salesConfig.phase1StartDate,
-        salesEndDate: salesConfig.salesEndDate,
-        tokensForSale: salesConfig.totalTokensToSale || salesConfig.presalesAmount || 0
+        totalBatches: currentSalesConfig.totalBatches || 0,
+        amountPerBatch: currentSalesConfig.amountPerBatch || currentSalesConfig.tokensPerBatch || 0,
+        platformShare: currentSalesConfig.platformShare || 0,
+        liquidityLockupAmount: currentSalesConfig.liquidityLockupAmount || 0,
+        treasuryAmount: currentSalesConfig.treasuryAmount || 0,
+        whitelistLimit: currentSalesConfig.whitelistLimit || 0,
+        phase0Price: currentSalesConfig.phase0Price || currentSalesConfig.phase0price || 0,
+        phase0StartDate: currentSalesConfig.phase0StartDate || currentSalesConfig.phase0startDate,
+        phase1Price: currentSalesConfig.phase1Price || 0,
+        phase1StartDate: currentSalesConfig.phase1StartDate,
+        salesEndDate: currentSalesConfig.salesEndDate,
+        tokensForSale: currentSalesConfig.totalTokensToSale || currentSalesConfig.presalesAmount || 0
       };
 
       console.log('Sales config prepared:', salesConfigForDeployment);
@@ -192,23 +201,23 @@ const LaunchTokenStep = ({ tokenDetails }) => {
   }, [fetchProjectDetails]);
 
   // Show different content based on project status
-  if (loading) {
+  if (isLoading) {
     return <LaunchLoadingState />;
   }
 
-  if (!project || !['sales_configured', 'launched'].includes(project.status)) {
+  if (!currentProject || !['sales_configured', 'launched'].includes(currentProject.status)) {
     return <PendingConfiguration />;
   }
 
-  if (project.status === 'sales_configured' && project.salesDetails) {
-    const salesDetails = project.salesDetails;
+  if (currentProject.status === 'sales_configured' && currentProject.salesDetails) {
+    const salesDetails = currentProject.salesDetails;
     
     return (
       <div ref={containerRef}>
         <SalesConfiguredView
           tokenDetails={tokenDetails}
           salesDetails={salesDetails}
-          project={project}
+          project={currentProject}
           deploymentState={deploymentState}
           onDeploy={handleDeploy}
           onDeploymentComplete={handleDeploymentComplete}
@@ -217,12 +226,12 @@ const LaunchTokenStep = ({ tokenDetails }) => {
     );
   }
 
-  if (project.status === 'launched') {
+  if (currentProject.status === 'launched') {
     return (
       <div ref={containerRef}>
         <LaunchedState
           tokenDetails={tokenDetails}
-          project={project}
+          project={currentProject}
         />
       </div>
     );
@@ -235,7 +244,9 @@ LaunchTokenStep.propTypes = {
   tokenDetails: PropTypes.shape({
     contractAddress: PropTypes.string,
     totalSupply: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
-  })
+  }),
+  project: PropTypes.object,
+  statusLoading: PropTypes.bool
 };
 
 export default LaunchTokenStep;

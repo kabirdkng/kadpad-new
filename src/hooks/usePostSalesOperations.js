@@ -10,7 +10,9 @@ export const usePostSalesOperations = (
   namespace,
   salesModuleName,
   supplyChain,
-  moduleName
+  moduleName,
+  client = null,
+  session = null
 ) => {
   const [isDistributing, setIsDistributing] = useState(false);
   const [isEndingSales, setIsEndingSales] = useState(false);
@@ -169,7 +171,9 @@ export const usePostSalesOperations = (
         code,
         supplyChain,
         namespace,
-        moduleName
+        moduleName,
+        client,
+        session
       );
 
       // Check if signing failed
@@ -245,7 +249,7 @@ export const usePostSalesOperations = (
     } finally {
       setIsDistributing(false);
     }
-  }, [namespace, salesModuleName, supplyChain, moduleName, submitTransaction, createTransactionMetadata, transactionTypes, checkDistributionStatus]);
+  }, [namespace, salesModuleName, supplyChain, moduleName, submitTransaction, createTransactionMetadata, transactionTypes, checkDistributionStatus, client, session]);
 
   const endSales = useCallback(async () => {
     if (!distributionComplete) {
@@ -261,7 +265,9 @@ export const usePostSalesOperations = (
         code,
         supplyChain,
         namespace,
-        moduleName
+        moduleName,
+        client,
+        session
       );
 
       // Check if signing failed
@@ -334,7 +340,7 @@ export const usePostSalesOperations = (
     } finally {
       setIsEndingSales(false);
     }
-  }, [namespace, salesModuleName, supplyChain, moduleName, distributionComplete, submitTransaction, createTransactionMetadata, transactionTypes]);
+  }, [namespace, salesModuleName, supplyChain, moduleName, distributionComplete, submitTransaction, createTransactionMetadata, transactionTypes, client, session]);
 
   const initLiquidity = useCallback(async () => {
     if (!salesEnded) {
@@ -352,7 +358,9 @@ export const usePostSalesOperations = (
         code,
         supplyChain,
         pubKey,
-        account
+        account,
+        client,
+        session
       );
 
       // Check if signing failed
@@ -425,7 +433,7 @@ export const usePostSalesOperations = (
     } finally {
       setIsInitializingLiquidity(false);
     }
-  }, [namespace, moduleName, supplyChain, salesEnded, submitTransaction, createTransactionMetadata, transactionTypes]);
+  }, [namespace, moduleName, supplyChain, salesEnded, submitTransaction, createTransactionMetadata, transactionTypes, client, session]);
 
   return {
     isDistributing,

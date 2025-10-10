@@ -5,6 +5,7 @@ import usePresaleStore from '../../store/usePresaleStore';
 import useWalletStore from '../../wallet/walletStore';
 import { usePresaleData } from '../../hooks/usePresaleData';
 import { safeRender } from '../../utils/valueUtils';
+import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
 import PriceUpdateSection from './PriceUpdateSection';
 import WhitelistForm from './WhitelistForm';
 import ReservationsList from './ReservationsList';
@@ -20,6 +21,7 @@ const ManageSales = ({
 }) => {
   const SALES_MODULE_NAME = `${moduleName}-sales`;
   const { pubKey } = useWalletStore();
+  const { client, session } = useWalletConnectClient();
   const { 
     salesEndTime, 
     phase0startTime, 
@@ -119,6 +121,8 @@ const ManageSales = ({
               fetchP0Price={fetchP0Price}
               fetchP1Price={fetchP1Price}
               pubKey={pubKey}
+              client={client}
+              session={session}
             />
             <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
               <p className="text-yellow-400">You can whitelist users after Phase 0 starts</p>
@@ -165,6 +169,8 @@ const ManageSales = ({
                 reservations={reservations}
                 onBack={handleBackToOptions}
                 onSuccess={handleWhitelistSuccess}
+                client={client}
+                session={session}
               />
             )}
 

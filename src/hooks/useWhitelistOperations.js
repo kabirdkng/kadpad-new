@@ -17,16 +17,22 @@ export const useWhitelistOperations = (
     transactionTypes 
   } = useTransactionManager();
 
-  const whitelistAddresses = async (walletsToWhitelist, onSuccess) => {
+  const whitelistAddresses = async (walletsToWhitelist, client, session, onSuccess) => {
     try {
       setIsWhitelisting(true);
+      
+      if (!client || !session) {
+        toast.error('Wallet connection required');
+        setIsWhitelisting(false);
+        return;
+      }
       
       const walletList = walletsToWhitelist.map(
         (wallet) => `(reserve-batch "${wallet}")`
       );
       
       const code = `(use ${namespace}.${salesModuleName}) ${walletList.join(' ')}`;
-      const res = await pactCallsSales(code, supplyChain, namespace, moduleName);
+      const res = await pactCallsSales(code, supplyChain, namespace, moduleName, client, session);
       
       if (res?.preflightResult?.result?.status === 'success') {
         const txKey = res.transactionDescriptor?.requestKey;

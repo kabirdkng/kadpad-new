@@ -52,40 +52,54 @@ const NextStepsCard = ({ existingProject }) => {
       return (
         <div className="card bg-yellow-500/5 border-yellow-500/20">
           <div className="flex items-start gap-3">
-            <DollarSign className="w-6 h-6 text-yellow-400 mt-1" />
-            <div>
-              <h4 className="font-semibold text-yellow-400 mb-2">Payment Required</h4>
-              <p className="text-secondary text-sm mb-3">
-                Launch fees have been set for your project. Please complete the payment to proceed.
-              </p>
-              {existingProject.feeDetails && (
-                <div className="bg-secondary-bg p-3 rounded-lg mb-3">
-                  <div className="text-sm space-y-1">
-                    <div className="flex items-start justify-between">
-                      <span className="text-secondary">Amount:</span>
-                      <div className="text-right">
-                        <FeeDisplay usdAmount={existingProject.feeDetails.amount} />
-                      </div>
-                    </div>
-                    {existingProject.feeDetails.dueDate && (
-                      <p className="text-primary-text">
-                        <span className="text-secondary">Due Date:</span>
-                        <span className="ml-2">{new Date(existingProject.feeDetails.dueDate).toLocaleDateString()}</span>
-                      </p>
-                    )}
-                    {existingProject.feeDetails.comment && (
-                      <p className="text-secondary text-xs mt-2">
-                        Note: {existingProject.feeDetails.comment}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-              <div className="text-xs text-secondary">
-                <p className="mb-1">• Contact admin team for payment instructions</p>
-                <p>• Project will be launched once payment is confirmed</p>
+        <DollarSign className="w-6 h-6 text-yellow-400 mt-1" />
+        <div>
+          <h4 className="font-semibold text-yellow-400 mb-2">Payment Required</h4>
+          <p className="text-secondary text-sm mb-3">
+            Launch fees have been set for your project. Please complete the payment to proceed.
+          </p>
+          {existingProject.feeDetails && (
+            <div className="bg-secondary-bg p-3 rounded-lg mb-3">
+          <div className="text-sm space-y-1">
+            <div className="flex items-start justify-between">
+              <span className="text-secondary">Amount:</span>
+              <div className="text-right">
+            <FeeDisplay usdAmount={existingProject.feeDetails.amount} />
               </div>
             </div>
+            {existingProject.feeDetails.dueDate && (
+              <p className="text-primary-text">
+            <span className="text-secondary">Due Date:</span>
+            <span className="ml-2">{new Date(existingProject.feeDetails.dueDate).toLocaleDateString()}</span>
+              </p>
+            )}
+            {existingProject.feeDetails.walletAddress && (
+              <div className="break-all">
+            <span className="text-secondary">Wallet Address:</span>
+            <span 
+              className="ml-2 cursor-pointer hover:text-yellow-400 transition-colors"
+              onClick={() => {
+                navigator.clipboard.writeText(existingProject.feeDetails.walletAddress);
+              }}
+              title="Click to copy"
+            >
+              {existingProject.feeDetails.walletAddress}
+            </span>
+              </div>
+            )}
+            {existingProject.feeDetails.comment && (
+              <p className="text-secondary text-xs mt-2">
+            Note: {existingProject.feeDetails.comment}
+              </p>
+            )}
+          </div>
+            </div>
+          )}
+          <div className="text-xs text-secondary">
+            <p className="mb-1">• Contact admin team for payment instructions</p>
+            <p>• Project will be launched once payment is confirmed</p>
+          </div>
+        </div>
           </div>
         </div>
       );
@@ -124,6 +138,27 @@ const NextStepsCard = ({ existingProject }) => {
                 <p className="text-green-400 font-medium text-sm mb-2">Waiting for Admin Configuration</p>
                 <p className="text-secondary text-xs">
                   Our team will set up your presale phases, pricing, and whitelist settings, then notify you to proceed.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+
+    case 'sales_configured':
+      return (
+        <div className="card bg-cyan-500/5 border-cyan-500/20">
+          <div className="flex items-start gap-3">
+            <CheckCircle className="w-6 h-6 text-cyan-400 mt-1" />
+            <div>
+              <h4 className="font-semibold text-cyan-400 mb-2">🚀 Ready for Deployment!</h4>
+              <p className="text-secondary text-sm mb-3">
+                Great news! Your sales configuration has been completed by our admin team. You can now proceed to deploy your token contracts.
+              </p>
+              <div className="bg-cyan-500/10 p-3 rounded-lg">
+                <p className="text-cyan-400 font-medium text-sm mb-2">Next: Deploy Token Contracts</p>
+                <p className="text-secondary text-xs">
+                  You will be automatically redirected to the Launch Token step where you can deploy your sales and treasury contracts.
                 </p>
               </div>
             </div>

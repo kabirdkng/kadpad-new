@@ -129,7 +129,7 @@ const signAndSubmitTx = async (tx, pactClient, client, session) => {
   }
 };
 
-export const pactCallsSig = async(code, chain) => {
+export const pactCallsSig = async(code, chain, client, session) => {
   try  {
     const storeState = useWalletStore.getState();
     const { account, pubKey } = storeState;
@@ -142,13 +142,13 @@ export const pactCallsSig = async(code, chain) => {
       signers: [['coin.GAS']]
     });
 
-    return await signAndSubmitTx(tx, pactClient);
+    return await signAndSubmitTx(tx, pactClient, client, session);
   } catch (error) {
     console.error(error);
   }
 }
 
-export const pactCallsSales = async(code, chain, namespace, moduleName) => {
+export const pactCallsSales = async(code, chain, namespace, moduleName, client, session) => {
   try  {
     const storeState = useWalletStore.getState();
     const { account, pubKey } = storeState;
@@ -159,12 +159,12 @@ export const pactCallsSales = async(code, chain, namespace, moduleName) => {
       account,
       sender: account,
       signers: [
-        [`${namespace}.${moduleName}-sales.SALES-OPERATOR`],
+        [`${namespace}.${moduleName}-sales.ADMIN`],
         ['coin.GAS']
       ]
     });
 
-    return await signAndSubmitTx(tx, pactClient);
+    return await signAndSubmitTx(tx, pactClient, client, session);
   } catch (error) {
     console.error(error);
   }
@@ -240,7 +240,7 @@ export const buyTokensSale = async(code, chain, salesAccount, amount, client, se
   }
 }
 
-export const transferCoinTreasury = async (token, code, chain, pubKey, sender) => {
+export const transferCoinTreasury = async (token, code, chain, pubKey, sender, client, session) => {
   try {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
     const storeState = useWalletStore.getState();
@@ -257,13 +257,13 @@ export const transferCoinTreasury = async (token, code, chain, pubKey, sender) =
       ]
     });
 
-    return await signAndSubmitTx(tx, pactClient);
+    return await signAndSubmitTx(tx, pactClient, client, session);
   } catch (error) {
     console.error(error);
   }
 };
 
-export const initLiquidityTreasury = async (token, code, chain, pubKey, sender) => {
+export const initLiquidityTreasury = async (token, code, chain, pubKey, sender, client, session) => {
   try {
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
     const storeState = useWalletStore.getState();
@@ -280,7 +280,7 @@ export const initLiquidityTreasury = async (token, code, chain, pubKey, sender) 
       ]
     });
 
-    return await signAndSubmitTx(tx, pactClient);
+    return await signAndSubmitTx(tx, pactClient, client, session);
   } catch (error) {
     console.error(error);
   }
@@ -359,7 +359,7 @@ export const checkTransactionStatus = async (requestKey, chainId = '1') => {
 };
 
 // Staking-specific Pact calls
-export const pactCallsStakeTokens = async(code, chain, stakingNamespace, tokenModule, amount, lockerAccount) => {
+export const pactCallsStakeTokens = async(code, chain, stakingNamespace, tokenModule, amount, lockerAccount, client, session) => {
   try {
     const storeState = useWalletStore.getState();
     const { account, pubKey } = storeState;
@@ -375,23 +375,18 @@ export const pactCallsStakeTokens = async(code, chain, stakingNamespace, tokenMo
       ]
     });
 
-    return await signAndSubmitTx(tx, pactClient);
+    return await signAndSubmitTx(tx, pactClient, client, session);
   } catch (error) {
     console.error(error);
     throw error;
   }
 }
 
-export const pactCallsUnstakeTokens = async(code, chain, stakingNamespace, stakingModule, tokenModule, account, lockerAccount, amount) => {
+export const pactCallsUnstakeTokens = async(code, chain, stakingNamespace, stakingModule, tokenModule, account, lockerAccount, amount, client, session) => {
   try {
     const storeState = useWalletStore.getState();
     const { account: userAccount, pubKey } = storeState;
     const pactClient = createClient(`${api}/chainweb/0.0/${network}/chain/${chain}/pact`);
-
-    // Determine burn account based on network
-    const burnAccount = network === "mainnet01" 
-      ? "user.burn.BURN-ACCOUNT" 
-      : "n_e309f0fa7cf3a13f93a8da5325cdad32790d2070.burn.BURN-ACCOUNT";
 
     const tx = createTx(code, chain, {
       pubKey,
@@ -403,7 +398,7 @@ export const pactCallsUnstakeTokens = async(code, chain, stakingNamespace, staki
       ]
     });
 
-    return await signAndSubmitTx(tx, pactClient);
+    return await signAndSubmitTx(tx, pactClient, client, session);
   } catch (error) {
     console.error(error);
     throw error;

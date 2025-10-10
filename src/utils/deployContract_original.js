@@ -140,11 +140,7 @@ export const signAndProcessDeployTransactions = async (
 
   let signedBatch;
   try {
-    if (providerName === "WC") {
-      signedBatch = await provider.quickSignAll(commands, client, session);
-    } else {
-      signedBatch = await provider.quickSignAll(commands);
-    }
+    signedBatch = await provider.quickSignAll(commands, client, session);
   } catch (error) {
     if (isWalletRejectionError(error)) {
       throw new Error('Transaction signing was rejected by user');

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { Package, Zap, DollarSign, RotateCcw } from 'lucide-react';
 import { usePostSalesOperations } from '../../hooks/usePostSalesOperations';
+import { useWalletConnectClient } from '../../wallet/providers/ClientContextProvider';
 import PostSalesStatusCard from './PostSalesStatusCard';
 
 const PostSalesManager = ({
@@ -13,6 +14,9 @@ const PostSalesManager = ({
 }) => {
   const [currentStep, setCurrentStep] = useState('distribution');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Get client and session for wallet connect
+  const { client, session } = useWalletConnectClient();
 
   const {
     isDistributing,
@@ -34,7 +38,9 @@ const PostSalesManager = ({
     namespace,
     salesModuleName,
     supplyChain,
-    moduleName
+    moduleName,
+    client,
+    session
   );
 
   const handleDistribute = async () => {

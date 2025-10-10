@@ -352,11 +352,7 @@ export const transferTokensToContracts = async (
     const { showSigningToast } = await import("../transactionUtils.js");
     showSigningToast();
 
-    if (providerName === "WC") {
-      signedBatch = await provider.quickSignAll(commands, client, session);
-    } else {
-      signedBatch = await provider.quickSignAll(commands);
-    }
+    signedBatch = await provider.quickSignAll(commands, client, session);
 
     // Check if signing was successful
     if (!signedBatch || !signedBatch.responses || signedBatch.responses.length === 0) {

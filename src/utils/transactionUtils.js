@@ -135,9 +135,7 @@ export const handleTokenPurchase = async ({
       salesAccount, 
       amount, 
       client, 
-      session, 
-      namespace, 
-      moduleName
+      session
     );
     
     // Check if signing failed
@@ -235,10 +233,11 @@ export const handleTreasuryTransfer = async ({
       code, 
       supplyChain, 
       pubKey, 
-      treasuryContractAccount, 
-      transferAccount, 
+      treasuryContractAccount,
+      transferAccount,
       keysetGuard,
-      parseFloat(transferAmount), 
+      transferAmount,
+      parseFloat(transferAmount),
       client, 
       session
     );
@@ -335,10 +334,10 @@ export const handleWhitelistOperation = async ({
     const result = await pactCallsSales(
       code, 
       supplyChain, 
-      client, 
-      session, 
       namespace, 
-      moduleName
+      moduleName,
+      client, 
+      session
     );
     
     // Check if signing failed
@@ -419,6 +418,8 @@ export const handleTokenStaking = async ({
   lockerAccount,
   account,
   pactCallsStakeTokens,
+  client,
+  session,
   onSuccess,
   onError,
 }) => {
@@ -429,7 +430,9 @@ export const handleTokenStaking = async ({
       namespace,
       tokenModule,
       amount,
-      lockerAccount
+      lockerAccount,
+      client,
+      session
     );
     
     // Check if signing failed
@@ -512,6 +515,8 @@ export const handleTokenUnstaking = async ({
   lockerAccount,
   amount,
   pactCallsUnstakeTokens,
+  client,
+  session,
   onSuccess,
   onError,
 }) => {
@@ -524,7 +529,9 @@ export const handleTokenUnstaking = async ({
       tokenModule,
       account,
       lockerAccount,
-      amount
+      amount,
+      client,
+      session
     );
     
     // Check if signing failed

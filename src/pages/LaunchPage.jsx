@@ -55,6 +55,9 @@ const StepContent = ({
           <button 
             onClick={onNextStep} 
             className={`btn order-1 sm:order-2 ${
+              // Button is disabled if:
+              // - On step 0 (CreateVerify) and not verified
+              // - On step 1 (Review) and can't proceed (no sales configuration)
               (step === 0 && !isVerified) ||
               (step === 1 && !canProceedFromReviewStep(submissionStatus))
                 ? 'btn-ghost opacity-50 cursor-not-allowed' 
@@ -65,7 +68,13 @@ const StepContent = ({
               (step === 1 && !canProceedFromReviewStep(submissionStatus))
             }
           >
-            Next Step →
+            {/* Dynamic button text based on current step and status */}
+            {step === 0 && isVerified && (submissionStatus === 'sales_configured' || submissionStatus === 'launched') 
+              ? 'Go to Launch →' 
+              : step === 0 && isVerified 
+                ? 'Go to Review →'
+                : 'Next Step →'
+            }
           </button>
         )}
       </div>
@@ -83,6 +92,7 @@ const LaunchPage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isVerified, setIsVerified] = useState(false);
   const [tokenDetails, setTokenDetails] = useState(null);
+  const [hasAutoNavigatedAfterVerification, setHasAutoNavigatedAfterVerification] = useState(false);
 
   // Use the real-time project status hook
   const { 
@@ -113,30 +123,90 @@ const LaunchPage = () => {
     window.scrollTo(0, 0);
   }, []);
 
-  const handleNextStep = () => {
-    // If on CreateVerify step and project has sales configured, skip Review and go to LaunchToken
+  // Reset auto-navigation flag when verification status changes
+  useEffect(() => {
+    if (!isVerified) {
+      setHasAutoNavigatedAfterVerification(false);
+    }
+  }, [isVerified]);
+
+  // Auto-navigate to LaunchTokenStep when project status becomes sales_configured
+  useEffect(() => {
     if (
-      currentStep === 0 &&
-      (submissionStatus === 'sales_configured' || submissionStatus === 'launched')
+      currentStep === 1 && // Currently on ReviewSubmitStep
+      submissionStatus === 'sales_configured' && // Project has sales configured
+      !statusLoading // Not loading to avoid navigation during status checks
     ) {
+      console.log('Auto-navigating to LaunchTokenStep due to sales_configured status');
       setCurrentStep(2);
+    }
+  }, [currentStep, submissionStatus, statusLoading]);
+
+  // Auto-navigate after ownership verification is completed (only once per verification)
+  useEffect(() => {
+    if (
+      currentStep === 0 && // Currently on CreateVerifyStep
+      isVerified && // Ownership has been verified
+      tokenDetails && // Token details are available
+      !hasAutoNavigatedAfterVerification // Haven't auto-navigated yet for this verification
+    ) {
+      // Add a small delay to allow UI to update and prevent conflicts
+      const timer = setTimeout(() => {
+        console.log('Auto-navigating to next step after ownership verification');
+        setHasAutoNavigatedAfterVerification(true);
+        // Check if project has sales configured to determine which step to navigate to
+        if (submissionStatus === 'sales_configured' || submissionStatus === 'launched') {
+          setCurrentStep(2); // Go directly to LaunchTokenStep
+        } else {
+          setCurrentStep(1); // Go to ReviewSubmitStep
+        }
+      }, 500); // 500ms delay
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep, isVerified, tokenDetails, submissionStatus, hasAutoNavigatedAfterVerification]);
+
+  const handleNextStep = () => {
+    // If on CreateVerify step
+    if (currentStep === 0) {
+      // Check if verified and if project has sales configured
+      if (isVerified && (submissionStatus === 'sales_configured' || submissionStatus === 'launched')) {
+        setCurrentStep(2); // Skip to LaunchTokenStep
+      } else if (isVerified) {
+        setCurrentStep(1); // Go to ReviewSubmitStep
+      }
+      // If not verified, button should be disabled anyway
       return;
     }
+    
     // If on Review step, only allow next if project has sales configured
-    if (currentStep === 1 && !canProceedFromReviewStep(submissionStatus)) {
+    if (currentStep === 1) {
+      if (canProceedFromReviewStep(submissionStatus)) {
+        setCurrentStep(2);
+      }
       return;
     }
-    // Normal next step
+    
+    // Normal next step for any other case
     setCurrentStep((prevStep) => Math.min(prevStep + 1, 2));
   };
 
   const handlePrevStep = () => {
-    // Always go to CreateVerify step from LaunchToken
+    // From LaunchToken step (step 2), always go back to CreateVerify (step 0)
+    // This maintains consistency since users might have skipped Review step
     if (currentStep === 2) {
       setCurrentStep(0);
-    } else {
-      setCurrentStep((prevStep) => Math.max(prevStep - 1, 0));
+      return;
     }
+    
+    // From Review step (step 1), go back to CreateVerify (step 0)
+    if (currentStep === 1) {
+      setCurrentStep(0);
+      return;
+    }
+    
+    // Fallback: normal previous step
+    setCurrentStep((prevStep) => Math.max(prevStep - 1, 0));
   };
 
   const stepTitles = [

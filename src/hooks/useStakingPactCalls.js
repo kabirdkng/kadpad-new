@@ -369,7 +369,7 @@ export const useStakingPactCalls = (options = {}) => {
   }, [createPactCode, pubKey, setLeaderboard, extractNumericValue, getTierByAmount]);
 
   // Stake tokens
-  const stakeTokens = useCallback(async (amount) => {
+  const stakeTokens = useCallback(async (amount, client, session) => {
     if (!account || !pubKey || !isConnected) {
       toast.error('Please connect your wallet first');
       return;
@@ -404,7 +404,9 @@ export const useStakingPactCalls = (options = {}) => {
         lockerAccount,
         account,
         pactCallsStakeTokens,
-        onSuccess: (result) => {
+        client,
+        session,
+        onSuccess: () => {
           toast.success('Tokens staked successfully!');
           // Refresh data
           Promise.all([
@@ -431,10 +433,10 @@ export const useStakingPactCalls = (options = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [account, pubKey, isConnected, createPactCode, clearError, getUserStakes, getUserBalance, getTotalStaked, getLockerAccount]);
+  }, [account, pubKey, isConnected, createPactCode, clearError, getUserStakes, getUserBalance, getTotalStaked, getLockerAccount, setError]);
 
   // Unstake tokens
-  const unstakeTokens = useCallback(async (amount) => {
+  const unstakeTokens = useCallback(async (amount, client, session) => {
     if (!account || !pubKey || !isConnected) {
       toast.error('Please connect your wallet first');
       return;
@@ -468,7 +470,9 @@ export const useStakingPactCalls = (options = {}) => {
         lockerAccount,
         amount,
         pactCallsUnstakeTokens,
-        onSuccess: (result) => {
+        client,
+        session,
+        onSuccess: () => {
           toast.success('Tokens unstaked successfully!');
           // Refresh data
           Promise.all([
@@ -495,7 +499,7 @@ export const useStakingPactCalls = (options = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [account, pubKey, isConnected, createPactCode, clearError, getUserStakes, getUserBalance, getTotalStaked, getLockerAccount]);
+  }, [account, pubKey, isConnected, createPactCode, clearError, getUserStakes, getUserBalance, getTotalStaked, getLockerAccount, setError]);
 
   // Refresh public data (stats, leaderboard, total staked) - doesn't require wallet connection
   const refreshPublicData = useCallback(async () => {

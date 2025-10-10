@@ -75,12 +75,7 @@ export const deploySalesAndTreasuryContracts = async (
       const { showSigningToast } = await import("../transactionUtils.js");
       showSigningToast();
 
-      let signedBatch;
-      if (providerName === "WC") {
-        signedBatch = await provider.quickSignAll(allCommands, client, session);
-      } else {
-        signedBatch = await provider.quickSignAll(allCommands);
-      }
+      let signedBatch = await provider.quickSignAll(allCommands, client, session);
 
       // Check if signing was successful
       if (!signedBatch || !signedBatch.responses || signedBatch.responses.length === 0) {

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { generateSalesContract, generateTreasuryContract } from '../utils/contractGeneration';
 import { deploySalesAndTreasuryWithTokenDistribution } from '../utils/deployContract';
+import { useWalletConnectClient } from '../wallet/providers/ClientContextProvider';
 import useWalletStore from '../wallet/walletStore';
 import { toast } from 'react-toastify';
 
@@ -17,6 +18,9 @@ export const useSalesContractDeployment = () => {
   });
 
   const { isConnected, account, pubKey, provider } = useWalletStore();
+
+  // Get client and session for wallet connect
+  const { client, session } = useWalletConnectClient();
 
   const updateState = useCallback((updates) => {
     setDeploymentState(prev => ({ ...prev, ...updates }));
@@ -91,7 +95,9 @@ export const useSalesContractDeployment = () => {
         provider,
         tokenDistribution,
         undefined, // chain (default)
-        progressCallback // Add progress callback
+        progressCallback, // Add progress callback
+        client, // Add client
+        session // Add session
       );
 
       console.log('Complete deployment result:', deploymentResult);
@@ -153,7 +159,7 @@ export const useSalesContractDeployment = () => {
     } finally {
       updateState({ isLoading: false });
     }
-  }, [updateState, isConnected, account, pubKey, provider]);
+  }, [updateState, isConnected, account, pubKey, provider, client, session]);
 
   const resetDeploymentState = useCallback(() => {
     setDeploymentState({
