@@ -369,8 +369,60 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
 
     allTransactionKeys = [...new Set(allTransactionKeys)];
 
+    // Validate contracts are deployed
     const contractsDeployed = deploymentResults.length > 0 || (treasuryExists && salesExists);
-    const tokenDistributionCompleted = transfers.length === 0 || transferResults.length === transfers.length;
+    
+    let tokenDistributionCompleted = false;
+    
+    if (transfers.length === 0) {
+      // No transfers needed, distribution is complete
+      tokenDistributionCompleted = true;
+      console.log('✅ No token transfers needed, distribution complete');
+    } else if (contractsDeployed) {
+      // Validate by checking actual account balances
+      try {
+        const contractAccounts = await fetchContractAccounts(networkApi, network, chain, namespace, moduleName);
+        let validatedAccounts = 0;
+        
+        for (const transfer of transfers) {
+          let targetAccount;
+          
+          if (transfer.transferType === 'reserve') {
+            targetAccount = contractAccounts.reserveAccount;
+          } else if (transfer.transferType === 'platform') {
+            targetAccount = import.meta.env.VITE_PLATFORM_ACCOUNT;
+          } else if (transfer.transferType === 'liquidity') {
+            targetAccount = contractAccounts.liquidityAccount;
+          } else if (transfer.transferType === 'treasury') {
+            targetAccount = contractAccounts.treasuryAccount;
+          }
+          
+          if (targetAccount) {
+            try {
+              const hasBalance = await checkAccountBalance(
+                networkApi, network, chain, namespace, moduleName, 
+                targetAccount, transfer.amount
+              );
+              
+              if (hasBalance) {
+                validatedAccounts++;
+                console.log(`✅ ${transfer.transferType} account has correct balance: ${transfer.amount}`);
+              } else {
+                console.log(`❌ ${transfer.transferType} account missing expected balance: ${transfer.amount}`);
+              }
+            } catch (error) {
+              console.error(`⚠️ Failed to verify ${transfer.transferType} account balance:`, error.message);
+            }
+          }
+        }
+        
+        tokenDistributionCompleted = validatedAccounts === transfers.length;
+        console.log(`Token distribution validation: ${validatedAccounts}/${transfers.length} accounts have correct balances`);
+      } catch (error) {
+        console.error('Failed to validate token distribution:', error);
+        tokenDistributionCompleted = false;
+      }
+    }
     
     if (contractsDeployed && tokenDistributionCompleted) {
       if (progressCallback) progressCallback('Updating project status...');
@@ -394,6 +446,7 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
         };
 
         await markProjectAsDeployed(namespace, moduleName, deploymentData);
+        console.log('✅ Project marked as deployed in backend');
       } catch (error) {
         console.warn('Failed to update project status on backend:', error.message);
       }
@@ -402,7 +455,7 @@ export const deploySalesAndTreasuryWithTokenDistribution = async (
         throw new Error('Contract deployment was not completed successfully');
       }
       if (!tokenDistributionCompleted) {
-        throw new Error(`Token distribution was not completed successfully. Expected ${transfers.length} transfers, completed ${transferResults.length}`);
+        throw new Error('Token distribution validation failed - not all accounts have the expected balances');
       }
     }
 
