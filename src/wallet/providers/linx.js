@@ -39,17 +39,20 @@ const linx = {
     };
   },
 
-  quickSign: async function (tx) {
+  quickSign: async function (signingCommand) {
     if (!window.flutter_inappwebview) {
       throw new Error("Linx wallet is not available");
     }
 
     try {
-      const description = tx.meta?.description || "Sign Transaction";
+      // Parse the command similar to other wallet providers
+      const commandObj = JSON.parse(signingCommand.cmd);
+      
+      const description = commandObj.meta?.description || "Sign Transaction";
       const signRequest = await send({
-        signingRequest: tx,
+        signingRequest: signingCommand,
         description,
-        chainId: parseInt(tx.meta.chainId),
+        chainId: parseInt(commandObj.meta.chainId),
         token: "KDA",
         amount: 0.0,
         gasPrice: 0.0,
@@ -71,7 +74,7 @@ const linx = {
     }
   },
 
-  quickSignAll: async function (txs) {
+  quickSignAll: async function (signingCommands) {
     if (!window.flutter_inappwebview) {
       throw new Error("Linx wallet is not available");
     }
@@ -80,12 +83,13 @@ const linx = {
       const signedTransactions = [];
       
       // Process each transaction sequentially to maintain order
-      for (const tx of txs) {
-        const description = tx.meta?.description || "Sign Transaction";
+      for (const signingCommand of signingCommands) {
+        const commandObj = JSON.parse(signingCommand.cmd);
+        const description = commandObj.meta?.description || "Sign Transaction";
         const signRequest = await send({
-          signingRequest: tx,
+          signingRequest: signingCommand,
           description,
-          chainId: parseInt(tx.meta.chainId),
+          chainId: parseInt(commandObj.meta.chainId),
           token: "KDA",
           amount: 0.0,
           gasPrice: 0.0,
