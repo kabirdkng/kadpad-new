@@ -61,8 +61,6 @@ const WalletConnectButton = () => {
         return 'Chainweaver';
       case 'CHAINWEAVER_LEGACY':
         return 'Chainweaver Legacy';
-      case 'LINX':
-        return 'Linx Wallet';
       default:
         return 'Wallet';
     }

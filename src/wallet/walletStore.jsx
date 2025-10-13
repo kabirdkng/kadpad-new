@@ -36,30 +36,6 @@ const getInitialState = () => {
   };
 };
 
-// Auto-detect and connect Linx wallet if available
-const autoConnectLinx = async () => {
-  if (typeof window !== 'undefined' && window.flutter_inappwebview) {
-    try {
-      const { default: providers } = await import("./providers/providers");
-      const linxProvider = providers.LINX;
-      const connectResult = await linxProvider.connect();
-      
-      if (connectResult.status === "success") {
-        return {
-          provider: "LINX",
-          account: connectResult.account.account,
-          pubKey: connectResult.account.publicKey,
-          isConnected: true,
-          messages: "Auto-connected to Linx Wallet.",
-        };
-      }
-    } catch (error) {
-      console.log("Linx auto-connect failed:", error.message);
-    }
-  }
-  return null;
-};
-
 const useWalletStore = create((set, get) => ({
   ...getInitialState(),
 
@@ -223,45 +199,6 @@ const useWalletStore = create((set, get) => ({
           set({ messages: `Chainweaver connection error: ${errorMessage}` });
           return;
         }
-      } else if (providerId === "LINX") {
-        console.log("Connecting with Linx Wallet...");
-        try {
-          const { default: providers } = await import("./providers/providers");
-          const provider = providers[providerId];
-          connectResult = await provider.connect();
-          
-          if (connectResult.status === "success") {
-            const newWalletState = {
-              provider: providerId,
-              account: connectResult.account.account,
-              pubKey: connectResult.account.publicKey,
-              isConnected: true,
-              messages: "Successfully connected to Linx Wallet.",
-            };
-            
-            set(newWalletState);
-            
-            // Save to sessionStorage
-            if (isWalletStorageAvailable()) {
-              saveWalletToStorage(newWalletState);
-            }
-            
-            sethideConnectWalletModal();
-            return;
-          } else {
-            // Show toast error message for Linx wallet issues
-            toast.error(connectResult.message);
-            console.error("Linx Wallet connection error:", connectResult.message);
-            set({ messages: `Linx Wallet connection error: ${connectResult.message}` });
-            return;
-          }
-        } catch (error) {
-          const errorMessage = error.message || "Failed to connect to Linx Wallet";
-          toast.error(errorMessage);
-          console.error("Error connecting to Linx Wallet:", error);
-          set({ messages: `Linx Wallet connection error: ${errorMessage}` });
-          return;
-        }
       } else if (providerId === "CHAINWEAVER_LEGACY") {
         console.log("Connecting with Chainweaver Legacy...");
         try {
@@ -400,15 +337,6 @@ const useWalletStore = create((set, get) => ({
         } catch (error) {
           console.error("Error disconnecting Chainweaver:", error);
         }
-      } else if (providerName === "LINX") {
-        // Handle Linx wallet disconnection
-        try {
-          const { default: providers } = await import("./providers/providers");
-          const provider = providers[providerName];
-          await provider.disconnect();
-        } catch (error) {
-          console.error("Error disconnecting Linx Wallet:", error);
-        }
       } else if (providerName === "CHAINWEAVER_LEGACY") {
         // Handle Chainweaver Legacy disconnection through adapter system
         try {
@@ -451,22 +379,7 @@ const useWalletStore = create((set, get) => ({
     });
   },
 
-  restoreWalletSession: async () => {
-    // First, try to auto-connect to Linx if available
-    const linxConnection = await autoConnectLinx();
-    if (linxConnection) {
-      set(linxConnection);
-      
-      // Save to sessionStorage
-      if (isWalletStorageAvailable()) {
-        saveWalletToStorage(linxConnection);
-      }
-      
-      console.log("Auto-connected to Linx Wallet");
-      return linxConnection;
-    }
-    
-    // If no Linx wallet, try to restore from storage
+  restoreWalletSession: () => {
     if (typeof window !== 'undefined' && isWalletStorageAvailable()) {
       const savedWallet = loadWalletFromStorage();
       if (savedWallet && savedWallet.isConnected) {

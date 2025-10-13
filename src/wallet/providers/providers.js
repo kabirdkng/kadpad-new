@@ -7,9 +7,8 @@ import metamask, { METAMASK } from "./metamask"
 import magic, { MAGIC } from "./magic"
 import chainweaver, { CHAINWEAVER } from "./chainweaver"
 import chainweaverLegacy, { CHAINWEAVER_LEGACY } from "./chainweaver-legacy"
-import linx, { LINX } from "./linx"
 
-export { X_WALLET, ZELCORE, KOALA, WC, SPIREKEY, METAMASK, MAGIC, CHAINWEAVER, CHAINWEAVER_LEGACY, LINX }
+export { X_WALLET, ZELCORE, KOALA, WC, SPIREKEY, METAMASK, MAGIC, CHAINWEAVER, CHAINWEAVER_LEGACY }
 const providers = {
   X_WALLET: xwallet,
   ZELCORE: zelcore,
@@ -20,6 +19,5 @@ const providers = {
   MAGIC: magic,
   CHAINWEAVER: chainweaver,
   CHAINWEAVER_LEGACY: chainweaverLegacy,
-  LINX: linx,
 }
 export default providers;

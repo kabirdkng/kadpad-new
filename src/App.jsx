@@ -37,18 +37,14 @@ const App = () => {
 
   // Restore wallet session on app load
   useEffect(() => {
-    const initializeWallet = async () => {
-      try {
-        const restoredSession = await restoreWalletSession();
-        if (restoredSession) {
-          console.log('Wallet session restored:', restoredSession.provider);
-        }
-      } catch (error) {
-        console.error('Failed to restore wallet session:', error);
+    try {
+      const restoredSession = restoreWalletSession();
+      if (restoredSession) {
+        console.log('Wallet session restored:', restoredSession.provider);
       }
-    };
-    
-    initializeWallet();
+    } catch (error) {
+      console.error('Failed to restore wallet session:', error);
+    }
     
     // Optional: Add event listener for page beforeunload to save state
     const handleBeforeUnload = () => {
