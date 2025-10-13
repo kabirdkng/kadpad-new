@@ -38,9 +38,7 @@ const getInitialState = () => {
 
 // Auto-detect and connect Linx wallet if available
 const autoConnectLinx = async () => {
-  if (typeof window !== 'undefined' && 
-      window.kadena && 
-      window.kadena.name === "Linx Wallet") {
+  if (typeof window !== 'undefined' && window.flutter_inappwebview) {
     try {
       const { default: providers } = await import("./providers/providers");
       const linxProvider = providers.LINX;

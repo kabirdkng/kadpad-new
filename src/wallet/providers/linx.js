@@ -5,7 +5,7 @@ export const LINX = "LINX";
 const linx = {
   name: "Linx Wallet",
   connect: async function () {
-    if (!window.kadena || window.kadena.name !== "Linx Wallet") {
+    if (!window.flutter_inappwebview) {
       throw new Error("Linx wallet is not available");
     }
 
@@ -40,7 +40,7 @@ const linx = {
   },
 
   quickSign: async function (tx) {
-    if (!window.kadena || window.kadena.name !== "Linx Wallet") {
+    if (!window.flutter_inappwebview) {
       throw new Error("Linx wallet is not available");
     }
 
@@ -72,7 +72,7 @@ const linx = {
   },
 
   quickSignAll: async function (txs) {
-    if (!window.kadena || window.kadena.name !== "Linx Wallet") {
+    if (!window.flutter_inappwebview) {
       throw new Error("Linx wallet is not available");
     }
 
