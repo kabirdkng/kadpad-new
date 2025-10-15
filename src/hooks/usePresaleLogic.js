@@ -286,6 +286,11 @@ const usePresaleLogic = (namespace, moduleName) => {
     return () => clearInterval(interval);
   }, [phase0startTime, phase1startTime, salesEndTime]);
 
+  // Reset loading state when account changes
+  useEffect(() => {
+    setIsLoading(false);
+  }, [account]);
+
   // Buy tokens handler
   const handleBuy = async (client, session) => {
     try {
