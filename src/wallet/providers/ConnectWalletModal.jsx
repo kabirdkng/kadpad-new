@@ -143,7 +143,7 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
               {/* Show only Linx Wallet (X_WALLET) button if in Linx Explorer */}
               {isLinx ? (
                 <button onClick={connectXWalletClicked} className="btn btn-secondary wallet-row">
-                  <span className="wallet-icon"><img src={Ecko} alt="Linx" /></span>
+                  <span className="wallet-icon"><img src="https://framerusercontent.com/images/GBAEW1PAj37Kx4e975CdPbnJujM.png" alt="Linx" /></span>
                   <span className="wallet-name">Linx Wallet</span>
                 </button>
               ) : (
