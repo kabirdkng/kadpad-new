@@ -11,6 +11,8 @@ import { WalletConnectModal } from "@walletconnect/modal";
 import { getSdkError } from "@walletconnect/utils";
 import useWalletStore from "../walletStore.jsx";
 import walletConnectStore from "./connectWalletModalSlice";
+import { toast } from "react-toastify";
+import { getWalletDisplayName } from "../../utils/walletDetection.js";
 
 export const ClientContext = createContext();
 
@@ -62,6 +64,9 @@ function ClientContextProvider({ children }) {
       
       // Also set the session separately
       useWalletStore.setState({ session: _session });
+      
+      // Show success toast
+      toast.success(`Successfully connected to ${getWalletDisplayName("WC")}`);
     }
   }, []);
 

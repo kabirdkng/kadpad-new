@@ -9,6 +9,7 @@ import {
   clearWalletFromStorage, 
   isWalletStorageAvailable 
 } from "./walletPersistence";
+import { getWalletDisplayName } from "../utils/walletDetection";
 
 // Load initial state from sessionStorage
 const getInitialState = () => {
@@ -105,6 +106,9 @@ const useWalletStore = create((set, get) => ({
               saveWalletToStorage(newWalletState);
             }
             
+            // Show success toast
+            toast.success(`Successfully connected to ${getWalletDisplayName(providerId)}`);
+            
             sethideConnectWalletModal();
             return;
           } else {
@@ -143,6 +147,9 @@ const useWalletStore = create((set, get) => ({
             if (isWalletStorageAvailable()) {
               saveWalletToStorage(newWalletState);
             }
+            
+            // Show success toast
+            toast.success(`Successfully connected to ${getWalletDisplayName(providerId)}`);
             
             sethideConnectWalletModal();
             return;
@@ -183,6 +190,9 @@ const useWalletStore = create((set, get) => ({
               saveWalletToStorage(newWalletState);
             }
             
+            // Show success toast
+            toast.success(`Successfully connected to ${getWalletDisplayName(providerId)}`);
+            
             sethideConnectWalletModal();
             return;
           } else {
@@ -222,6 +232,9 @@ const useWalletStore = create((set, get) => ({
               saveWalletToStorage(newWalletState);
             }
             
+            // Show success toast
+            toast.success(`Successfully connected to ${getWalletDisplayName(providerId)}`);
+            
             sethideConnectWalletModal();
             return;
           } else {
@@ -259,6 +272,9 @@ const useWalletStore = create((set, get) => ({
         if (isWalletStorageAvailable()) {
           saveWalletToStorage(newWalletState);
         }
+        
+        // Show success toast
+        toast.success(`Successfully connected to ${getWalletDisplayName(providerId)}`);
         
         sethideConnectWalletModal();
       } else if (connectResult.message === "Network invalid") {

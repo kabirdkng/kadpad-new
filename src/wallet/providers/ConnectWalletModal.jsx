@@ -1,7 +1,7 @@
 // ConnectWalletModal.jsx
 import { useEffect, useRef, useState } from "react";
 import PropTypes from "prop-types";
-import { X_WALLET, WC, KOALA, METAMASK, MAGIC, CHAINWEAVER, CHAINWEAVER_LEGACY } from "./providers";
+import { X_WALLET, METAMASK, MAGIC, CHAINWEAVER, CHAINWEAVER_LEGACY } from "./providers";
 import useWalletStore from "../walletStore.jsx";
 import walletConnectStore from "./connectWalletModalSlice";
 import "./wallet.css";
@@ -12,6 +12,7 @@ import magic from "../../assets/magic.svg?react"
 import chainweaverl from "../../assets/chainweaver-legacy.png?react"
 import chainweaver from "../../assets/chainweaver.svg?react"
 import { toast } from "react-toastify";
+import { isLinxExplorer } from "../../utils/walletDetection.js";
 
 const ConnectWalletModal = ({ onWalletConnected }) => {
   const showModal = walletConnectStore((state) => state.showModal);
@@ -107,6 +108,8 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
     }
   };
 
+  const isLinx = isLinxExplorer();
+
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -137,39 +140,50 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
             <>
               <h3 className="text-xl font-semibold text-left text-primary">Select Wallet</h3>
               
-              <button onClick={connectXWalletClicked} className="btn btn-secondary wallet-row">
-                <span className="wallet-icon"><img src={Ecko} alt="Ecko" /></span>
-                <span className="wallet-name">Ecko Wallet</span>
-              </button>
+              {/* Show only Linx Wallet (X_WALLET) button if in Linx Explorer */}
+              {isLinx ? (
+                <button onClick={connectXWalletClicked} className="btn btn-secondary wallet-row">
+                  <span className="wallet-icon"><img src={Ecko} alt="Linx" /></span>
+                  <span className="wallet-name">Linx Wallet</span>
+                </button>
+              ) : (
+                <>
+                  {/* Show all wallet options when not in Linx Explorer */}
+                  <button onClick={connectXWalletClicked} className="btn btn-secondary wallet-row">
+                    <span className="wallet-icon"><img src={Ecko} alt="Ecko" /></span>
+                    <span className="wallet-name">Ecko Wallet</span>
+                  </button>
               
-              <button onClick={connectMetaMaskClicked} className="btn btn-secondary wallet-row">
-                <span className="wallet-icon"><img src="https://images.ctfassets.net/clixtyxoaeas/4rnpEzy1ATWRKVBOLxZ1Fm/a74dc1eed36d23d7ea6030383a4d5163/MetaMask-icon-fox.svg" alt="MetaMask" /></span>
-                <span className="wallet-name">MetaMask (Snap)</span>
-              </button>
+                  <button onClick={connectMetaMaskClicked} className="btn btn-secondary wallet-row">
+                    <span className="wallet-icon"><img src="https://images.ctfassets.net/clixtyxoaeas/4rnpEzy1ATWRKVBOLxZ1Fm/a74dc1eed36d23d7ea6030383a4d5163/MetaMask-icon-fox.svg" alt="MetaMask" /></span>
+                    <span className="wallet-name">MetaMask (Snap)</span>
+                  </button>
               
-              <button onClick={handleWalletConnect} className="btn btn-secondary wallet-row">
-                <span className="wallet-icon"><img src={wc} alt="WalletConnect" /></span>
-                <span className="wallet-name">Wallet Connect</span>
-              </button>
+                  <button onClick={handleWalletConnect} className="btn btn-secondary wallet-row">
+                    <span className="wallet-icon"><img src={wc} alt="WalletConnect" /></span>
+                    <span className="wallet-name">Wallet Connect</span>
+                  </button>
               
-              <button onClick={connectMagicClicked} className="btn btn-secondary wallet-row">
-                <span className="wallet-icon"><img src={magic} alt="Magic" /></span>
-                <span className="wallet-name">Magic Wallet (Spirekey)</span>
-              </button>
+                  <button onClick={connectMagicClicked} className="btn btn-secondary wallet-row">
+                    <span className="wallet-icon"><img src={magic} alt="Magic" /></span>
+                    <span className="wallet-name">Magic Wallet (Spirekey)</span>
+                  </button>
               
-              <button onClick={connectChainweaverClicked} className="btn btn-secondary wallet-row">
-                <span className="wallet-icon">
-                  <img src={chainweaver} alt="Chainweaver" />
-                </span>
-                <span className="wallet-name">Chainweaver(V3)</span>
-              </button>
+                  <button onClick={connectChainweaverClicked} className="btn btn-secondary wallet-row">
+                    <span className="wallet-icon">
+                      <img src={chainweaver} alt="Chainweaver" />
+                    </span>
+                    <span className="wallet-name">Chainweaver(V3)</span>
+                  </button>
               
-              <button onClick={connectChainweaverLegacyClicked} className="btn btn-secondary wallet-row">
-                <span className="wallet-icon">
-                  <img src={chainweaverl} alt="Chainweaver Legacy" />
-                </span>
-                <span className="wallet-name">Chainweaver(Legacy)</span>
-              </button>
+                  <button onClick={connectChainweaverLegacyClicked} className="btn btn-secondary wallet-row">
+                    <span className="wallet-icon">
+                      <img src={chainweaverl} alt="Chainweaver Legacy" />
+                    </span>
+                    <span className="wallet-name">Chainweaver(Legacy)</span>
+                  </button>
+                </>
+              )}
             </>
           ) : (
             // Show account input for Chainweaver Legacy

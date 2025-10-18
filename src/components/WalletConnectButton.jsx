@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Wallet, LogOut, Copy, Check, ExternalLink } from 'lucide-react';
 import useWalletStore from "../wallet/walletStore.jsx";
 import walletConnectStore from "../wallet/providers/connectWalletModalSlice";
+import { getWalletDisplayName } from '../utils/walletDetection.js';
 
 const WalletConnectButton = () => {
   const { disconnectWallet, isConnected, provider, account } = useWalletStore();
@@ -45,26 +46,7 @@ const WalletConnectButton = () => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const getProviderName = (provider) => {
-    switch (provider) {
-      case 'X_WALLET':
-        return 'Ecko Wallet';
-      case 'WC':
-        return 'WalletConnect';
-      case 'SPIREKEY':
-        return 'SpireKey';
-      case 'METAMASK':
-        return 'MetaMask';
-      case 'MAGIC':
-        return 'Magic';
-      case 'CHAINWEAVER':
-        return 'Chainweaver';
-      case 'CHAINWEAVER_LEGACY':
-        return 'Chainweaver Legacy';
-      default:
-        return 'Wallet';
-    }
-  };
+  // Removed getProviderName function - now using getWalletDisplayName from utils
 
   if (!isConnected) {
     return (
@@ -119,7 +101,7 @@ const WalletConnectButton = () => {
                   </div>
                   <div className="min-w-0">
                     <div className="font-medium text-primary-text text-sm sm:text-base">Connected</div>
-                    <div className="text-xs text-secondary truncate">{getProviderName(provider)}</div>
+                    <div className="text-xs text-secondary truncate">{getWalletDisplayName(provider)}</div>
                   </div>
                 </div>
                 <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-accent-primary rounded-full flex-shrink-0"></div>

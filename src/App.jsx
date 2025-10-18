@@ -22,6 +22,7 @@ import useWalletStore from './wallet/walletStore.jsx';
 
 // Utils
 import { preloadImages } from './utils/imagePreloader';
+import { isLinxExplorer } from './utils/walletDetection.js';
 
 // Assets
 import logo from '/favicon.svg';
@@ -31,9 +32,25 @@ import tLogo from './assets/tlogo.svg';
 
 const App = () => {
   const { showModal } = walletConnectStore();
-  const { restoreWalletSession } = useWalletStore();
+  const { restoreWalletSession, connectWallet, isConnected } = useWalletStore();
   const [isLoading, setIsLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState(0);
+
+  // Auto-connect X Wallet if running in Linx Explorer
+  useEffect(() => {
+    const autoConnectLinxWallet = async () => {
+      if (isLinxExplorer() && !isConnected) {
+        console.log('Linx Explorer detected, auto-connecting Wallet...');
+        try {
+          await connectWallet('X_WALLET');
+        } catch (error) {
+          console.error('Failed to auto-connect Linx Wallet:', error);
+        }
+      }
+    };
+
+    autoConnectLinxWallet();
+  }, []); // Run only once on mount
 
   // Restore wallet session on app load
   useEffect(() => {
