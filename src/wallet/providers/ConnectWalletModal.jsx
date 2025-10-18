@@ -11,6 +11,7 @@ import wc from "../../assets/WC.svg?react"
 import magic from "../../assets/magic.svg?react"
 import chainweaverl from "../../assets/chainweaver-legacy.png?react"
 import chainweaver from "../../assets/chainweaver.svg?react"
+import linx from "../../assets/linx.svg?react"
 import { toast } from "react-toastify";
 import { isLinxExplorer } from "../../utils/walletDetection.js";
 
@@ -143,7 +144,7 @@ const ConnectWalletModal = ({ onWalletConnected }) => {
               {/* Show only Linx Wallet (X_WALLET) button if in Linx Explorer */}
               {isLinx ? (
                 <button onClick={connectXWalletClicked} className="btn btn-secondary wallet-row">
-                  <span className="wallet-icon"><img src="https://framerusercontent.com/images/GBAEW1PAj37Kx4e975CdPbnJujM.png" alt="Linx" /></span>
+                  <span className="wallet-icon"><img src={linx} alt="Linx" /></span>
                   <span className="wallet-name">Linx Wallet</span>
                 </button>
               ) : (
