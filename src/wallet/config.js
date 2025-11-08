@@ -9,8 +9,8 @@ const config = {
     },
     mainnet: {
       name: "mainnet",
-      apiUrl: "https://api.chainweb.com",
-      client: "https://api.chainweb.com/chainweb/0.0/mainnet01/chain/2/pact",
+      apiUrl: "https://api.chainweb-community.org",
+      client: "https://api.chainweb-community.org/chainweb/0.0/mainnet01/chain/2/pact",
       chainId: "2",
       networkId: "mainnet01",
       spireKeyUrl: "https://spirekey.kadena.io",
