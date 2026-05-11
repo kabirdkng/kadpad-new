@@ -1,0 +1,53 @@
+/* Minimal modal-specific styles - everything else uses index.css classes */
+.wallet-modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  z-index: 5000;
+  overflow-y: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.wallet-modal {
+  background: var(--card-bg);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-large);
+  width: 100%;
+  max-width: 400px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Custom layout for wallet buttons */
+.wallet-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  gap: 1rem;
+}
+
+.wallet-icon {
+  flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wallet-icon img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.wallet-name {
+  flex: 1;
+  text-align: left;
+  font-weight: 500;
+}

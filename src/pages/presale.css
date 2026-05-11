@@ -1,0 +1,152 @@
+/* Make the arrows visible */
+input[type="number"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 100px;
+    height: 50px;
+    padding: 5px;
+    padding-right: 0px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    font-size: 28px;
+    text-align: center;
+  }
+  
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    opacity: 1;
+    width: 20px;
+    height: 50px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: #ccc;
+    cursor: pointer;
+  }
+  
+  input[type="number"]::-webkit-inner-spin-button:hover,
+  input[type="number"]::-webkit-outer-spin-button:hover {
+    background-color: #aaa;
+  }
+  
+  input[type="number"]::-webkit-inner-spin-button:active,
+  input[type="number"]::-webkit-outer-spin-button:active {
+    background-color: #888;
+  }
+  .number-input{
+    display: flex;
+    flex-direction: row-reverse;
+    margin-inline: auto;
+    justify-items: center;
+    align-items: center;
+    gap: 15px;
+  }
+  .balance-wrap{
+    display: flex;
+    justify-content: space-between;
+  }
+  .presale-info{
+    display: grid;
+    place-items: center;
+    border: 1.5px solid #FCFCFC;
+    padding-top: 10px;
+    gap: 15px;
+  }
+  .contract-add{
+    word-break: break-all;
+  }
+  .presale-info h2{
+    margin-bottom: 0;
+  }
+  .presale-info h3 {
+    border-top: 1px solid #fcfcfc;
+    padding-inline: 10px;
+    padding-block: 5px;
+    vertical-align: middle;
+    margin-bottom: 0;
+    display: grid;
+    place-items: center;
+    grid-template-columns: 2fr 1fr 2fr;
+    align-items: center;
+    gap: auto;
+  }
+  .presale-info h3 span{
+    text-align: center;
+  }
+  .presale-info .infos{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .value{
+    border: 1px solid #FCFCFC;
+    padding-inline: 5px;
+    padding-block: 1px;
+    white-space: nowrap;
+  }
+  .buy-btn{
+    padding-inline: 100px !important;
+    padding-block: 10px;
+    border-radius: 10px 0 10px 0;
+    border: 0;
+    color: #fcfcfc;
+    border: 0.1px solid #fcfcfc !important;
+    font-weight: 800;
+    background: var(--primary-color) !important;
+    margin-bottom: 20px;
+  }
+  .buy-btn:hover,
+  .buy-btn:focus{
+    color: var(--primary-color);
+    font-weight: 800;
+    background: #fcfcfc !important;
+  }
+.link {
+  color: var(--primary-color) ;
+}
+.btn-small{
+  padding: 0 1em;
+  color: var(--primary-color) !important;
+  background: transparent;
+  border: 0;
+}
+.dashboard-container{
+  width: 100%;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  gap: 1rem
+}
+.deployer-modal{
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  padding: 2rem 1rem;
+  width: 100%;
+  max-width: 1280px;
+}
+.deployer-panel{
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  max-width: 100%;
+}
+.deployer-options{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+  @media (max-width : 600px) {
+    .number-input{
+      flex-direction: column-reverse;
+    }
+    
+  }
+  .treasury-balance {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }

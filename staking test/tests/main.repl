@@ -1,0 +1,22 @@
+;; Load the contract state
+
+;; Load all tests
+
+;; Staking Testing
+(load "staking.repl")
+(print "Staking Testing Successful")
+(env-sigs [])
+(env-data {})
+
+; read functions
+(load "read.repl")
+(print "Read Testing Successful")
+
+; penalty calculations
+(load "penalty.repl")
+(print "Penalty Testing Successful")
+
+; penalty withdrawal tests
+(load "penalty-withdraw.repl")
+(print "Penalty Withdrawal Testing Successful")
+

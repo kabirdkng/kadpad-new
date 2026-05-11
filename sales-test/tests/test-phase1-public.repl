@@ -1,0 +1,98 @@
+; Test Phase 1 - Public Sales with Real Coin Operations
+; This test validates the complete public phase functionality
+
+; Advance time to Phase 1
+(env-chain-data {"chain-id": "1", "block-time": (time "2025-08-26T11:50:30Z")})
+
+(begin-tx)
+; Test Phase 1 activation
+(expect "now in phase 1" "phase-1" 
+  (NS.token-sales.current-phase))
+(expect "in phase 1 check" true 
+  (NS.token-sales.in-phase-1))
+(expect "phase 1 price is 2.0 KDA" 2.0 
+  (NS.token-sales.get-price))
+(commit-tx)
+
+; Test Phase 1 public buying (buyer2 - no reservation)
+(begin-tx)
+; Get initial balances to calculate differences
+(let ((buyer2-initial (coin.get-balance "buyer2"))
+      (sales-initial (coin.get-balance NS.token-sales.SALES-ACCOUNT)))
+
+(env-sigs
+  [{ "key": "b2"
+   , "caps": 
+     [(coin.TRANSFER "buyer2" NS.token-sales.SALES-ACCOUNT 50.0)]
+   }])
+
+; buyer2 buys 25 batches at 2.0 KDA each = 50.0 KDA
+(NS.token-sales.buy "buyer2" (keyset-ref-guard "buyer2") 25)
+
+; Test buyer2 balance after purchase (use difference)
+(expect "buyer2 KDA reduced by 50.0" (- buyer2-initial 50.0)
+  (coin.get-balance "buyer2"))
+(expect "sales account increased by 50.0 KDA" (+ sales-initial 50.0)
+  (coin.get-balance NS.token-sales.SALES-ACCOUNT)))
+(commit-tx)
+
+; Test reserved buyer buying in Phase 1 (can still use reservation)
+(begin-tx)
+(let ((buyer1-initial (coin.get-balance "buyer1"))
+      (sales-initial (coin.get-balance NS.token-sales.SALES-ACCOUNT)))
+
+(env-sigs
+  [{ "key": "b1"
+   , "caps": 
+     [(coin.TRANSFER "buyer1" NS.token-sales.SALES-ACCOUNT 30.0)]
+   }])
+
+; buyer1 buys 15 batches at 2.0 KDA each = 30.0 KDA
+(NS.token-sales.buy "buyer1" (keyset-ref-guard "buyer1") 15)
+
+; Test buyer1 balance after purchase
+(expect "buyer1 KDA reduced by 30.0" (- buyer1-initial 30.0)
+  (coin.get-balance "buyer1"))
+(expect "sales account increased by 30.0" (+ sales-initial 30.0)
+  (coin.get-balance NS.token-sales.SALES-ACCOUNT)))
+(commit-tx)
+
+; Test third buyer (no reservation, public sales)
+(begin-tx)
+(let ((buyer3-initial (coin.get-balance "buyer3"))
+      (sales-initial (coin.get-balance NS.token-sales.SALES-ACCOUNT)))
+
+(env-sigs
+  [{ "key": "b3"
+   , "caps": 
+     [(coin.TRANSFER "buyer3" NS.token-sales.SALES-ACCOUNT 60.0)]
+   }])
+
+; buyer3 buys 30 batches at 2.0 KDA each = 60.0 KDA
+(NS.token-sales.buy "buyer3" (keyset-ref-guard "buyer3") 30)
+
+; Test buyer3 balance after purchase
+(expect "buyer3 KDA reduced by 60.0" (- buyer3-initial 60.0)
+  (coin.get-balance "buyer3"))
+(expect "sales account increased by 60.0" (+ sales-initial 60.0)
+  (coin.get-balance NS.token-sales.SALES-ACCOUNT)))
+(commit-tx)
+
+; Test sales ending
+(env-chain-data {"chain-id": "1", "block-time": (time "2025-08-26T12:05:30Z")})
+
+(begin-tx)
+; Test sales ended status
+(expect "sales ended" true 
+  (NS.token-sales.ended))
+
+; Try to buy after sales end (should fail)
+(env-sigs
+  [{ "key": "b1"
+   , "caps": 
+     [(coin.TRANSFER "buyer1" NS.token-sales.SALES-ACCOUNT 2.0)]
+   }])
+
+(expect-failure "cannot buy after sales end"
+  (NS.token-sales.buy "buyer1" (keyset-ref-guard "buyer1") 1))
+(commit-tx)
