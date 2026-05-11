@@ -1,0 +1,9 @@
+(begin-tx)
+(load "./bootstrap-modules/repl-coin-tools.repl")
+(commit-tx)
+
+
+(begin-tx)
+(use repl-coin-tools)
+(fund-accounts ["alice", "bob", "carol", "dave"] 1000.0)
+(commit-tx)
